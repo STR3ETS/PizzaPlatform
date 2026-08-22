@@ -226,8 +226,10 @@
     flex-shrink: 0;
 }
 
-/* Dag-chips */
+/* Dag-chips: samen precies de volle rijbreedte, net als de tijd-rijen eronder */
 .day-chip {
+    flex: 1 1 0;
+    text-align: center;
     font-weight: 900;
     font-size: 1rem;
     text-transform: capitalize;
@@ -273,18 +275,20 @@
     color: #fff;
 }
 
-/* Per dag eigen tijden */
+/* Per dag eigen tijden: alle rijen even breed, de tijdvelden rekken mee */
 .day-time-row {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: .6rem;
+    width: 100%;
     background: #fff;
     border: 3px solid var(--color-crema-dark);
     border-radius: 1rem;
     padding: .45rem .8rem;
     animation: pop-in .25s ease both;
 }
+.day-time-row .inp-time { flex: 1 1 0; min-width: 0; }
 .day-time-row .d-label {
     width: 2.2rem;
     text-transform: capitalize;
@@ -888,8 +892,276 @@
 .ring-track { stroke: var(--color-crema-dark); }
 .ring-bar { stroke: var(--color-basil); transition: stroke-dashoffset 1s cubic-bezier(.22,1,.36,1); }
 
-/* Demo-bestelling */
-.order-card { animation: pop-in .35s cubic-bezier(.22,1.4,.36,1) both; }
+/* Bestellingen: touch-first (grote tikdoelen, geen dropdowns) */
+.order-tab {
+    font-weight: 900;
+    font-size: .95rem;
+    background: #fff;
+    border: 4px solid var(--color-crema-dark);
+    border-radius: 9999px;
+    padding: .6rem 1.15rem;
+    min-height: 2.9rem;
+    color: var(--color-cacao);
+    cursor: pointer;
+    transition: transform .12s ease;
+}
+.order-tab:active { transform: scale(.95); }
+
+/* Status-tijdlijn: passief, toont alleen waar de bestelling is */
+.status-tijdlijn { display: flex; margin: .4rem 0 1rem; pointer-events: none; }
+.stl-stap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .4rem;
+    position: relative;
+}
+.stl-stap::before, .stl-stap::after {
+    content: "";
+    position: absolute;
+    top: 1.3rem;
+    height: 4px;
+    width: 50%;
+    background: var(--color-crema-dark);
+    transform: translateY(-50%);
+}
+.stl-stap::before { left: 0; }
+.stl-stap::after { right: 0; }
+.stl-stap:first-child::before, .stl-stap:last-child::after { display: none; }
+.stl-dot {
+    width: 2.6rem; height: 2.6rem;
+    border-radius: 9999px;
+    background: #fff;
+    border: 3px solid var(--color-crema-dark);
+    color: color-mix(in srgb, var(--color-cacao) 40%, transparent);
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    line-height: 1;
+    position: relative;
+    transition: all .25s ease;
+}
+.stl-dot svg { width: 55%; height: 55%; }
+.stl-dot i { font-size: 1.05rem; }
+.stl-stap.geweest .stl-dot {
+    background: var(--color-basil);
+    border-color: var(--color-basil);
+    color: #fff;
+}
+.stl-stap.nu .stl-dot { color: color-mix(in srgb, var(--color-cacao) 60%, transparent); }
+.stl-lbl { font-size: .72rem; font-weight: 900; color: color-mix(in srgb, var(--color-cacao) 38%, transparent); }
+
+/* Tijdsschatting bij accepteren */
+.eta-kiezer {
+    background: var(--color-crema);
+    border-radius: 1.25rem;
+    padding: 1rem;
+}
+.eta-snel {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    color: var(--color-cacao);
+    background: #fff;
+    border: 3px solid var(--color-crema-dark);
+    border-radius: 1rem;
+    padding: .8rem .3rem;
+    min-height: 3.2rem;
+    width: 100%;
+    cursor: pointer;
+    transition: transform .1s ease, border-color .15s ease;
+}
+.eta-snel:hover { border-color: var(--color-gold); }
+.eta-snel:active { transform: scale(.94); }
+.eta-stap {
+    width: 3rem; height: 3rem;
+    border-radius: 9999px;
+    background: #fff;
+    border: 3px solid var(--color-crema-dark);
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    color: var(--color-cacao);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: transform .1s ease;
+}
+.eta-stap:active { transform: scale(.9); }
+.stl-stap.geweest::before, .stl-stap.geweest::after,
+.stl-stap.nu::before { background: var(--color-basil); }
+
+/* Statuswissel: vinkje popt, het groen vult over de grijze lijn heen, dan het laad-icoon.
+   Lineaire snelheid + kleine overlap tussen de twee helften, anders stottert het op het midden.
+   Het groen is een achtergrondlaag zodat de grijze basislijn altijd zichtbaar blijft. */
+.stl-stap.vul::after {
+    background: var(--color-crema-dark);
+    background-image: linear-gradient(var(--color-basil), var(--color-basil));
+    background-repeat: no-repeat;
+    background-position: left center;
+    background-size: 0% 100%;
+    animation: lijn-vul .26s linear both;
+}
+.stl-stap.vul .stl-dot { animation: dot-check .32s cubic-bezier(.22,1.4,.36,1) both; }
+
+.stl-stap.nu.vul-in::before {
+    background: var(--color-crema-dark);
+    background-image: linear-gradient(var(--color-basil), var(--color-basil));
+    background-repeat: no-repeat;
+    background-position: left center;
+    background-size: 0% 100%;
+    animation: lijn-vul .26s linear .24s both;
+}
+/* Tijdens het vollopen blijft het oude grijze icoon staan; daarna kruisvervagen */
+.stl-stap.nu.vul-in .stl-dot { animation: dot-groei .25s ease-out .44s both; }
+.stl-stap.nu.vul-in .stl-dot > i { animation: icoon-in .22s ease-out .48s both; }
+
+/* Laatste stap (Bezorgd of Afgehaald): de lijn stond al groen, alleen het rondje wisselt direct */
+.stl-stap.vul-eind .stl-dot { animation: dot-eind .32s cubic-bezier(.22,1.4,.36,1) .05s both; }
+.stl-stap.vul-eind .stl-dot > i { animation: icoon-in .22s ease-out .1s both; }
+.stl-stap.vul-eind .stl-was { animation-delay: .05s; }
+
+.stl-was {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: color-mix(in srgb, var(--color-cacao) 40%, transparent);
+    animation: was-uit .18s ease .46s both;
+}
+
+@keyframes lijn-vul {
+    to { background-size: 100% 100%; }
+}
+@keyframes dot-check {
+    0%   { transform: scale(.4); }
+    60%  { transform: scale(1.18); }
+    100% { transform: scale(1); }
+}
+@keyframes dot-groei {
+    from { transform: scale(1); }
+    to   { transform: scale(1.2); }
+}
+@keyframes dot-eind {
+    0%   { transform: scale(1); background: #fff; border-color: var(--color-crema-dark); }
+    60%  { transform: scale(1.18); }
+    100% { transform: scale(1); background: var(--color-basil); border-color: var(--color-basil); }
+}
+@keyframes icoon-in {
+    from { opacity: 0; transform: scale(.5); }
+    to   { opacity: 1; transform: scale(1); }
+}
+@keyframes was-uit {
+    to { opacity: 0; }
+}
+/* Kaart pas vervagen zodra het vinkje bij de laatste stap staat, niet al bij het klikken */
+.order-card.klaar-vervaag { animation: kaart-vervaag .35s ease .45s both; }
+@keyframes kaart-vervaag {
+    from { opacity: 1; }
+    to   { opacity: .6; }
+}
+.stl-stap.nu .stl-dot { transform: scale(1.2); }
+.stl-stap.nu .stl-lbl { color: var(--color-cacao); }
+
+/* ── Menukaart-beheer ────────────────────────────────────────── */
+
+.menu-card { cursor: pointer; transition: transform .15s ease; }
+.menu-card:hover { transform: translateY(-2px); }
+.menu-card.uit { opacity: .55; }
+.menu-card.pop { animation: pop-in .35s cubic-bezier(.22,1.4,.36,1) both; }
+
+.m-label { display: block; font-weight: 800; font-size: .9rem; margin-bottom: .35rem; }
+.m-hint { font-size: .75rem; font-weight: 800; color: color-mix(in srgb, var(--color-cacao) 45%, transparent); }
+.m-inp {
+    width: 100%; background: #fff; color: var(--color-cacao);
+    border: 3px solid var(--color-crema-dark); border-radius: 1rem;
+    padding: .55rem .9rem; font: inherit; font-weight: 800; font-size: .95rem;
+    outline: none; transition: border-color .15s ease;
+}
+.m-inp:focus { border-color: var(--color-gold); }
+.m-inp.m-fout { border-color: var(--color-tomato); }
+.m-inp::placeholder { color: color-mix(in srgb, var(--color-cacao) 30%, transparent); font-weight: 800; }
+
+/* Vaste chip (bijv. een ingrediënt) met verwijderkruisje */
+.chip {
+    display: inline-flex; align-items: center; gap: .4rem;
+    background: var(--color-crema); border: 2px solid var(--color-crema-dark);
+    border-radius: 999px; padding: .25rem .75rem; font-size: .8rem; font-weight: 800;
+}
+.chip-x { cursor: pointer; color: color-mix(in srgb, var(--color-cacao) 40%, transparent); transition: color .12s ease; }
+.chip-x:hover { color: var(--color-tomato); }
+
+/* Aan/uit-chip (categorie, allergenen, templates) */
+.keuze-chip {
+    display: inline-flex; align-items: center; gap: .4rem; cursor: pointer;
+    background: #fff; border: 2px solid var(--color-crema-dark); color: var(--color-cacao);
+    border-radius: 999px; padding: .35rem .85rem; font-size: .8rem; font-weight: 800;
+    transition: border-color .12s ease, background .12s ease, color .12s ease;
+}
+.keuze-chip:hover { border-color: var(--color-gold); }
+.keuze-chip.aan { background: var(--color-cacao); border-color: var(--color-cacao); color: #fff; }
+.keuze-chip.geel.aan { background: var(--color-gold); border-color: var(--color-gold); color: var(--color-cacao); }
+
+/* Allergenen op de gerecht-kaart: opvallend, want dit moet je niet missen */
+.warn-chip {
+    display: inline-flex; align-items: center; gap: .35rem;
+    background: color-mix(in srgb, var(--color-gold) 18%, #fff);
+    border: 2px solid color-mix(in srgb, var(--color-gold) 55%, #fff);
+    color: var(--color-cacao); border-radius: 999px; padding: .15rem .6rem;
+    font-size: .72rem; font-weight: 800;
+}
+.warn-chip i { color: color-mix(in srgb, var(--color-gold) 80%, var(--color-cacao)); }
+.warn-chip.leeg { background: var(--color-crema); border-color: var(--color-crema-dark); color: color-mix(in srgb, var(--color-cacao) 55%, transparent); }
+.warn-chip.leeg i { color: color-mix(in srgb, var(--color-cacao) 35%, transparent); }
+.warn-chip.ok { background: color-mix(in srgb, var(--color-basil) 12%, #fff); border-color: color-mix(in srgb, var(--color-basil) 40%, #fff); }
+.warn-chip.ok i { color: var(--color-basil); }
+
+/* ── Bezorgkaart: warme cartoon-look in de huisstijl ─────────── */
+
+#bezorgMap .leaflet-tile-pane {
+    filter: sepia(.28) saturate(1.1) hue-rotate(-8deg) contrast(.9) brightness(1.05);
+}
+#bezorgMap .bezorg-pin-bol {
+    width: 2.6rem; height: 2.6rem;
+    background: #fff;
+    border: 3px solid var(--color-tomato);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: grid; place-items: center;
+    font-size: 1.3rem;
+    box-shadow: 0 4px 0 rgb(56 34 26 / .18);
+}
+#bezorgMap .bezorg-pin-bol > span { transform: rotate(45deg); }
+#bezorgMap .leaflet-control-zoom { border: none; box-shadow: none; }
+#bezorgMap .leaflet-control-zoom a {
+    width: 2.2rem; height: 2.2rem; line-height: 2.05rem;
+    font-family: inherit; font-weight: 800; font-size: 1.1rem;
+    color: var(--color-cacao); background: #fff;
+    border: 3px solid var(--color-crema-dark);
+    border-radius: 999px !important;
+    margin-bottom: .35rem;
+    box-shadow: 0 3px 0 0 var(--color-crema-dark);
+}
+#bezorgMap .leaflet-control-zoom a:hover { background: var(--color-crema); }
+
+/* Gerecht-wizard: stappen schuiven zachtjes in */
+.m-stap { margin-top: .25rem; }
+.m-stap.actief { animation: m-stap-in .28s ease both; }
+@keyframes m-stap-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Optiegroep in de editor */
+.optie-groep { border: 3px solid var(--color-crema-dark); border-radius: 1.1rem; padding: .8rem; }
+.seg { display: inline-flex; border: 2px solid var(--color-crema-dark); border-radius: 999px; overflow: hidden; background: #fff; }
+.seg button {
+    padding: .3rem .7rem; font-size: .72rem; font-weight: 800; cursor: pointer;
+    color: color-mix(in srgb, var(--color-cacao) 55%, transparent); background: transparent; border: 0; font-family: inherit;
+}
+.seg button.aan { background: var(--color-cacao); color: #fff; }
+
+/* Bestelling: alleen nieuwe kaarten poppen in */
+.order-card.pop { animation: pop-in .35s cubic-bezier(.22,1.4,.36,1) both; }
 .order-step { transition: background .3s ease, color .3s ease; }
 .order-step.nu { background: var(--color-gold); color: var(--color-cacao); }
 .order-step.klaar { background: var(--color-basil); color: #fff; }

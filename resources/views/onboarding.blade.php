@@ -45,6 +45,14 @@
         <span class="text-2xl">🍕</span>
     </div>
 
+    @auth
+    <!-- Ingelogd: wijzigingen direct kunnen opslaan zonder alle stappen af te lopen -->
+    <div class="fixed top-4 right-4 z-40 text-right">
+        <button id="quickSave" type="button" class="btn-primary !text-base !px-6 !py-2.5">Opslaan ✓</button>
+        <p class="mt-1.5 text-[11px] font-extrabold text-cacao/40">en terug naar je dashboard</p>
+    </div>
+    @endauth
+
     <!-- Voortgang -->
     <div id="progressWrap" class="fixed top-0 left-0 right-0 z-30 hidden">
         <div class="h-2 bg-crema-dark">
@@ -210,7 +218,7 @@
                 <span class="text-cacao/50 text-base">tot</span>
                 <input id="inpClose" type="time" value="21:30" class="inp-time">
             </div>
-            <div id="perDayTimes" class="hidden max-w-xs mx-auto space-y-2"></div>
+            <div id="perDayTimes" class="hidden space-y-2"></div>
             <p class="err" data-err="hours"></p>
             <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
                 <button data-back type="button" class="btn-primary btn-grey">Terug</button>
@@ -431,6 +439,7 @@
     <canvas id="confetti" class="pointer-events-none fixed inset-0 z-50 hidden"></canvas>
 
     <script>window.PP_AUTH = @json(auth()->check());</script>
+    <script>window.PP_SAVED = @json(auth()->check() ? auth()->user()->onboarding : null);</script>
     <script src="{{ asset('assets/onboarding/app.js') }}?v={{ filemtime(public_path('assets/onboarding/app.js')) }}"></script>
 </body>
 </html>

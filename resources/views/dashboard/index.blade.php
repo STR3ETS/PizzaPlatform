@@ -26,6 +26,8 @@
             --font-body: "Nunito", sans-serif;
         }
     </style>
+    <link rel="stylesheet" href="{{ asset('fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
     <link rel="stylesheet" href="{{ asset('assets/onboarding/style.css') }}?v={{ filemtime(public_path('assets/onboarding/style.css')) }}">
 </head>
 <body class="bg-crema font-body text-cacao min-h-screen antialiased overflow-x-hidden">
@@ -56,9 +58,8 @@
 
         <nav class="flex-1 px-3 space-y-1 overflow-y-auto">
             <button type="button" data-nav="overzicht" class="rail-item actief"><span class="r-ico">🏠</span> Overzicht</button>
-            <button type="button" data-nav="bestellingen" class="rail-item"><span class="r-ico">🧾</span> Bestellingen</button>
+            <button type="button" data-nav="bestellingen" class="rail-item"><span class="r-ico">🧾</span> Bestellingen <span id="railOrdersBadge" class="n-soon" style="background:var(--color-tomato); color:#fff; display:none">0</span></button>
             <button type="button" data-nav="menukaart" class="rail-item"><span class="r-ico">📋</span> Menukaart</button>
-            <button type="button" data-nav="tijden" class="rail-item"><span class="r-ico">🕐</span> Openingstijden</button>
             <button type="button" data-nav="bestelpagina" class="rail-item"><span class="r-ico">🎨</span> Bestelpagina</button>
             <button type="button" data-nav="dozen" class="rail-item"><span class="r-ico">📦</span> Dozen <span class="n-soon">Binnenkort</span></button>
             <button type="button" data-nav="instellingen" class="rail-item"><span class="r-ico">⚙️</span> Instellingen</button>
@@ -115,16 +116,34 @@
                 </div>
             </div>
 
+            @php
+                $vandaagBestellingen = auth()->user()->orders()->whereDate('created_at', today())->get();
+            @endphp
+
+            <!-- Waarschuwing als status en openingstijden niet kloppen -->
+            <div id="statusWaarschuwing" class="hidden mb-5 flex-col sm:flex-row sm:items-center gap-3 rounded-2xl border-4 px-4 py-3"
+                style="display:none; background:color-mix(in srgb, var(--color-gold) 16%, #fff); border-color:color-mix(in srgb, var(--color-gold) 55%, transparent)">
+                <p id="waarschuwingTekst" class="flex-1 text-sm font-extrabold"></p>
+                <button id="waarschuwingActie" type="button" class="btn-primary !text-sm !px-5 !py-2 shrink-0"></button>
+            </div>
+
+            <!-- Openstaande bestellingen -->
+            <div class="dash-card rise mb-5" style="--d:.04s">
+                <p class="font-display text-xl mb-3">Openstaande bestellingen</p>
+                <div id="openOrders" class="space-y-2.5"></div>
+                <div id="openLeeg" class="empty-box hidden">🎉 Geen openstaande bestellingen, alles is de deur uit!</div>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
                 <div class="dash-card rise" style="--d:.05s">
                     <p class="lbl !ml-0">Bestellingen vandaag</p>
-                    <p class="font-display text-4xl mt-1" data-teller="0">0</p>
-                    <p class="text-xs font-extrabold text-cacao/40 mt-1">Wachten op je eerste 🤞</p>
+                    <p id="statAantal" class="font-display text-4xl mt-1" data-teller="{{ $vandaagBestellingen->count() }}">0</p>
+                    <p class="text-xs font-extrabold text-cacao/40 mt-1">{{ $vandaagBestellingen->count() ? 'Lekker bezig! 💪' : 'Wachten op je eerste 🤞' }}</p>
                 </div>
                 <div class="dash-card rise" style="--d:.1s">
                     <p class="lbl !ml-0">Omzet vandaag</p>
-                    <p class="font-display text-4xl mt-1">€ <span data-teller="0">0</span>,00</p>
-                    <p class="text-xs font-extrabold text-cacao/40 mt-1">De teller start bij je eerste bestelling</p>
+                    <p id="statOmzet" class="font-display text-4xl mt-1" data-cents="{{ $vandaagBestellingen->sum('totaal') }}">€ {{ number_format($vandaagBestellingen->sum('totaal') / 100, 2, ',', '.') }}</p>
+                    <p class="text-xs font-extrabold text-cacao/40 mt-1">{{ $vandaagBestellingen->count() ? 'Van ' . $vandaagBestellingen->count() . ' bestelling' . ($vandaagBestellingen->count() === 1 ? '' : 'en') . ' vandaag' : 'De teller start bij je eerste bestelling' }}</p>
                 </div>
                 <div class="dash-card rise" style="--d:.15s">
                     <div class="flex items-center justify-between">
@@ -159,46 +178,94 @@
                 <div class="dash-card rise" style="--d:.25s">
                     <p class="font-display text-xl mb-3">Snel regelen</p>
                     <div class="grid grid-cols-2 gap-3">
-                        <a href="{{ route('onboarding') }}?stap=menu" class="qa-btn"><span class="q-ico">📋</span> Menu aanpassen</a>
+                        <button type="button" data-nav="menukaart" class="qa-btn"><span class="q-ico">📋</span> Menu aanpassen</button>
                         <a href="{{ route('onboarding') }}?stap=hours" class="qa-btn"><span class="q-ico">🕐</span> Tijden wijzigen</a>
                         <a href="{{ route('onboarding') }}?stap=style" class="qa-btn"><span class="q-ico">🎨</span> Pagina stylen</a>
                         <span class="qa-btn uit"><span class="q-ico">📦</span> Dozen bestellen <span class="n-soon !absolute !-top-2 !-right-2">Binnenkort</span></span>
                     </div>
                 </div>
             </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+                <!-- Deel je bestelpagina -->
+                <div class="dash-card rise" style="--d:.3s">
+                    <p class="font-display text-xl mb-3">Deel je bestelpagina</p>
+                    <div class="flex items-center gap-4">
+                        <div id="qrBox" class="w-[104px] h-[104px] shrink-0 bg-white rounded-xl border-2 border-crema-dark grid place-items-center overflow-hidden p-1.5"></div>
+                        <div class="min-w-0 flex-1">
+                            <p id="shareLink" class="text-xs font-extrabold text-cacao/60 break-all mb-2">…</p>
+                            <button id="copyLink" type="button" class="btn-primary !text-sm !px-4 !py-2">Kopieer link</button>
+                            <p class="text-[11px] font-extrabold text-cacao/40 mt-2">Print de QR voor op je toonbank of flyers</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toppers deze week -->
+                <div class="dash-card rise" style="--d:.35s">
+                    <div class="flex items-center justify-between mb-3">
+                        <p class="font-display text-xl">Toppers deze week</p>
+                        <span class="text-[10px] font-extrabold uppercase tracking-wide bg-crema-dark text-cacao/50 rounded-full px-2 py-0.5">Voorbeeld</span>
+                    </div>
+                    <div id="topGerechten" class="space-y-3"></div>
+                </div>
+
+                <!-- Gemiddelde doorlooptijd -->
+                <div class="dash-card rise" style="--d:.4s">
+                    <div class="flex items-center justify-between">
+                        <p class="lbl !ml-0">Gemiddelde doorlooptijd</p>
+                        <span class="text-[10px] font-extrabold uppercase tracking-wide bg-crema-dark text-cacao/50 rounded-full px-2 py-0.5">Voorbeeld</span>
+                    </div>
+                    <p class="font-display text-4xl mt-1">24 min</p>
+                    <div class="mt-2.5 space-y-1.5 text-xs font-extrabold text-cacao/50">
+                        <p>🔥 In de oven: gemiddeld 14 min</p>
+                        <p>🛵 Onderweg: gemiddeld 10 min</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Omzet afgelopen 7 dagen -->
+            <div class="dash-card rise mt-4" style="--d:.45s">
+                <div class="flex items-center justify-between">
+                    <p class="font-display text-xl">Omzet afgelopen 7 dagen</p>
+                    <span class="text-[10px] font-extrabold uppercase tracking-wide bg-crema-dark text-cacao/50 rounded-full px-2 py-0.5">Voorbeeld</span>
+                </div>
+                <div id="omzetWeek" class="flex items-end gap-2 h-24 mt-3"></div>
+            </div>
         </section>
 
-        <!-- PANEEL: Bestellingen -->
+        <!-- PANEEL: Bestellingen (touch-first) -->
         <section data-panel="bestellingen" class="panel">
-            <div class="dash-card text-center py-8">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div id="orderTabs" class="flex flex-wrap gap-2"></div>
+                <button id="demoOrderBtn" type="button" class="btn-primary !text-base !px-5 !py-2.5">Voorbeeld toevoegen ▶</button>
+            </div>
+            <div id="orderLijst" class="space-y-3"></div>
+            <div id="ordersLeeg" class="dash-card text-center py-8 hidden">
                 <img src="{{ asset('stickers/showing-pizza-order.png') }}" alt="" class="h-32 mx-auto mb-3 select-none pointer-events-none">
                 <p class="font-display text-2xl mb-1">Hier rollen je bestellingen binnen</p>
-                <p class="text-sm font-extrabold text-cacao/50 max-w-sm mx-auto mb-5">Zodra je bestelpagina live staat, zie je hier elke bestelling realtime binnenkomen. Zo gaat dat eruitzien:</p>
-                <button id="demoOrderBtn" type="button" class="btn-primary !text-lg !px-8 !py-3">Speel een voorbeeld af ▶</button>
+                <p id="ordersLeegTekst" class="text-sm font-extrabold text-cacao/50 max-w-sm mx-auto">…</p>
             </div>
-            <div id="demoOrders" class="mt-4 space-y-3"></div>
         </section>
 
         <!-- PANEEL: Menukaart -->
         <section data-panel="menukaart" class="panel">
-            <div class="dash-card flex flex-col sm:flex-row items-center gap-5">
-                <img src="{{ asset('stickers/sprinkling-cheese.png') }}" alt="" class="h-32 select-none pointer-events-none">
-                <div class="flex-1 text-center sm:text-left">
-                    <p class="font-display text-2xl mb-1">Jouw menukaart</p>
-                    <p id="menuSamenvatting" class="text-sm font-extrabold text-cacao/50 mb-4">Je hebt nog geen gerechten toegevoegd.</p>
-                    <a href="{{ route('onboarding') }}?stap=menu" class="btn-primary inline-block !text-lg !px-8 !py-3">Menukaart bewerken</a>
+            <div class="flex flex-wrap items-center gap-3 mb-4">
+                <div class="flex-1 min-w-0">
+                    <p class="font-display text-2xl">Jouw menukaart</p>
+                    <p id="menuSamenvatting" class="text-sm font-extrabold text-cacao/50">Je hebt nog geen gerechten toegevoegd.</p>
                 </div>
+                <button type="button" id="menuNieuw" class="btn-primary !text-lg !px-6 !py-3 !flex items-center gap-2"><i class="fa-solid fa-plus" aria-hidden="true"></i> Gerecht toevoegen</button>
             </div>
-        </section>
-
-        <!-- PANEEL: Openingstijden -->
-        <section data-panel="tijden" class="panel">
-            <div class="dash-card flex flex-col sm:flex-row items-center gap-5">
-                <img src="{{ asset('stickers/pizza-in-oven.png') }}" alt="" class="h-32 select-none pointer-events-none">
-                <div class="flex-1 text-center sm:text-left">
-                    <p class="font-display text-2xl mb-1">Openingstijden</p>
-                    <p id="tijdenSamenvatting" class="text-sm font-extrabold text-cacao/50 mb-4">Nog niet ingesteld.</p>
-                    <a href="{{ route('onboarding') }}?stap=hours" class="btn-primary inline-block !text-lg !px-8 !py-3">Tijden aanpassen</a>
+            <div id="menuCats" class="flex flex-wrap gap-2 mb-4"></div>
+            <div id="menuLijst" class="grid md:grid-cols-2 gap-4"></div>
+            <div id="menuLeeg" class="hidden">
+                <div class="dash-card flex flex-col sm:flex-row items-center gap-5">
+                    <img src="{{ asset('stickers/sprinkling-cheese.png') }}" alt="" class="h-32 select-none pointer-events-none">
+                    <div class="flex-1 text-center sm:text-left">
+                        <p class="font-display text-2xl mb-1">Nog niks op de kaart</p>
+                        <p class="text-sm font-extrabold text-cacao/50 mb-4">Voeg je eerste gerecht toe, inclusief opties voor de klant en allergenen.</p>
+                        <button type="button" class="btn-primary !text-lg !px-8 !py-3" data-menu-nieuw>Eerste gerecht toevoegen</button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -225,27 +292,96 @@
         </section>
 
         <!-- PANEEL: Instellingen -->
+        @php
+            $ob = auth()->user()->onboarding ?? [];
+            $obSlug = substr(preg_replace('/[^a-z0-9]+/', '', strtolower(\Illuminate\Support\Str::ascii($ob['name'] ?? ''))), 0, 30) ?: 'jouwpizzeria';
+            $betaalLabels = ['mollie' => 'Online betalen via Mollie', 'stripe' => 'Online betalen via Stripe', 'later' => 'Nog geen keuze gemaakt'];
+            $eigenDomein = ($ob['domainMode'] ?? 'sub') === 'own' && ! empty($ob['ownDomain']);
+        @endphp
         <section data-panel="instellingen" class="panel">
-            <div class="dash-card max-w-lg">
-                <p class="font-display text-2xl mb-4">Instellingen</p>
-                <div class="space-y-3">
-                    <div>
-                        <p class="lbl !ml-0">Naam</p>
-                        <p class="font-extrabold">{{ auth()->user()->name }}</p>
+            <p class="font-display text-2xl mb-4">Instellingen</p>
+            <div class="grid md:grid-cols-2 gap-4 mb-4">
+                <div class="dash-card">
+                    <div class="flex items-center gap-3 mb-3">
+                        <p class="font-display text-xl flex-1">🍕 Jouw zaak</p>
+                        <button type="button" data-inst="zaak" class="skip-link !mt-0">wijzig</button>
                     </div>
-                    <div>
-                        <p class="lbl !ml-0">E-mailadres</p>
-                        <p class="font-extrabold">{{ auth()->user()->email }}</p>
+                    <div class="space-y-2 text-sm font-extrabold">
+                        <div class="flex justify-between gap-3"><span class="text-cacao/45 shrink-0">Pizzeria</span><span class="text-right truncate">{{ $ob['name'] ?? '-' }}</span></div>
+                        <div class="flex justify-between gap-3"><span class="text-cacao/45 shrink-0">Contactpersoon</span><span class="text-right truncate">{{ $ob['person'] ?? '-' }}</span></div>
+                        <div class="flex justify-between gap-3"><span class="text-cacao/45 shrink-0">Telefoon</span><span class="text-right truncate">{{ ($ob['phone'] ?? '') !== '' ? $ob['phone'] : 'Nog niet ingevuld' }}</span></div>
+                        <div class="flex justify-between gap-3"><span class="text-cacao/45 shrink-0">E-mail</span><span class="text-right truncate">{{ auth()->user()->email }}</span></div>
                     </div>
-                    <div>
-                        <p class="lbl !ml-0">Hulp</p>
-                        <button id="introOpnieuw" type="button" class="font-extrabold text-tomato hover:underline cursor-pointer">🎬 Bekijk de uitlegvideo nog eens</button>
+                </div>
+
+                <div class="dash-card">
+                    <div class="flex items-center gap-3 mb-3">
+                        <p class="font-display text-xl flex-1">📇 Bedrijfsgegevens</p>
+                        <button type="button" data-inst="bedrijf" class="skip-link !mt-0">wijzig</button>
                     </div>
-                    <p class="text-xs font-extrabold text-cacao/40">Meer instellingen volgen binnenkort.</p>
-                    <form method="POST" action="{{ route('logout') }}" class="pt-2">
-                        @csrf
-                        <button type="submit" class="btn-primary btn-grey !text-lg !px-8 !py-3">Uitloggen</button>
-                    </form>
+                    <div class="space-y-2 text-sm font-extrabold">
+                        <div class="flex justify-between gap-3"><span class="text-cacao/45 shrink-0">KVK-nummer</span><span class="text-right truncate">{{ ($ob['kvk'] ?? '') !== '' ? $ob['kvk'] : 'Nog niet ingevuld' }}</span></div>
+                        <div class="flex justify-between gap-3"><span class="text-cacao/45 shrink-0">Adres</span><span class="text-right truncate">{{ ($ob['street'] ?? '') !== '' ? $ob['street'] : 'Nog niet ingevuld' }}</span></div>
+                        <div class="flex justify-between gap-3"><span class="text-cacao/45 shrink-0">Plaats</span><span class="text-right truncate">{{ trim(($ob['zip'] ?? '') . ' ' . ($ob['city'] ?? '')) !== '' ? trim(($ob['zip'] ?? '') . ' ' . ($ob['city'] ?? '')) : 'Nog niet ingevuld' }}</span></div>
+                    </div>
+                </div>
+
+                <div class="dash-card">
+                    <div class="flex items-center gap-3 mb-3">
+                        <p class="font-display text-xl flex-1">🕐 Openingstijden</p>
+                        <button type="button" data-inst="tijden" class="skip-link !mt-0">wijzig</button>
+                    </div>
+                    <p id="tijdenSamenvatting" class="text-sm font-extrabold text-cacao/50 mb-3">Nog niet ingesteld.</p>
+                    <div id="tijdenLijst" class="space-y-1.5 text-sm font-extrabold"></div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="dash-card">
+                        <div class="flex items-center gap-3 mb-3">
+                            <p class="font-display text-xl flex-1">💶 Betalen</p>
+                            <button type="button" data-inst="betalen" class="skip-link !mt-0">wijzig</button>
+                        </div>
+                        <p id="betaalWaarde" class="text-sm font-extrabold">{{ $betaalLabels[$ob['payment'] ?? 'later'] ?? 'Nog geen keuze gemaakt' }}</p>
+                    </div>
+
+                    <div class="dash-card">
+                        <div class="flex items-center gap-3 mb-3">
+                            <p class="font-display text-xl flex-1">🌐 Jouw domein</p>
+                            <button type="button" data-inst="domein" class="skip-link !mt-0">wijzig</button>
+                        </div>
+                        <p id="domeinWaarde" class="text-sm font-extrabold break-all">{{ $eigenDomein ? 'bestellen.' . strtolower(preg_replace('#^(https?://)?(www\.)?#', '', $ob['ownDomain'])) : $obSlug . '.bestelpagina.nl' }}</p>
+                    </div>
+
+                    <div class="dash-card">
+                        <p class="font-display text-xl mb-3">🎬 Hulp en account</p>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <button id="introOpnieuw" type="button" class="btn-primary !text-base !px-6 !py-2.5">Bekijk de uitlegvideo</button>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="btn-primary btn-grey !text-base !px-6 !py-2.5">Uitloggen</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bezorggebied (kaart, alleen ter inzage) en bezorgkosten per straal -->
+            <div class="grid lg:grid-cols-[1fr_24rem] gap-4 items-start">
+                <div class="dash-card">
+                    <p class="font-display text-xl mb-1">🗺️ Jouw bezorggebied</p>
+                    <p class="text-sm font-extrabold text-cacao/50 mb-4">Zo ver bezorg je op dit moment. De ringen horen bij de tarieven hiernaast.</p>
+                    <div id="bezorgMap" class="aspect-square w-full rounded-2xl border-4 border-crema-dark z-0" style="background:var(--color-crema)"></div>
+                    <p id="bezorgHint" class="text-xs font-extrabold text-cacao/40 mt-2"></p>
+                </div>
+                <div class="dash-card">
+                    <div class="flex items-center gap-3 mb-1">
+                        <p class="font-display text-xl flex-1">🛵 Bezorgkosten</p>
+                        <span id="bezorgStatus" class="text-xs font-extrabold" style="color:var(--color-basil); display:none">Opgeslagen ✓</span>
+                    </div>
+                    <p class="text-sm font-extrabold text-cacao/50 mb-4">Stel per afstand een tarief in, bijvoorbeeld tot 2 km voor € 1,00.</p>
+                    <div id="bezorgTiers" class="space-y-2 mb-2"></div>
+                    <button type="button" id="bezorgTierAdd" class="skip-link !mt-0">+ straal toevoegen</button>
+                    <button type="button" id="bezorgOpslaan" class="btn-primary w-full !py-3 mt-5">Bezorgkosten opslaan</button>
                 </div>
             </div>
         </section>
@@ -256,6 +392,86 @@
     <div id="tipMascotte" class="tip-mascotte" title="Klik voor een nieuwe tip">
         <div class="bubble" id="tipBubble">Ciao! Klik op mij voor tips 👋</div>
         <img src="{{ asset('stickers/waving-hello.png') }}" alt="">
+    </div>
+
+    <!-- Instellingen bewerken: popup per sectie, in dezelfde stijl als de gerecht-editor -->
+    <div id="instModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-cacao/60 backdrop-blur-sm">
+        <div id="instModalMidden" class="min-h-full flex items-center justify-center p-4 py-10">
+            <div class="relative w-full max-w-xl">
+                <div id="instMascot" class="mascot mascot-right" aria-hidden="true">
+                    <div id="instMascotBubble" class="bubble"></div>
+                    <img id="instMascotImg" src="{{ asset('stickers/waving-hello.png') }}" alt="">
+                </div>
+                <div class="relative bg-white rounded-3xl border-4 border-crema-dark shadow-2xl p-6 sm:p-10 text-center animate-pop">
+                    <button type="button" id="instModalSluit" class="absolute top-4 right-4 w-10 h-10 rounded-full grid place-items-center cursor-pointer hover:bg-crema transition-colors" style="background:var(--color-crema-dark)" aria-label="Sluiten"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+                    <p id="instKicker" class="step-kicker"></p>
+                    <h2 id="instTitel" class="step-title"></h2>
+                    <p id="instSub" class="step-sub"></p>
+                    <div id="instVelden" class="text-left space-y-4 mt-2"></div>
+                    <div class="mt-8">
+                        <button type="button" id="instOpslaan" class="btn-primary !px-10 !py-3">Opslaan</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gerecht toevoegen of bewerken: stap voor stap, net als de onboarding -->
+    <div id="menuModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-cacao/60 backdrop-blur-sm">
+        <div id="mModalMidden" class="min-h-full flex items-center justify-center p-4 py-10">
+            <div class="relative w-full max-w-xl">
+                <div id="mMascot" class="mascot mascot-right" aria-hidden="true">
+                    <div id="mMascotBubble" class="bubble"></div>
+                    <img id="mMascotImg" src="{{ asset('stickers/tossing-dough.png') }}" alt="">
+                </div>
+                <div class="relative bg-white rounded-3xl border-4 border-crema-dark shadow-2xl p-6 sm:p-10 text-center animate-pop">
+                    <button type="button" id="menuModalSluit" class="absolute top-4 right-4 w-10 h-10 rounded-full grid place-items-center cursor-pointer hover:bg-crema transition-colors" style="background:var(--color-crema-dark)" aria-label="Sluiten"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+                    <p id="mKicker" class="step-kicker"></p>
+                    <h2 id="mTitel" class="step-title"></h2>
+                    <p id="mSub" class="step-sub"></p>
+
+                    <div data-mstap="naam" class="m-stap hidden">
+                        <input id="mNaam" type="text" class="inp text-center" placeholder="bijv. Margherita" maxlength="100">
+                        <p class="err" id="mNaamErr"></p>
+                    </div>
+                    <div data-mstap="prijs" class="m-stap hidden">
+                        <div class="relative max-w-xs mx-auto">
+                            <span class="absolute left-5 top-1/2 -translate-y-1/2 font-extrabold text-cacao/45 text-lg">€</span>
+                            <input id="mPrijs" class="inp text-center" placeholder="9,50" inputmode="decimal">
+                        </div>
+                        <p class="err" id="mPrijsErr"></p>
+                    </div>
+                    <div data-mstap="categorie" class="m-stap hidden">
+                        <div id="mCatChips" class="flex flex-wrap justify-center gap-2"></div>
+                    </div>
+                    <div data-mstap="beschrijving" class="m-stap hidden">
+                        <textarea id="mBeschrijving" class="inp !h-28" rows="3" maxlength="300" placeholder="bijv. Tomatensaus, mozzarella en verse basilicum"></textarea>
+                    </div>
+                    <div data-mstap="ingredienten" class="m-stap hidden">
+                        <div id="mIngChips" class="flex flex-wrap justify-center gap-2 mb-3"></div>
+                        <input id="mIngInput" class="inp text-center" placeholder="Typ een ingrediënt en druk op Enter">
+                    </div>
+                    <div data-mstap="allergenen" class="m-stap hidden">
+                        <div id="mAllergChips" class="flex flex-wrap justify-center gap-2"></div>
+                        <p id="mAllergHint" class="m-hint mt-3"></p>
+                    </div>
+                    <div data-mstap="opties" class="m-stap hidden text-left">
+                        <div id="mOptieTemplates" class="flex flex-wrap justify-center gap-2 mb-3"></div>
+                        <div id="mOptieGroepen" class="space-y-3"></div>
+                    </div>
+                    <div data-mstap="overzicht" class="m-stap hidden text-left">
+                        <div id="mOverzicht" class="space-y-2.5"></div>
+                    </div>
+
+                    <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+                        <button type="button" id="mTerug" class="btn-primary btn-grey">Terug</button>
+                        <button type="button" id="mVolgende" class="btn-primary">Volgende</button>
+                    </div>
+                    <p class="enter-hint" id="mEnterHint">of druk op <b>Enter ↵</b></p>
+                    <p class="mt-3"><button type="button" id="menuVerwijder" class="hidden font-extrabold text-sm cursor-pointer" style="color:var(--color-tomato)">Dit gerecht verwijderen</button></p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Introvideo bij je eerste bezoek -->
@@ -278,7 +494,17 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script>window.PP_BEZORG = @json(['lat' => auth()->user()->lat, 'lng' => auth()->user()->lng, 'tiers' => auth()->user()->bezorgkosten ?? []]);</script>
     <script>window.PP_DATA = @json(auth()->user()->onboarding ?? new stdClass);</script>
+    @php
+        $ppOrders = auth()->user()->orders()
+            ->where(fn ($q) => $q->where('status', '!=', 'bezorgd')->orWhereDate('created_at', today()))
+            ->latest()->get();
+    @endphp
+    <script>window.PP_ORDERS = @json($ppOrders);</script>
+    <script>window.PP_MENU = @json(auth()->user()->menuItems()->orderBy('volgorde')->orderBy('id')->get());</script>
     <script>window.PP_INTRO = @json(! auth()->user()->intro_seen);</script>
     <script>window.PP_STATUS = @json(['online' => (bool) auth()->user()->is_online, 'mode' => auth()->user()->order_mode ?? 'bezorgen_afhalen']);</script>
     <script src="{{ asset('assets/dashboard.js') }}?v={{ filemtime(public_path('assets/dashboard.js')) }}"></script>

@@ -112,26 +112,29 @@ $$('[data-teller]').forEach((el) => {
 /* ── Checklist "maak je zaak compleet" op basis van echte data ── */
 
 const CHECKS = [
-    { label: 'Menukaart gevuld (3+ gerechten)', emoji: '📋', af: (DATA.menu || []).length >= 3, stap: 'menu' },
+    { label: 'Menukaart gevuld (3+ gerechten)', emoji: '📋', af: (window.PP_MENU || []).length >= 3, paneel: 'menukaart' },
     { label: 'Logo geüpload', emoji: '🖼️', af: !!DATA.logo, stap: 'style' },
-    { label: 'Betaalmethode gekozen', emoji: '💶', af: !!DATA.payment && DATA.payment !== 'later', stap: 'payment' },
-    { label: 'Bedrijfsgegevens compleet', emoji: '📇', af: !!DATA.kvk && !!DATA.street, stap: 'company' },
-    { label: 'Telefoonnummer toegevoegd', emoji: '📞', af: !!DATA.phone, stap: 'contact' },
+    { label: 'Betaalmethode gekozen', emoji: '💶', af: !!DATA.payment && DATA.payment !== 'later', inst: 'betalen' },
+    { label: 'Bedrijfsgegevens compleet', emoji: '📇', af: !!DATA.kvk && !!DATA.street, inst: 'bedrijf' },
+    { label: 'Telefoonnummer toegevoegd', emoji: '📞', af: !!DATA.phone, inst: 'zaak' },
 ];
 
 (function renderChecklist() {
     const lijst = $('#checklist');
     if (!lijst) return;
     lijst.innerHTML = CHECKS.map((c) =>
-        `<button type="button" class="check-item ${c.af ? 'af' : ''}" data-stap="${c.stap}">
+        `<button type="button" class="check-item ${c.af ? 'af' : ''}" data-stap="${c.stap || ''}" data-paneel="${c.paneel || ''}" data-inst="${c.inst || ''}">
             <span class="c-dot">✓</span>
             <span>${c.emoji}</span>
             <span class="c-lbl">${c.label}</span>
         </button>`
     ).join('');
     lijst.addEventListener('click', (e) => {
-        const item = e.target.closest('[data-stap]');
-        if (item) window.location.href = `/onboarding?stap=${item.dataset.stap}`;
+        const item = e.target.closest('.check-item');
+        if (!item) return;
+        if (item.dataset.paneel) document.querySelector(`.rail-item[data-nav="${item.dataset.paneel}"]`)?.click();
+        else if (item.dataset.inst) return; /* de algemene [data-inst] handler opent de popup */
+        else if (item.dataset.stap) window.location.href = `/onboarding?stap=${item.dataset.stap}`;
     });
 
     const klaar = CHECKS.filter((c) => c.af).length;
@@ -150,12 +153,6 @@ const CHECKS = [
 /* ── Samenvattingen uit de onboarding-data ────────────────────── */
 
 (function samenvattingen() {
-    const menu = DATA.menu || [];
-    if (menu.length) {
-        const cats = (DATA.categories || []).filter((c) => menu.some((m) => m.cat === c.id)).length;
-        $('#menuSamenvatting').textContent = `Je hebt ${menu.length} gerecht${menu.length === 1 ? '' : 'en'} in ${cats} categorie${cats === 1 ? '' : 'ën'} staan.`;
-    }
-
     if (DATA.days) {
         const namen = { ma: 'ma', di: 'di', wo: 'wo', do: 'do', vr: 'vr', za: 'za', zo: 'zo' };
         const open = Object.keys(namen).filter((d) => DATA.days[d]);
@@ -165,6 +162,21 @@ const CHECKS = [
                 ? `Open op ${label}, met eigen tijden per dag.`
                 : `Open op ${label}, van ${DATA.open || '16:00'} tot ${DATA.close || '21:30'}.`;
         }
+
+        /* Per dag uitgeschreven, voor het instellingen-paneel */
+        const DAGNAMEN = { ma: 'Maandag', di: 'Dinsdag', wo: 'Woensdag', do: 'Donderdag', vr: 'Vrijdag', za: 'Zaterdag', zo: 'Zondag' };
+        const lijst = $('#tijdenLijst');
+        if (lijst) {
+            lijst.innerHTML = Object.keys(DAGNAMEN).map((d) => {
+                const tijd = (DATA.hoursMode === 'perday' && DATA.dayTimes && DATA.dayTimes[d])
+                    ? DATA.dayTimes[d]
+                    : { open: DATA.open || '16:00', close: DATA.close || '21:30' };
+                return `<div class="flex justify-between gap-3">
+                    <span class="text-cacao/45">${DAGNAMEN[d]}</span>
+                    <span>${DATA.days[d] ? `${tijd.open} - ${tijd.close}` : 'Gesloten'}</span>
+                </div>`;
+            }).join('');
+        }
     }
 
     const THEMA_NAMEN = { fresco: 'Fresco', nero: 'Nero', napoli: 'Napoli', puro: 'Puro', blocco: 'Blocco', retro: 'Retro' };
@@ -173,44 +185,379 @@ const CHECKS = [
     }
 })();
 
-/* ── Demo-bestelling afspelen ─────────────────────────────────── */
+/* ── Bestellingen (echt uit de database, touch-first) ─────────── */
 
-const GERECHTEN = [['Margherita', 950], ['Salami', 1100], ['Quattro Formaggi', 1250], ['Diavola', 1200], ['Calzone', 1250], ['Cola', 250]];
-const KLANTEN = ['Sanne', 'Ahmed', 'Julia', 'Daan', 'Fatima', 'Ruben', 'Lisa', 'Tom'];
-const STATUSSEN = ['Nieuw', 'In de oven', 'Onderweg', 'Bezorgd'];
-let orderNr = 412;
+let ORDERS = (window.PP_ORDERS || []).map((o) => ({ ...o }));
+let orderFilter = 'alles';
 
-$('#demoOrderBtn')?.addEventListener('click', () => {
-    const aantal = 1 + Math.floor(Math.random() * 3);
-    const items = Array.from({ length: aantal }, () => GERECHTEN[Math.floor(Math.random() * GERECHTEN.length)]);
-    const totaal = (items.reduce((s, [, p]) => s + p, 0) / 100).toFixed(2).replace('.', ',');
-    const klant = KLANTEN[Math.floor(Math.random() * KLANTEN.length)];
-    orderNr += 1 + Math.floor(Math.random() * 4);
+const STATUSSEN = ['nieuw', 'geaccepteerd', 'bereiden', 'oven', 'onderweg', 'bezorgd'];
 
-    const card = document.createElement('div');
-    card.className = 'dash-card order-card';
-    card.innerHTML = `
-        <div class="flex items-center justify-between gap-3 mb-2">
-            <p class="font-display text-lg">#${orderNr} voor ${klant}</p>
-            <p class="font-display text-lg">€ ${totaal}</p>
+/* Font Awesome solid-iconen voor de status-tijdlijn */
+const ICONEN = {
+    nieuw: '<i class="fa-solid fa-euro-sign" aria-hidden="true"></i>',
+    geaccepteerd: '<i class="fa-solid fa-thumbs-up" aria-hidden="true"></i>',
+    bereiden: '<i class="fa-solid fa-utensils" aria-hidden="true"></i>',
+    oven: '<i class="fa-solid fa-fire" aria-hidden="true"></i>',
+    onderweg: '<i class="fa-solid fa-bicycle" aria-hidden="true"></i>',
+    bezorgd: '<i class="fa-solid fa-flag" aria-hidden="true"></i>',
+};
+
+/* De interne statuswaarden blijven gelijk, alleen de labels verschillen:
+   Betaald -> Bevestigd (met tijdsindicatie) -> Wordt bereid -> In de oven -> Onderweg -> Bezorgd */
+const STATUS_INFO = {
+    nieuw:        { label: 'Betaald',      icoon: ICONEN.nieuw,        chip: 'background:var(--color-gold); color:var(--color-cacao)', actie: 'Bevestigen',   volgende: 'geaccepteerd' },
+    geaccepteerd: { label: 'Bevestigd',    icoon: ICONEN.geaccepteerd, chip: 'background:#2563EB; color:#fff',                         actie: 'Wordt bereid', volgende: 'bereiden' },
+    bereiden:     { label: 'Wordt bereid', icoon: ICONEN.bereiden,     chip: 'background:#F97316; color:#fff',                         actie: 'In de oven',   volgende: 'oven' },
+    oven:         { label: 'In de oven',   icoon: ICONEN.oven,         chip: 'background:var(--color-tomato); color:#fff',             actie: 'Onderweg',     volgende: 'onderweg' },
+    onderweg:     { label: 'Onderweg',     icoon: ICONEN.onderweg,     chip: 'background:var(--color-basil); color:#fff',              actie: 'Bezorgd',      volgende: 'bezorgd' },
+    bezorgd:      { label: 'Bezorgd',      icoon: ICONEN.bezorgd,      chip: 'background:var(--color-cacao); color:#fff',              actie: null,           volgende: null },
+};
+
+/* Afhalen kent geen bezorgtraject: de laatste stappen heten en ogen anders */
+const ICONEN_AFHALEN = {
+    ...ICONEN,
+    onderweg: '<i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>',
+};
+const STATUS_INFO_AFHALEN = {
+    ...STATUS_INFO,
+    oven:     { ...STATUS_INFO.oven, actie: 'Af te halen' },
+    onderweg: { label: 'Af te halen', icoon: ICONEN_AFHALEN.onderweg, chip: 'background:var(--color-basil); color:#fff', actie: 'Afgehaald', volgende: 'bezorgd' },
+    bezorgd:  { label: 'Afgehaald', icoon: ICONEN.bezorgd, chip: 'background:var(--color-cacao); color:#fff', actie: null, volgende: null },
+};
+
+const iconenVoor = (o) => (o.type === 'afhalen' ? ICONEN_AFHALEN : ICONEN);
+const infoVoor = (o, status = o.status) => (o.type === 'afhalen' ? STATUS_INFO_AFHALEN : STATUS_INFO)[status] || STATUS_INFO.nieuw;
+
+/* Tijdsschatting bij accepteren */
+let etaOpen = null;      // order-id waarvoor de kiezer open staat
+let etaWaarde = 75;      // eigen invoer, in stappen van 15 minuten
+const euro = (c) => '€ ' + (c / 100).toFixed(2).replace('.', ',');
+
+function postJson(url, body, method = 'POST') {
+    return fetch(url, {
+        method,
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+        },
+        body: body ? JSON.stringify(body) : undefined,
+    });
+}
+
+function tijdGeleden(iso) {
+    const min = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+    if (min < 1) return 'zojuist';
+    if (min < 60) return `${min} min geleden`;
+    return `${Math.floor(min / 60)} uur geleden`;
+}
+
+function typeChip(o) {
+    const label = o.type === 'afhalen' ? '🥡 Afhalen' : '🛵 Bezorgen';
+    return `<span class="text-[11px] font-body font-extrabold rounded-full px-2 py-0.5" style="background:var(--color-crema-dark)">${label}</span>`;
+}
+
+/* Compacte rij voor het overzicht */
+function orderRij(o) {
+    const info = infoVoor(o);
+    if (!info || !info.actie) return '';
+    return `<div class="order-card flex flex-col sm:flex-row sm:items-center gap-2 rounded-2xl px-3.5 py-2.5" data-id="${o.id}" style="background:var(--color-crema)">
+        <div class="flex-1 min-w-0">
+            <p class="font-display text-base">#${o.nummer} voor ${esc(o.klant)}
+                <span class="text-[11px] font-body font-extrabold rounded-full px-2 py-0.5 ml-1 align-middle" style="${info.chip}">${info.label}</span>
+                <span class="ml-1 align-middle inline-block">${typeChip(o)}</span></p>
+            <p class="text-xs font-extrabold text-cacao/50 truncate">${(o.items || []).map((i) => i.aantal + '× ' + esc(i.naam)).join(', ')}</p>
         </div>
-        <p class="text-sm font-extrabold text-cacao/55 mb-3">${items.map(([n]) => '1× ' + n).join(', ')}</p>
-        <div class="flex gap-1.5 flex-wrap">
-            ${STATUSSEN.map((s) => `<span class="order-step text-[11px] font-extrabold rounded-full px-2.5 py-1 bg-crema text-cacao/45">${s}</span>`).join('')}
-        </div>`;
-    $('#demoOrders').prepend(card);
+        <div class="flex items-center gap-2.5 shrink-0">
+            <span class="font-display">${euro(o.totaal)}</span>
+            <button type="button" class="order-actie btn-primary !text-sm !px-4 !py-2" data-order="${o.id}" data-volgende="${info.volgende}">${info.actie}</button>
+        </div>
+    </div>`;
+}
 
-    const stappen = [...card.querySelectorAll('.order-step')];
-    let i = 0;
-    stappen[0].classList.add('nu');
-    const timer = setInterval(() => {
-        stappen[i].classList.remove('nu');
-        stappen[i].classList.add('klaar');
-        i++;
-        if (i >= stappen.length) { clearInterval(timer); card.style.opacity = '.6'; return; }
-        stappen[i].classList.add('nu');
-    }, 1500);
+/* Grote touch-kaart voor het bestellingen-paneel */
+function orderKaart(o) {
+    const info = infoVoor(o);
+    const idx = STATUSSEN.indexOf(o.status);
+    const klaar = o.status === 'bezorgd';
+    /* De huidige status is behaald (vinkje); de stap erna is waar de pizzeria mee bezig is (laad-rondje) */
+    const tijdlijn = STATUSSEN.map((s, i) => {
+        const si = infoVoor(o, s);
+        let st = '';
+        let inhoud = si.icoon;   // toekomstige stap: grijs status-icoon
+        if (i <= idx || klaar) {
+            st = 'geweest';      // behaald: groen met vinkje
+            inhoud = '<i class="fa-solid fa-check" aria-hidden="true"></i>';
+        } else if (i === idx + 1) {
+            st = 'nu';           // hiermee bezig: laad-rondje
+            inhoud = '<i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>';
+        }
+        return `<div class="stl-stap ${st}">
+            <div class="stl-dot">${inhoud}</div>
+            <span class="stl-lbl">${si.label}</span>
+        </div>`;
+    }).join('');
+    const etaChip = o.eta_minuten && o.status !== 'bezorgd'
+        ? `<span class="text-[11px] font-body font-extrabold rounded-full px-2 py-0.5" style="background:var(--color-crema-dark)"><i class="fa-solid fa-clock" aria-hidden="true"></i> ± ${o.eta_minuten} min</span>`
+        : '';
+
+    /* Bij accepteren eerst een tijdsschatting kiezen */
+    const kiezer = etaOpen === o.id && o.status === 'nieuw' ? `
+        <div class="eta-kiezer">
+            <p class="font-extrabold text-sm text-cacao/60 mb-2.5 text-center">${o.type === 'afhalen' ? 'Over hoe lang kan het ongeveer afgehaald worden?' : 'Hoe lang gaat dit ongeveer duren?'}</p>
+            <div class="grid grid-cols-4 gap-2 mb-3">
+                ${[15, 30, 45, 60].map((m) => `<button type="button" class="eta-snel" data-eta-snel="${m}" data-order="${o.id}">${m} min</button>`).join('')}
+            </div>
+            <div class="flex items-center justify-center gap-4 mb-3">
+                <button type="button" class="eta-stap" data-eta-min aria-label="15 minuten minder">−</button>
+                <span class="font-display text-2xl w-28 text-center">${etaWaarde} min</span>
+                <button type="button" class="eta-stap" data-eta-plus aria-label="15 minuten meer">+</button>
+            </div>
+            <button type="button" class="btn-primary w-full !text-lg !py-3" data-eta-bevestig data-order="${o.id}">Bevestigen, ± ${etaWaarde} min</button>
+            <div class="text-center"><button type="button" class="skip-link !mt-2" data-eta-sluit>annuleren</button></div>
+        </div>` : '';
+
+    /* Wijzigingen per gerecht: extra's in groen, weglatingen in rood */
+    const optieRegel = (op) => {
+        const zonder = op.type === 'zonder';
+        return `<p class="order-optie text-xs font-extrabold ${zonder ? 'text-tomato' : 'text-basil'}">
+            <i class="fa-solid ${zonder ? 'fa-minus' : 'fa-plus'} !text-[10px] w-3" aria-hidden="true"></i>${esc(op.naam)}${op.prijs ? ` <span class="text-cacao/40">${euro(op.prijs)}</span>` : ''}
+        </p>`;
+    };
+    const itemRegels = (o.items || []).map((i) => {
+        const regelTotaal = (i.prijs + (i.opties || []).reduce((som, op) => som + (op.prijs || 0), 0)) * (i.aantal || 1);
+        return `<div class="order-item flex items-start gap-2.5 text-sm font-extrabold">
+            <span class="shrink-0 w-8 text-center rounded-lg py-0.5 text-xs" style="background:var(--color-crema-dark)">${i.aantal || 1}×</span>
+            <div class="flex-1 min-w-0">
+                <p class="truncate">${esc(i.naam)}</p>
+                ${(i.opties || []).map(optieRegel).join('')}
+            </div>
+            <span class="shrink-0 text-cacao/55">${euro(regelTotaal)}</span>
+        </div>`;
+    }).join('');
+    const adres = o.type === 'bezorgen' && o.adres
+        ? `<p class="order-adres text-sm font-extrabold mt-2.5 flex items-center gap-2"><i class="fa-solid fa-location-dot text-tomato" aria-hidden="true"></i>${esc(o.adres)}</p>`
+        : '';
+    const opmerking = o.opmerking
+        ? `<div class="order-opmerking mt-2.5 rounded-xl px-3 py-2 text-sm font-extrabold flex items-start gap-2" style="background:color-mix(in srgb, var(--color-gold) 16%, #fff)">
+            <i class="fa-solid fa-comment-dots mt-0.5" style="color:var(--color-gold)" aria-hidden="true"></i>
+            <span class="min-w-0">${esc(o.opmerking)}</span>
+        </div>`
+        : '';
+
+    return `<div class="order-kaart dash-card !p-4 sm:!p-5 order-card ${o.status === 'bezorgd' ? 'opacity-60' : ''}" data-id="${o.id}">
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p class="font-display text-2xl">#${o.nummer}</p>
+            <p class="font-extrabold text-lg flex-1 min-w-0 truncate">${esc(o.klant)}</p>
+            ${etaChip}
+            ${typeChip(o)}
+            <p class="font-display text-2xl">${euro(o.totaal)}</p>
+        </div>
+        <div class="mt-2.5 space-y-1.5">${itemRegels}</div>
+        ${adres}
+        ${opmerking}
+        <p class="text-xs font-extrabold text-cacao/40 mt-2 mb-3">${tijdGeleden(o.created_at)}</p>
+        <div class="status-tijdlijn">${tijdlijn}</div>
+        ${kiezer}
+        ${info.volgende && !kiezer ? `<button type="button" class="order-actie btn-primary w-full !text-lg !py-3.5 !flex items-center justify-center gap-2.5" data-order="${o.id}" data-volgende="${info.volgende}">
+            ${info.label}
+            <i class="fa-solid fa-arrow-right !text-base" aria-hidden="true"></i>
+            ${infoVoor(o, info.volgende).label}
+        </button>` : ''}
+    </div>`;
+}
+
+const TAB_KLEUREN = {
+    alles: ['var(--color-cacao)', '#fff'],
+    nieuw: ['var(--color-gold)', 'var(--color-cacao)'],
+    geaccepteerd: ['#2563EB', '#fff'],
+    bereiden: ['#F97316', '#fff'],
+    oven: ['var(--color-tomato)', '#fff'],
+    onderweg: ['var(--color-basil)', '#fff'],
+    bezorgd: ['var(--color-cacao)', '#fff'],
+};
+
+function orderTabs() {
+    const el = $('#orderTabs');
+    if (!el) return;
+    /* In de lijst staan bezorgingen en afhalers door elkaar, dus de laatste twee tabs heten neutraal */
+    const labels = { alles: 'Alles', nieuw: 'Betaald', geaccepteerd: 'Bevestigd', bereiden: 'Wordt bereid', oven: 'In de oven', onderweg: 'Onderweg / klaar', bezorgd: 'Afgerond' };
+    el.innerHTML = Object.keys(labels).map((f) => {
+        const actief = orderFilter === f;
+        const aantal = f === 'alles' ? ORDERS.length : ORDERS.filter((o) => o.status === f).length;
+        const [kleur, tekst] = TAB_KLEUREN[f];
+        return `<button type="button" class="order-tab" data-filter="${f}"
+            style="${actief ? `background:${kleur}; border-color:${kleur}; color:${tekst};` : ''}">${labels[f]} <span class="opacity-60">${aantal}</span></button>`;
+    }).join('');
+}
+
+function werkTellersBij() {
+    const open = ORDERS.filter((o) => o.status !== 'bezorgd');
+    $('#openLeeg')?.classList.toggle('hidden', open.length > 0);
+    const badge = $('#railOrdersBadge');
+    if (badge) {
+        badge.textContent = open.length;
+        badge.style.display = open.length ? '' : 'none';
+    }
+    orderTabs();
+    const zichtbaar = document.querySelectorAll('#orderLijst .order-kaart').length;
+    $('#ordersLeeg')?.classList.toggle('hidden', zichtbaar > 0);
+    const leegTekst = $('#ordersLeegTekst');
+    if (leegTekst) {
+        leegTekst.textContent = ORDERS.length === 0
+            ? 'Zodra je live staat, komen je bestellingen hier realtime binnen. Probeer het alvast met een voorbeeld!'
+            : 'Geen bestellingen met deze status.';
+    }
+}
+
+/* Volledige render: alleen bij laden, filterwissel en de tijd-verversing */
+function renderOrders() {
+    const open = ORDERS.filter((o) => o.status !== 'bezorgd');
+    if ($('#openOrders')) $('#openOrders').innerHTML = open.map(orderRij).join('');
+    if ($('#orderLijst')) {
+        const lijst = orderFilter === 'alles' ? [...open, ...ORDERS.filter((o) => o.status === 'bezorgd')] : ORDERS.filter((o) => o.status === orderFilter);
+        $('#orderLijst').innerHTML = lijst.map(orderKaart).join('');
+    }
+    werkTellersBij();
+}
+
+/* Bij een actie alleen de betreffende bestelling bijwerken, de rest blijft staan */
+function werkOrderBij(order, opts = {}) {
+    const rijHtml = orderRij(order);
+    const rij = document.querySelector(`#openOrders [data-id="${order.id}"]`);
+    if (rij) {
+        if (rijHtml) rij.outerHTML = rijHtml;
+        else rij.remove();
+    } else if (rijHtml && $('#openOrders')) {
+        $('#openOrders').insertAdjacentHTML('afterbegin', rijHtml);
+    }
+
+    if ($('#orderLijst')) {
+        const hoortErbij = orderFilter === 'alles' || order.status === orderFilter;
+        const kaartHtml = hoortErbij ? orderKaart(order) : '';
+        const kaart = document.querySelector(`#orderLijst [data-id="${order.id}"]`);
+        if (kaart) {
+            if (kaartHtml) kaart.outerHTML = kaartHtml;
+            else kaart.remove();
+        } else if (kaartHtml) {
+            $('#orderLijst').insertAdjacentHTML('afterbegin', kaartHtml);
+        }
+    }
+
+    if (opts.pop) document.querySelectorAll(`[data-id="${order.id}"]`).forEach((el) => el.classList.add('pop'));
+
+    /* Statuswissel: het balkje netjes laten vollopen in plaats van verspringen */
+    if (opts.wissel) {
+        const kaart = document.querySelector(`#orderLijst [data-id="${order.id}"]`);
+        if (kaart) {
+            const stappen = [...kaart.querySelectorAll('.stl-stap')];
+            const nuIdx = stappen.findIndex((s) => s.classList.contains('nu'));
+            if (nuIdx > 0) {
+                stappen[nuIdx - 1].classList.add('vul');
+                stappen[nuIdx].classList.add('vul-in');
+                /* Oude grijze icoon laten staan tot het balkje aankomt */
+                stappen[nuIdx].querySelector('.stl-dot').insertAdjacentHTML('afterbegin', `<span class="stl-was">${iconenVoor(order)[STATUSSEN[nuIdx]]}</span>`);
+            } else if (nuIdx === -1 && stappen.length > 1) {
+                /* Laatste stap: de lijn was al groen (laad-rondje), alleen het rondje wisselt naar een vinkje */
+                const laatste = stappen[stappen.length - 1];
+                laatste.classList.add('vul-eind');
+                laatste.querySelector('.stl-dot').insertAdjacentHTML('afterbegin', '<span class="stl-was"><i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i></span>');
+                /* Doorzichtig worden wacht tot het vinkje er staat; de animatie wint van opacity-60 */
+                kaart.classList.add('klaar-vervaag');
+            }
+            /* Na afloop de animatieklassen opruimen, anders blokkeren ze de fa-spin van het laad-icoon */
+            setTimeout(() => {
+                stappen.forEach((s) => {
+                    s.classList.remove('vul', 'vul-in', 'vul-eind');
+                    s.querySelectorAll('.stl-was').forEach((w) => w.remove());
+                });
+            }, 950);
+        }
+    }
+    werkTellersBij();
+}
+
+/* Plus/min in de tijdkiezer: alleen de twee tekstjes aanpassen */
+function werkEtaTekstBij() {
+    const kaart = document.querySelector(`#orderLijst [data-id="${etaOpen}"]`);
+    if (!kaart) return;
+    const span = kaart.querySelector('.eta-kiezer .font-display');
+    if (span) span.textContent = `${etaWaarde} min`;
+    const knop = kaart.querySelector('[data-eta-bevestig]');
+    if (knop) knop.textContent = `Bevestigen, ± ${etaWaarde} min`;
+}
+
+function accepteer(order, eta) {
+    order.status = 'geaccepteerd';
+    order.eta_minuten = eta;
+    etaOpen = null;
+    werkOrderBij(order, { wissel: true });
+    postJson(`/bestellingen/${order.id}/status`, { status: 'geaccepteerd', eta }).catch(() => {});
+}
+
+document.addEventListener('click', (e) => {
+    const orderVan = (el) => ORDERS.find((o) => o.id === Number(el.dataset.order));
+
+    /* Tijdsschatting-kiezer */
+    const snel = e.target.closest('[data-eta-snel]');
+    if (snel) { const o = orderVan(snel); if (o) accepteer(o, Number(snel.dataset.etaSnel)); return; }
+    if (e.target.closest('[data-eta-min]')) { etaWaarde = Math.max(15, etaWaarde - 15); werkEtaTekstBij(); return; }
+    if (e.target.closest('[data-eta-plus]')) { etaWaarde = Math.min(240, etaWaarde + 15); werkEtaTekstBij(); return; }
+    const bevestig = e.target.closest('[data-eta-bevestig]');
+    if (bevestig) { const o = orderVan(bevestig); if (o) accepteer(o, etaWaarde); return; }
+    if (e.target.closest('[data-eta-sluit]')) {
+        const o = ORDERS.find((x) => x.id === etaOpen);
+        etaOpen = null;
+        if (o) werkOrderBij(o);
+        return;
+    }
+
+    /* Grote actieknop: door naar de volgende status (alleen vooruit) */
+    const btn = e.target.closest('.order-actie');
+    if (!btn) return;
+    const order = orderVan(btn);
+    if (!order) return;
+    if (order.status === 'nieuw') {
+        /* Eerst een tijdsschatting kiezen; vanaf het overzicht springen we naar het bestellingen-paneel */
+        etaOpen = order.id;
+        etaWaarde = 75;
+        if (!btn.closest('#orderLijst')) document.querySelector('[data-nav="bestellingen"].rail-item')?.click();
+        werkOrderBij(order);
+        return;
+    }
+    order.status = btn.dataset.volgende;
+    werkOrderBij(order, { wissel: true });
+    postJson(`/bestellingen/${order.id}/status`, { status: order.status }).catch(() => {});
 });
+
+$('#orderTabs')?.addEventListener('click', (e) => {
+    const tab = e.target.closest('[data-filter]');
+    if (!tab) return;
+    orderFilter = tab.dataset.filter;
+    renderOrders();
+});
+
+$('#demoOrderBtn')?.addEventListener('click', async () => {
+    try {
+        const res = await postJson('/dashboard/demo-bestelling');
+        if (!res.ok) return;
+        const order = await res.json();
+        ORDERS.unshift(order);
+        werkOrderBij(order, { pop: true });
+
+        /* Statistieken van vandaag live bijwerken */
+        const aantal = $('#statAantal');
+        if (aantal) aantal.textContent = Number(aantal.textContent || 0) + 1;
+        const omzet = $('#statOmzet');
+        if (omzet) {
+            omzet.dataset.cents = Number(omzet.dataset.cents || 0) + order.totaal;
+            omzet.textContent = euro(Number(omzet.dataset.cents));
+        }
+    } catch { /* geen verbinding */ }
+});
+
+renderOrders();
+setInterval(renderOrders, 30000);   // "x min geleden" actueel houden
 
 /* ── Tip-mascotte ─────────────────────────────────────────────── */
 
@@ -255,7 +602,54 @@ function renderStatus() {
     if (railSub) railSub.textContent = STATUS.online
         ? (STATUS.mode === 'alleen_afhalen' ? 'neemt bestellingen aan (alleen afhalen)' : 'neemt bestellingen aan')
         : 'neemt geen bestellingen aan';
+
+    updateWaarschuwing();
 }
+
+/* Waarschuwing wanneer online-status en openingstijden niet kloppen */
+
+function isNuBinnenTijden() {
+    const DAGKEYS = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'];
+    const key = DAGKEYS[new Date().getDay()];
+    if (!DATA.days || !DATA.days[key]) return false;
+    const tijd = (DATA.hoursMode === 'perday' && DATA.dayTimes && DATA.dayTimes[key])
+        ? DATA.dayTimes[key]
+        : { open: DATA.open || '16:00', close: DATA.close || '21:30' };
+    const naarDecimaal = (s, fb) => {
+        const [h, m] = String(s).split(':').map(Number);
+        return isNaN(h) ? fb : h + (m || 0) / 60;
+    };
+    const nu = new Date();
+    const nuD = nu.getHours() + nu.getMinutes() / 60;
+    return nuD >= naarDecimaal(tijd.open, 16) && nuD < naarDecimaal(tijd.close, 21.5);
+}
+
+function updateWaarschuwing() {
+    const banner = $('#statusWaarschuwing');
+    if (!banner) return;
+    const binnen = isNuBinnenTijden();
+    let tekst = '';
+    let actie = '';
+    if (binnen && !STATUS.online) {
+        tekst = '⚠️ Volgens je openingstijden ben je nu open, maar je neemt geen bestellingen aan.';
+        actie = 'Online gaan 🟢';
+    } else if (!binnen && STATUS.online) {
+        tekst = '🌙 Je staat online buiten je openingstijden. Expres? Prima! Anders:';
+        actie = 'Ga offline';
+    }
+    banner.style.display = tekst ? 'flex' : 'none';
+    banner.classList.toggle('hidden', !tekst);
+    if (tekst) {
+        $('#waarschuwingTekst').textContent = tekst;
+        $('#waarschuwingActie').textContent = actie;
+    }
+}
+
+$('#waarschuwingActie')?.addEventListener('click', () => {
+    STATUS.online = !STATUS.online;
+    renderStatus();
+    bewaarStatus();
+});
 
 function bewaarStatus() {
     fetch('/dashboard/status', {
@@ -297,6 +691,86 @@ $('#modeSwitch')?.addEventListener('click', (e) => {
 
 renderStatus();
 
+/* ── Deel je bestelpagina: link + QR ──────────────────────────── */
+
+(function deelBestelpagina() {
+    const linkEl = $('#shareLink');
+    if (!linkEl) return;
+
+    const slug = String(DATA.name || 'jouwpizzeria')
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 30) || 'jouwpizzeria';
+    let link = `https://${slug}.bestelpagina.nl`;
+    if (DATA.domainMode === 'own' && DATA.ownDomain) {
+        const d = String(DATA.ownDomain).trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
+        if (d) link = `https://bestellen.${d}`;
+    }
+    linkEl.textContent = link;
+
+    if (window.QRCode) {
+        new QRCode($('#qrBox'), { text: link, width: 90, height: 90, correctLevel: QRCode.CorrectLevel.M });
+    }
+
+    $('#copyLink')?.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(link);
+        } catch {
+            const ta = document.createElement('textarea');
+            ta.value = link;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
+        }
+        const btn = $('#copyLink');
+        btn.textContent = 'Gekopieerd ✓';
+        setTimeout(() => { btn.textContent = 'Kopieer link'; }, 1600);
+    });
+})();
+
+/* ── Toppers deze week (voorbeeld tot er echte data is) ───────── */
+
+(function renderToppers() {
+    const el = $('#topGerechten');
+    if (!el) return;
+    const eigenNamen = (window.PP_MENU || []).slice(0, 3).map((m) => m.naam);
+    const demo = ['Margherita', 'Salami', 'Diavola'];
+    const aantallen = [34, 27, 19];
+    const medailles = ['🥇', '🥈', '🥉'];
+    el.innerHTML = [0, 1, 2].map((i) =>
+        `<div class="flex items-center gap-2.5 text-sm font-extrabold">
+            <span class="text-lg">${medailles[i]}</span>
+            <span class="flex-1 truncate">${esc(eigenNamen[i] || demo[i])}</span>
+            <span class="text-cacao/45">${aantallen[i]}×</span>
+        </div>`
+    ).join('');
+})();
+
+/* ── Omzet afgelopen 7 dagen (voorbeeld tot er echte data is) ── */
+
+(function renderOmzetWeek() {
+    const chart = $('#omzetWeek');
+    if (!chart) return;
+    const OMZET = [420, 385, 455, 510, 645, 890, 760];   // straks: echte omzet per dag
+    const max = Math.max(...OMZET);
+    const dagen = [...Array(7)].map((_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i));
+        return d.toLocaleDateString('nl-NL', { weekday: 'short' });
+    });
+    chart.innerHTML = OMZET.map((bedrag, i) => {
+        const rel = bedrag / max;
+        const klasse = rel > 0.75 ? 'hoog' : rel > 0.45 ? 'middel' : 'laag';
+        return `<div class="drukte-kolom ${i === 6 ? 'nu' : ''}" title="€ ${bedrag},00">
+            <div class="d-balkvak"><div class="drukte-bar ${klasse}" data-hoogte="${Math.round(rel * 100)}"></div></div>
+            <span class="d-uur">${dagen[i]}</span>
+        </div>`;
+    }).join('');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        $$('#omzetWeek .drukte-bar').forEach((bar) => { bar.style.height = Math.max(6, bar.dataset.hoogte) + '%'; });
+    }));
+})();
+
 /* ── Introvideo bij het eerste bezoek ─────────────────────────── */
 
 const introModal = $('#introModal');
@@ -326,3 +800,772 @@ $('#introOpnieuw')?.addEventListener('click', introTonen);
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !introModal.classList.contains('hidden')) introSluiten(true);
 });
+
+/* ── Menukaart-beheer ─────────────────────────────────────────── */
+
+const MENU = (window.PP_MENU || []).map((m) => ({ ...m }));
+const ALLERGENEN = ['gluten', 'schaaldieren', 'ei', 'vis', 'pinda', 'soja', 'melk', 'noten', 'selderij', 'mosterd', 'sesam', 'sulfiet', 'lupine', 'weekdieren'];
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/* Veelvoorkomende ingrediënten → allergenen. Alleen een hulpje: de pizzeria controleert zelf. */
+const ALLERGEEN_HINTS = {
+    melk: ['mozzarella', 'kaas', 'gorgonzola', 'parmezaan', 'mascarpone', 'ricotta', 'burrata', 'room', 'boter'],
+    gluten: ['bloem', 'deeg', 'bodem', 'paneermeel'],
+    vis: ['ansjovis', 'tonijn', 'zalm', 'vis'],
+    schaaldieren: ['garnaal', 'garnalen', 'gamba', 'krab', 'kreeft'],
+    weekdieren: ['mossel', 'mosselen', 'inktvis', 'calamaris', 'octopus'],
+    ei: ['ei', 'eieren', 'mayonaise', 'aioli'],
+    noten: ['pesto', 'walnoot', 'walnoten', 'hazelnoot', 'noten', 'pistache'],
+    pinda: ['pinda', 'satesaus', 'sate', 'saté'],
+    soja: ['soja'],
+    sesam: ['sesam'],
+    mosterd: ['mosterd'],
+    selderij: ['selderij', 'bleekselderij'],
+};
+
+function allergenenBij(ingredient) {
+    const woorden = ingredient.toLowerCase().split(/[\s-]+/);
+    return Object.keys(ALLERGEEN_HINTS).filter((a) =>
+        ALLERGEEN_HINTS[a].some((kw) => woorden.some((w) => w === kw || (kw.length >= 4 && w.includes(kw)))));
+}
+
+const naarCenten = (str) => {
+    const n = parseFloat(String(str).replace(/[^\d,.]/g, '').replace(',', '.'));
+    return isNaN(n) ? null : Math.round(n * 100);
+};
+const uitCenten = (c) => (c / 100).toFixed(2).replace('.', ',');
+
+let menuCatFilter = 'alles';
+const menuCategorieen = () => [...new Set(MENU.map((m) => m.categorie))];
+
+function renderMenuCats() {
+    const el = $('#menuCats');
+    if (!el) return;
+    const cats = menuCategorieen();
+    el.innerHTML = cats.length < 2 ? '' : ['alles', ...cats].map((c) =>
+        `<button type="button" class="order-tab" data-menucat="${esc(c)}"
+            style="${menuCatFilter === c ? 'background:var(--color-cacao); border-color:var(--color-cacao); color:#fff;' : ''}">${c === 'alles' ? 'Alles' : esc(c)}</button>`).join('');
+}
+
+function menuKaart(m) {
+    const ing = m.ingredienten || [];
+    const allerg = m.allergenen;
+    const allergHtml = (allerg === null || allerg === undefined)
+        ? '<span class="warn-chip leeg"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Allergenen nog niet ingevuld</span>'
+        : (allerg.length
+            ? allerg.map((a) => `<span class="warn-chip"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> ${cap(a)}</span>`).join('')
+            : '<span class="warn-chip ok"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Geen allergenen</span>');
+    const groepen = m.opties || [];
+    return `<div class="menu-card dash-card !p-4 ${m.actief ? '' : 'uit'}" data-menu-id="${m.id}">
+        <div class="flex items-start gap-3">
+            <div class="flex-1 min-w-0">
+                <p class="font-display text-xl truncate">${m.icoon ? esc(m.icoon) + ' ' : ''}${esc(m.naam)}</p>
+                <p class="text-xs font-extrabold text-cacao/45">${esc(m.categorie)}</p>
+            </div>
+            <p class="font-display text-xl shrink-0">${euro(m.prijs)}</p>
+            <button type="button" class="keuze-chip shrink-0 ${m.actief ? 'aan' : ''}" data-menu-actief="${m.id}" title="${m.actief ? 'Klanten zien dit gerecht' : 'Verborgen voor klanten'}">${m.actief ? 'Actief' : 'Uit'}</button>
+        </div>
+        ${m.beschrijving ? `<p class="text-sm font-extrabold text-cacao/55 mt-1.5">${esc(m.beschrijving)}</p>` : ''}
+        ${ing.length ? `<p class="text-xs font-extrabold text-cacao/50 mt-2">${ing.map(esc).join(', ')}</p>` : ''}
+        <div class="flex flex-wrap gap-1.5 mt-2.5">${allergHtml}</div>
+        ${groepen.length ? `<p class="text-xs font-extrabold text-cacao/45 mt-2"><i class="fa-solid fa-sliders" aria-hidden="true"></i> Opties: ${groepen.map((g) => esc(g.naam)).join(', ')}</p>` : ''}
+    </div>`;
+}
+
+function menuSamenvattingBijwerken() {
+    const el = $('#menuSamenvatting');
+    if (!el) return;
+    if (!MENU.length) { el.textContent = 'Je hebt nog geen gerechten toegevoegd.'; return; }
+    const cats = menuCategorieen().length;
+    el.textContent = `Je hebt ${MENU.length} gerecht${MENU.length === 1 ? '' : 'en'} in ${cats} categorie${cats === 1 ? '' : 'ën'} staan.`;
+}
+
+function renderMenu(popId = null) {
+    const lijst = $('#menuLijst');
+    if (!lijst) return;
+    if (menuCatFilter !== 'alles' && !menuCategorieen().includes(menuCatFilter)) menuCatFilter = 'alles';
+    renderMenuCats();
+    const items = menuCatFilter === 'alles' ? MENU : MENU.filter((m) => m.categorie === menuCatFilter);
+    lijst.innerHTML = items.map(menuKaart).join('');
+    if (popId) lijst.querySelector(`[data-menu-id="${popId}"]`)?.classList.add('pop');
+    $('#menuLeeg')?.classList.toggle('hidden', MENU.length > 0);
+    menuSamenvattingBijwerken();
+}
+
+function vervangMenuKaart(item) {
+    const el = document.querySelector(`#menuLijst [data-menu-id="${item.id}"]`);
+    if (el) el.outerHTML = menuKaart(item);
+}
+
+/* ── Editor: gerecht toevoegen of bewerken ── */
+
+const OPTIE_TEMPLATES = [
+    { naam: 'Formaat', type: 'een', keuzes: [{ naam: '25 cm', prijs: '0,00' }, { naam: '30 cm', prijs: '2,50' }, { naam: '35 cm', prijs: '4,50' }] },
+    { naam: 'Saus erbij', type: 'meerdere', keuzes: [{ naam: 'Knoflooksaus', prijs: '1,00' }, { naam: 'Sambal', prijs: '0,50' }, { naam: 'Chilisaus', prijs: '0,75' }] },
+    { naam: 'Extra ingrediënten', type: 'meerdere', keuzes: [{ naam: 'Extra kaas', prijs: '1,50' }, { naam: 'Champignons', prijs: '1,00' }, { naam: 'Salami', prijs: '1,50' }] },
+    { naam: 'Drankje erbij', type: 'meerdere', keuzes: [{ naam: 'Cola', prijs: '2,50' }, { naam: 'Fanta', prijs: '2,50' }, { naam: 'Spa blauw', prijs: '2,00' }] },
+];
+
+let bewerkt = null;   // werkkopie van het gerecht dat in de editor staat
+
+function openMenuEditor(item = null) {
+    bewerkt = item ? {
+        id: item.id,
+        naam: item.naam,
+        prijs: uitCenten(item.prijs),
+        categorie: item.categorie,
+        beschrijving: item.beschrijving || '',
+        ingredienten: [...(item.ingredienten || [])],
+        allergenen: [...(item.allergenen || [])],
+        geenAllergenen: Array.isArray(item.allergenen) && item.allergenen.length === 0,
+        opties: (item.opties || []).map((g) => ({ ...g, keuzes: g.keuzes.map((k) => ({ ...k, prijs: uitCenten(k.prijs) })) })),
+        actief: item.actief,
+        nieuweCat: false,
+    } : {
+        id: null, naam: '', prijs: '',
+        categorie: menuCatFilter !== 'alles' ? menuCatFilter : (menuCategorieen()[0] || "Pizza's"),
+        beschrijving: '', ingredienten: [], allergenen: [], geenAllergenen: false, opties: [], actief: true, nieuweCat: false,
+    };
+    const verwijder = $('#menuVerwijder');
+    verwijder.textContent = 'Dit gerecht verwijderen';
+    delete verwijder.dataset.zeker;
+    $('#mNaam').value = bewerkt.naam;
+    $('#mPrijs').value = bewerkt.prijs;
+    $('#mBeschrijving').value = bewerkt.beschrijving;
+    $('#mIngInput').value = '';
+    $('#mNaamErr').textContent = '';
+    $('#mPrijsErr').textContent = '';
+    $('#mAllergHint').textContent = '';
+    renderCatChips(); renderIngChips(); renderAllergChips(); renderOptieGroepen();
+    mVanOverzicht = false;
+    toonMStap(item ? 'overzicht' : 'naam');
+    $('#menuModal').classList.remove('hidden');
+}
+
+function sluitMenuEditor() {
+    $('#menuModal').classList.add('hidden');
+    bewerkt = null;
+}
+
+/* ── De wizard: één vraag per stap, met het mannetje ernaast ── */
+
+const M_STAPPEN = ['naam', 'prijs', 'categorie', 'beschrijving', 'ingredienten', 'allergenen', 'opties', 'overzicht'];
+let mStap = 'naam';
+let mVanOverzicht = false;   // via "wijzig" op het overzicht een stap ingedoken?
+
+const naamNu = () => $('#mNaam').value.trim() || 'dit gerecht';
+
+const M_INFO = {
+    naam:         { kicker: () => (bewerkt.id ? 'Even bijwerken ✏️' : 'Nieuw gerecht 🍕'), titel: 'Hoe heet je gerecht?', sub: 'De naam die klanten straks op je kaart zien.', mascot: 'tossing-dough', bubble: 'Mmm, ik krijg al honger! 😋', kant: 'right', enter: true },
+    prijs:        { kicker: 'Kassa! 💶', titel: () => `Wat kost ${naamNu()}?`, sub: 'De normale prijs. Extra opties komen zo nog.', mascot: 'holding-3-pizzas', bubble: 'Die verkoopt zichzelf 🤌', kant: 'left', enter: true },
+    categorie:    { kicker: 'Op de kaart 📋', titel: 'In welke categorie hoort dit?', sub: 'Zo vinden klanten het sneller terug.', mascot: 'writing-chalkboard', bubble: 'Ik schrijf het erbij! ✍️', kant: 'right' },
+    beschrijving: { kicker: 'Vertel, vertel 📝', titel: 'Wil je er iets bij vertellen?', sub: 'Een korte omschrijving maakt het extra smakelijk. Mag ook leeg blijven.', mascot: 'showing-pizza-order', bubble: 'Verse basilicum? Zeg dat dan! 🌿', kant: 'left' },
+    ingredienten: { kicker: 'Wat zit erop? 🍅', titel: 'Welke ingrediënten zitten erop?', sub: 'Klanten kunnen deze weglaten bij het bestellen, en gasten met een allergie zien precies wat erin zit.', mascot: 'sprinkling-cheese', bubble: 'Extra kaasje? Altijd goed 🧀', kant: 'right' },
+    allergenen:   { kicker: 'Belangrijk! ⚠️', titel: 'Welke allergenen zitten erin?', sub: 'Tik aan wat erin zit en controleer het altijd zelf. Een pizzabodem bevat gluten!', mascot: 'kneading-dough', bubble: 'Dit moet kloppen voor je gasten 🙏', kant: 'left' },
+    opties:       { kicker: 'Upsell! 🚀', titel: 'Welke opties geef je de klant?', sub: 'Een saus, extra ingrediënten of een drankje erbij. Goed voor je omzet.', mascot: 'running-with-pizza', bubble: 'Extra kaas? Altijd ja 😄', kant: 'right' },
+    overzicht:    { kicker: 'Perfetto! 👌', titel: () => (bewerkt.id ? 'Dit is je gerecht' : 'Klaar om op de kaart te zetten?'), sub: 'Loop alles nog even na, wijzigen kan altijd.', mascot: 'waving-hello', bubble: 'Die staat straks mooi op de kaart! 🎉', kant: 'right' },
+};
+
+function toonMStap(stap) {
+    mStap = stap;
+    const info = M_INFO[stap];
+    const val = (v) => (typeof v === 'function' ? v() : v);
+    $$('#menuModal [data-mstap]').forEach((el) => {
+        const actief = el.dataset.mstap === stap;
+        el.classList.toggle('hidden', !actief);
+        el.classList.toggle('actief', actief);
+    });
+    $('#mKicker').textContent = val(info.kicker);
+    $('#mTitel').textContent = val(info.titel);
+    $('#mSub').textContent = val(info.sub);
+    $('#mMascotBubble').textContent = info.bubble;
+    $('#mMascotImg').src = `/stickers/${info.mascot}.png`;
+    $('#mMascot').classList.toggle('mascot-left', info.kant === 'left');
+    $('#mMascot').classList.toggle('mascot-right', info.kant !== 'left');
+    const eerste = !mVanOverzicht && stap === (bewerkt.id ? 'overzicht' : 'naam');
+    $('#mTerug').classList.toggle('hidden', eerste);
+    $('#mVolgende').textContent = stap === 'overzicht' ? (bewerkt.id ? 'Opslaan' : 'Op de kaart! 🍕') : (mVanOverzicht ? 'Klaar' : 'Volgende');
+    $('#mEnterHint').style.visibility = info.enter ? 'visible' : 'hidden';
+    $('#menuVerwijder').classList.toggle('hidden', !(stap === 'overzicht' && bewerkt.id));
+    if (stap === 'overzicht') renderMOverzicht();
+    const focusEl = { naam: '#mNaam', prijs: '#mPrijs', beschrijving: '#mBeschrijving', ingredienten: '#mIngInput' }[stap];
+    if (focusEl) setTimeout(() => $(focusEl)?.focus(), 80);
+}
+
+function valideerMStap() {
+    if (mStap === 'naam' && !$('#mNaam').value.trim()) {
+        $('#mNaam').classList.add('m-fout');
+        $('#mNaamErr').textContent = 'Geef je gerecht eerst een naam 😉';
+        return false;
+    }
+    if (mStap === 'prijs' && naarCenten($('#mPrijs').value) === null) {
+        $('#mPrijs').classList.add('m-fout');
+        $('#mPrijsErr').textContent = 'Vul een prijs in, bijvoorbeeld 9,50';
+        return false;
+    }
+    return true;
+}
+
+function volgendeMStap() {
+    if (!valideerMStap()) return;
+    if (mStap === 'overzicht') return menuOpslaanNu();
+    if (mVanOverzicht) { mVanOverzicht = false; return toonMStap('overzicht'); }
+    toonMStap(M_STAPPEN[M_STAPPEN.indexOf(mStap) + 1]);
+}
+
+function terugMStap() {
+    if (mVanOverzicht) { mVanOverzicht = false; return toonMStap('overzicht'); }
+    const i = M_STAPPEN.indexOf(mStap);
+    if (i > 0) toonMStap(M_STAPPEN[i - 1]);
+}
+
+function renderMOverzicht() {
+    const rij = (label, waarde, stap) => `
+        <div class="flex items-center gap-3 rounded-2xl px-4 py-3" style="background:var(--color-crema)">
+            <div class="flex-1 min-w-0">
+                <p class="text-[11px] font-extrabold uppercase tracking-wide text-cacao/45">${label}</p>
+                <p class="text-sm font-extrabold break-words">${waarde}</p>
+            </div>
+            <button type="button" class="skip-link !mt-0 shrink-0" data-m-ga="${stap}">wijzig</button>
+        </div>`;
+    const leeg = '<span class="text-cacao/40">Geen</span>';
+    const allerg = bewerkt.geenAllergenen
+        ? 'Geen allergenen'
+        : (bewerkt.allergenen.length ? bewerkt.allergenen.map(cap).join(', ') : '<span class="text-cacao/40">Nog niet ingevuld</span>');
+    const groepen = bewerkt.opties.filter((g) => g.naam.trim() && g.keuzes.some((k) => k.naam.trim()));
+    $('#mOverzicht').innerHTML =
+        rij('Naam', esc($('#mNaam').value.trim()), 'naam')
+        + rij('Prijs', euro(naarCenten($('#mPrijs').value) ?? 0), 'prijs')
+        + rij('Categorie', esc((bewerkt.nieuweCat && $('#mCatNieuw')?.value.trim()) || bewerkt.categorie || 'Menu'), 'categorie')
+        + rij('Beschrijving', esc($('#mBeschrijving').value.trim()) || leeg, 'beschrijving')
+        + rij('Ingrediënten', bewerkt.ingredienten.length ? bewerkt.ingredienten.map(esc).join(', ') : leeg, 'ingredienten')
+        + rij('Allergenen', allerg, 'allergenen')
+        + rij('Opties', groepen.length ? groepen.map((g) => `${esc(g.naam)} (${g.keuzes.filter((k) => k.naam.trim()).length})`).join(', ') : leeg, 'opties');
+}
+
+function renderCatChips() {
+    const cats = menuCategorieen();
+    if (bewerkt.categorie && !cats.includes(bewerkt.categorie)) cats.push(bewerkt.categorie);
+    $('#mCatChips').innerHTML = cats.map((c) =>
+        `<button type="button" class="keuze-chip ${bewerkt.categorie === c ? 'aan' : ''}" data-m-cat="${esc(c)}">${esc(c)}</button>`).join('')
+        + (bewerkt.nieuweCat
+            ? '<input id="mCatNieuw" class="m-inp !w-48 !py-1.5" placeholder="Naam nieuwe categorie">'
+            : '<button type="button" class="keuze-chip" data-m-cat-nieuw><i class="fa-solid fa-plus" aria-hidden="true"></i> Nieuwe categorie</button>');
+    if (bewerkt.nieuweCat) $('#mCatNieuw')?.focus();
+}
+
+function renderIngChips() {
+    $('#mIngChips').innerHTML = bewerkt.ingredienten.map((ing, i) =>
+        `<span class="chip">${esc(ing)}<button type="button" class="chip-x" data-m-ing-del="${i}" aria-label="Verwijder ${esc(ing)}"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></span>`).join('')
+        || '<span class="m-hint">Nog geen ingrediënten toegevoegd.</span>';
+}
+
+function renderAllergChips() {
+    $('#mAllergChips').innerHTML = ALLERGENEN.map((a) =>
+        `<button type="button" class="keuze-chip geel ${bewerkt.allergenen.includes(a) ? 'aan' : ''}" data-m-allerg="${a}">${cap(a)}</button>`).join('')
+        + `<button type="button" class="keuze-chip ${bewerkt.geenAllergenen ? 'aan' : ''}" data-m-allerg-geen><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Geen allergenen</button>`;
+}
+
+function renderOptieTemplates() {
+    $('#mOptieTemplates').innerHTML = OPTIE_TEMPLATES.map((t, i) =>
+        `<button type="button" class="keuze-chip" data-m-tpl="${i}" ${bewerkt.opties.some((g) => g.naam === t.naam) ? 'disabled style="opacity:.35; pointer-events:none"' : ''}><i class="fa-solid fa-plus" aria-hidden="true"></i> ${t.naam}</button>`).join('')
+        + '<button type="button" class="keuze-chip" data-m-groep-nieuw><i class="fa-solid fa-plus" aria-hidden="true"></i> Eigen groep</button>';
+}
+
+function renderOptieGroepen() {
+    $('#mOptieGroepen').innerHTML = bewerkt.opties.map((g, gi) => `
+        <div class="optie-groep">
+            <div class="flex items-center gap-2 mb-2">
+                <input class="m-inp !py-1.5 flex-1 min-w-0" value="${esc(g.naam)}" placeholder="Naam van de groep" data-m-g-naam="${gi}">
+                <div class="seg shrink-0">
+                    <button type="button" class="${g.type === 'een' ? 'aan' : ''}" data-m-g-type="${gi}" data-type="een">1 keuze</button>
+                    <button type="button" class="${g.type === 'meerdere' ? 'aan' : ''}" data-m-g-type="${gi}" data-type="meerdere">Meerdere</button>
+                </div>
+                <button type="button" class="chip-x shrink-0 text-base" data-m-g-del="${gi}" aria-label="Groep verwijderen"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
+            </div>
+            <div class="space-y-1.5">
+                ${g.keuzes.map((k, ki) => `
+                    <div class="flex items-center gap-2">
+                        <input class="m-inp !py-1.5 flex-1 min-w-0" value="${esc(k.naam)}" placeholder="bijv. Knoflooksaus" data-m-k-naam="${gi}-${ki}">
+                        <div class="relative w-24 shrink-0">
+                            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-extrabold text-cacao/40">+ €</span>
+                            <input class="m-inp !py-1.5 !pl-9 !text-sm" value="${esc(k.prijs)}" placeholder="0,00" inputmode="decimal" data-m-k-prijs="${gi}-${ki}">
+                        </div>
+                        <button type="button" class="chip-x shrink-0" data-m-k-del="${gi}-${ki}" aria-label="Keuze verwijderen"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+                    </div>`).join('')}
+            </div>
+            <button type="button" class="skip-link !mt-2 !text-xs" data-m-k-add="${gi}">+ keuze toevoegen</button>
+        </div>`).join('');
+    renderOptieTemplates();
+}
+
+function voegIngredientToe(ruw) {
+    const autoNieuw = [];
+    ruw.split(',').map((s) => s.trim()).filter(Boolean).forEach((ing) => {
+        if (bewerkt.ingredienten.some((b) => b.toLowerCase() === ing.toLowerCase())) return;
+        bewerkt.ingredienten.push(ing);
+        allergenenBij(ing).forEach((a) => {
+            if (!bewerkt.geenAllergenen && !bewerkt.allergenen.includes(a)) {
+                bewerkt.allergenen.push(a);
+                autoNieuw.push(a);
+            }
+        });
+    });
+    renderIngChips();
+    renderAllergChips();
+    if (autoNieuw.length) {
+        $('#mAllergHint').innerHTML = `<b>${autoNieuw.map(cap).join(' en ')}</b> automatisch aangevinkt op basis van je ingrediënten. Controleer het altijd zelf!`;
+    }
+}
+
+async function menuOpslaanNu() {
+    const naam = $('#mNaam').value.trim();
+    const prijs = naarCenten($('#mPrijs').value);
+    if (!naam) { $('#mNaam').classList.add('m-fout'); $('#mNaam').focus(); return; }
+    if (prijs === null) { $('#mPrijs').classList.add('m-fout'); $('#mPrijs').focus(); return; }
+    const payload = {
+        naam,
+        prijs,
+        categorie: (bewerkt.nieuweCat && $('#mCatNieuw')?.value.trim()) || bewerkt.categorie || 'Menu',
+        beschrijving: $('#mBeschrijving').value.trim() || null,
+        ingredienten: bewerkt.ingredienten,
+        allergenen: bewerkt.geenAllergenen ? [] : (bewerkt.allergenen.length ? bewerkt.allergenen : null),
+        opties: bewerkt.opties
+            .map((g) => ({
+                naam: g.naam.trim(),
+                type: g.type,
+                keuzes: g.keuzes.filter((k) => k.naam.trim()).map((k) => ({ naam: k.naam.trim(), prijs: naarCenten(k.prijs) ?? 0 })),
+            }))
+            .filter((g) => g.naam && g.keuzes.length),
+        actief: bewerkt.actief,
+    };
+    const res = await postJson(bewerkt.id ? `/menukaart/${bewerkt.id}` : '/menukaart', payload, bewerkt.id ? 'PATCH' : 'POST');
+    if (!res.ok) return;
+    const item = await res.json();
+    const idx = MENU.findIndex((m) => m.id === item.id);
+    if (idx >= 0) MENU[idx] = item; else MENU.push(item);
+    sluitMenuEditor();
+    renderMenu(item.id);
+}
+
+/* ── Events menukaart ── */
+
+$('#menuNieuw')?.addEventListener('click', () => openMenuEditor());
+$('#menuLeeg')?.addEventListener('click', (e) => { if (e.target.closest('[data-menu-nieuw]')) openMenuEditor(); });
+$('#menuModalSluit')?.addEventListener('click', sluitMenuEditor);
+$('#mVolgende')?.addEventListener('click', volgendeMStap);
+$('#mTerug')?.addEventListener('click', terugMStap);
+
+$('#menuVerwijder')?.addEventListener('click', async (e) => {
+    const knop = e.currentTarget;
+    if (knop.dataset.zeker !== '1') {
+        knop.dataset.zeker = '1';
+        knop.textContent = 'Zeker weten? Tik nog een keer';
+        return;
+    }
+    const id = bewerkt.id;
+    await postJson(`/menukaart/${id}`, null, 'DELETE').catch(() => {});
+    const idx = MENU.findIndex((m) => m.id === id);
+    if (idx >= 0) MENU.splice(idx, 1);
+    sluitMenuEditor();
+    renderMenu();
+});
+
+$('#menuCats')?.addEventListener('click', (e) => {
+    const tab = e.target.closest('[data-menucat]');
+    if (!tab) return;
+    menuCatFilter = tab.dataset.menucat;
+    renderMenu();
+});
+
+$('#menuLijst')?.addEventListener('click', (e) => {
+    const toggle = e.target.closest('[data-menu-actief]');
+    if (toggle) {
+        const item = MENU.find((m) => m.id === Number(toggle.dataset.menuActief));
+        if (!item) return;
+        item.actief = !item.actief;
+        vervangMenuKaart(item);
+        postJson(`/menukaart/${item.id}`, { actief: item.actief }, 'PATCH').catch(() => {});
+        return;
+    }
+    const kaart = e.target.closest('[data-menu-id]');
+    if (kaart) openMenuEditor(MENU.find((m) => m.id === Number(kaart.dataset.menuId)));
+});
+
+$('#mIngInput')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        voegIngredientToe(e.target.value);
+        e.target.value = '';
+    }
+});
+$('#mIngInput')?.addEventListener('blur', (e) => {
+    if (e.target.value.trim()) { voegIngredientToe(e.target.value); e.target.value = ''; }
+});
+
+$('#menuModal')?.addEventListener('input', (e) => {
+    e.target.classList.remove('m-fout');
+    if (e.target.id === 'mNaam') $('#mNaamErr').textContent = '';
+    if (e.target.id === 'mPrijs') $('#mPrijsErr').textContent = '';
+    if (!bewerkt) return;
+    const d = e.target.dataset;
+    if (d.mGNaam !== undefined) bewerkt.opties[+d.mGNaam].naam = e.target.value;
+    else if (d.mKNaam !== undefined) { const [gi, ki] = d.mKNaam.split('-').map(Number); bewerkt.opties[gi].keuzes[ki].naam = e.target.value; }
+    else if (d.mKPrijs !== undefined) { const [gi, ki] = d.mKPrijs.split('-').map(Number); bewerkt.opties[gi].keuzes[ki].prijs = e.target.value; }
+});
+
+$('#menuModal')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') return sluitMenuEditor();
+    if (e.key !== 'Enter') return;
+    if (e.target.id === 'mCatNieuw') {
+        const naam = e.target.value.trim();
+        if (naam) bewerkt.categorie = naam;
+        bewerkt.nieuweCat = false;
+        renderCatChips();
+        return;
+    }
+    if (e.target.id === 'mNaam' || e.target.id === 'mPrijs') {
+        e.preventDefault();
+        volgendeMStap();
+    }
+});
+
+$('#menuModal')?.addEventListener('click', (e) => {
+    if (!bewerkt) return;
+    if (e.target === $('#menuModal') || e.target === $('#mModalMidden')) return sluitMenuEditor();
+    const ga = e.target.closest('[data-m-ga]');
+    if (ga) { mVanOverzicht = true; return toonMStap(ga.dataset.mGa); }
+    const cat = e.target.closest('[data-m-cat]');
+    if (cat) { bewerkt.categorie = cat.dataset.mCat; bewerkt.nieuweCat = false; return renderCatChips(); }
+    if (e.target.closest('[data-m-cat-nieuw]')) { bewerkt.nieuweCat = true; return renderCatChips(); }
+    const ingDel = e.target.closest('[data-m-ing-del]');
+    if (ingDel) { bewerkt.ingredienten.splice(+ingDel.dataset.mIngDel, 1); return renderIngChips(); }
+    const allerg = e.target.closest('[data-m-allerg]');
+    if (allerg) {
+        const a = allerg.dataset.mAllerg;
+        bewerkt.geenAllergenen = false;
+        bewerkt.allergenen = bewerkt.allergenen.includes(a) ? bewerkt.allergenen.filter((x) => x !== a) : [...bewerkt.allergenen, a];
+        return renderAllergChips();
+    }
+    if (e.target.closest('[data-m-allerg-geen]')) {
+        bewerkt.geenAllergenen = !bewerkt.geenAllergenen;
+        if (bewerkt.geenAllergenen) bewerkt.allergenen = [];
+        return renderAllergChips();
+    }
+    const tpl = e.target.closest('[data-m-tpl]');
+    if (tpl) { bewerkt.opties.push(JSON.parse(JSON.stringify(OPTIE_TEMPLATES[+tpl.dataset.mTpl]))); return renderOptieGroepen(); }
+    if (e.target.closest('[data-m-groep-nieuw]')) { bewerkt.opties.push({ naam: '', type: 'meerdere', keuzes: [{ naam: '', prijs: '0,00' }] }); return renderOptieGroepen(); }
+    const gType = e.target.closest('[data-m-g-type]');
+    if (gType) { bewerkt.opties[+gType.dataset.mGType].type = gType.dataset.type; return renderOptieGroepen(); }
+    const gDel = e.target.closest('[data-m-g-del]');
+    if (gDel) { bewerkt.opties.splice(+gDel.dataset.mGDel, 1); return renderOptieGroepen(); }
+    const kDel = e.target.closest('[data-m-k-del]');
+    if (kDel) {
+        const [gi, ki] = kDel.dataset.mKDel.split('-').map(Number);
+        bewerkt.opties[gi].keuzes.splice(ki, 1);
+        if (!bewerkt.opties[gi].keuzes.length) bewerkt.opties.splice(gi, 1);
+        return renderOptieGroepen();
+    }
+    const kAdd = e.target.closest('[data-m-k-add]');
+    if (kAdd) { bewerkt.opties[+kAdd.dataset.mKAdd].keuzes.push({ naam: '', prijs: '0,00' }); return renderOptieGroepen(); }
+});
+
+renderMenu();
+
+/* ── Bezorgkosten: tarieven per straal, met kaart ─────────────── */
+
+const BEZORG = window.PP_BEZORG || { lat: null, lng: null, tiers: [] };
+const BEZORG_KLEUREN = ['#2F8F46', '#F5B301', '#F97316', '#E63946', '#2563EB', '#38221A'];
+
+let bezorgTiers = (BEZORG.tiers && BEZORG.tiers.length)
+    ? BEZORG.tiers.map((t) => ({ km: String(t.km).replace('.', ','), kosten: uitCenten(t.kosten) }))
+    : [{ km: '2', kosten: '1,00' }, { km: '4', kosten: '2,50' }];
+let bezorgLat = BEZORG.lat;
+let bezorgLng = BEZORG.lng;
+let bezorgMap = null;
+let bezorgMarker = null;
+let bezorgCirkels = [];
+
+const naarKm = (str) => {
+    const n = parseFloat(String(str).replace(',', '.'));
+    return isNaN(n) || n <= 0 ? null : Math.min(30, n);
+};
+
+function renderBezorgTiers() {
+    const el = $('#bezorgTiers');
+    if (!el) return;
+    el.innerHTML = bezorgTiers.map((t, i) => `
+        <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full shrink-0" style="background:${BEZORG_KLEUREN[i % BEZORG_KLEUREN.length]}"></span>
+            <span class="text-sm font-extrabold text-cacao/45 shrink-0">tot</span>
+            <input class="m-inp !py-1.5 !w-16 text-center" value="${esc(t.km)}" inputmode="decimal" data-b-km="${i}" aria-label="Afstand in kilometers">
+            <span class="text-sm font-extrabold text-cacao/45 shrink-0">km</span>
+            <div class="relative flex-1 min-w-0">
+                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-extrabold text-cacao/40">€</span>
+                <input class="m-inp !py-1.5 !pl-7" value="${esc(t.kosten)}" placeholder="0,00" inputmode="decimal" data-b-kosten="${i}" aria-label="Bezorgkosten">
+            </div>
+            <button type="button" class="chip-x shrink-0" data-b-del="${i}" aria-label="Straal verwijderen"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+        </div>`).join('');
+}
+
+/* Eigen pizza-pin in plaats van de standaard blauwe punaise */
+function pizzaPin() {
+    return L.divIcon({
+        className: 'bezorg-pin',
+        html: '<div class="bezorg-pin-bol"><span>🍕</span></div>',
+        iconSize: [44, 44],
+        iconAnchor: [22, 40],
+    });
+}
+
+function tekenBezorgCirkels() {
+    if (!bezorgMap || bezorgLat === null || bezorgLng === null) return;
+    bezorgCirkels.forEach((c) => c.remove());
+    bezorgCirkels = [];
+    if (!bezorgMarker) bezorgMarker = L.marker([bezorgLat, bezorgLng], { icon: pizzaPin() }).addTo(bezorgMap);
+    else bezorgMarker.setLatLng([bezorgLat, bezorgLng]);
+    /* Grootste ring eerst tekenen, zodat de kleinere bovenop liggen */
+    bezorgTiers
+        .map((t, i) => ({ km: naarKm(t.km), kleur: BEZORG_KLEUREN[i % BEZORG_KLEUREN.length] }))
+        .filter((t) => t.km)
+        .sort((a, b) => b.km - a.km)
+        .forEach((t) => {
+            bezorgCirkels.push(L.circle([bezorgLat, bezorgLng], {
+                radius: t.km * 1000, color: t.kleur, weight: 2, fillColor: t.kleur, fillOpacity: .07,
+            }).addTo(bezorgMap));
+        });
+}
+
+function pasBezorgZoom() {
+    if (bezorgMap && bezorgCirkels[0]) bezorgMap.fitBounds(bezorgCirkels[0].getBounds().pad(0.15));
+}
+
+function initBezorgKaart() {
+    const el = $('#bezorgMap');
+    if (!el || typeof L === 'undefined') return;
+    if (bezorgMap) { bezorgMap.invalidateSize(); return; }
+    const heeftLocatie = bezorgLat !== null && bezorgLng !== null;
+    bezorgMap = L.map('bezorgMap', { scrollWheelZoom: false, attributionControl: false })
+        .setView(heeftLocatie ? [bezorgLat, bezorgLng] : [52.15, 5.38], heeftLocatie ? 12 : 7);
+    /* Zachte cartoon-tegels (CARTO Voyager); de warme tint komt uit de CSS-filter */
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        subdomains: 'abcd',
+        maxZoom: 19,
+    }).addTo(bezorgMap);
+    $('#bezorgHint').textContent = heeftLocatie
+        ? 'Je zaak staat op de kaart op basis van je adres bij Bedrijfsgegevens.'
+        : 'Vul je adres in bij Bedrijfsgegevens, dan zetten we je zaak automatisch op de kaart.';
+    tekenBezorgCirkels();
+    if (heeftLocatie) pasBezorgZoom();
+}
+
+$('#bezorgTiers')?.addEventListener('input', (e) => {
+    const d = e.target.dataset;
+    if (d.bKm !== undefined) { bezorgTiers[+d.bKm].km = e.target.value; tekenBezorgCirkels(); }
+    if (d.bKosten !== undefined) bezorgTiers[+d.bKosten].kosten = e.target.value;
+});
+
+$('#bezorgTiers')?.addEventListener('click', (e) => {
+    const del = e.target.closest('[data-b-del]');
+    if (del) {
+        bezorgTiers.splice(+del.dataset.bDel, 1);
+        renderBezorgTiers();
+        tekenBezorgCirkels();
+    }
+});
+
+$('#bezorgTierAdd')?.addEventListener('click', () => {
+    if (bezorgTiers.length >= 8) return;
+    const laatste = naarKm(bezorgTiers[bezorgTiers.length - 1]?.km) || 2;
+    bezorgTiers.push({ km: String(Math.min(30, laatste + 2)).replace('.', ','), kosten: '' });
+    renderBezorgTiers();
+    tekenBezorgCirkels();
+});
+
+$('#bezorgOpslaan')?.addEventListener('click', async () => {
+    const tiers = bezorgTiers
+        .map((t) => ({ km: naarKm(t.km), kosten: naarCenten(t.kosten) ?? 0 }))
+        .filter((t) => t.km)
+        .sort((a, b) => a.km - b.km);
+    const res = await postJson('/instellingen/bezorg', { lat: bezorgLat, lng: bezorgLng, tiers }).catch(() => null);
+    if (!res || !res.ok) return;
+    bezorgTiers = tiers.map((t) => ({ km: String(t.km).replace('.', ','), kosten: uitCenten(t.kosten) }));
+    renderBezorgTiers();
+    tekenBezorgCirkels();
+    const status = $('#bezorgStatus');
+    status.style.display = '';
+    setTimeout(() => { status.style.display = 'none'; }, 2500);
+});
+
+/* De kaart pas opbouwen zodra het paneel zichtbaar is: Leaflet heeft echte maten nodig */
+$$('[data-nav="instellingen"]').forEach((btn) => btn.addEventListener('click', () => setTimeout(initBezorgKaart, 80)));
+renderBezorgTiers();
+
+/* ── Instellingen bewerken via popups (geen onboarding meer nodig) ── */
+
+const DAGNAMEN_VOL = { ma: 'Maandag', di: 'Dinsdag', wo: 'Woensdag', do: 'Donderdag', vr: 'Vrijdag', za: 'Zaterdag', zo: 'Zondag' };
+let instSectie = null;
+
+const INST_SECTIES = {
+    zaak: {
+        kicker: 'Jouw zaak 🍕', titel: 'Gegevens van je zaak', sub: 'Zo kennen je klanten en wij je zaak.',
+        mascot: 'tossing-dough', bubble: 'Aangenaam! 😄', kant: 'right',
+        velden: () => `
+            <div><label class="m-label" for="iNaam">Naam van je zaak</label><input id="iNaam" class="m-inp" maxlength="60" value="${esc(DATA.name || '')}"></div>
+            <div><label class="m-label" for="iPersoon">Contactpersoon</label><input id="iPersoon" class="m-inp" maxlength="60" value="${esc(DATA.person || '')}"></div>
+            <div><label class="m-label" for="iTelefoon">Telefoonnummer</label><input id="iTelefoon" class="m-inp" maxlength="20" inputmode="tel" value="${esc(DATA.phone || '')}"></div>`,
+        payload: () => {
+            const name = $('#iNaam').value.trim();
+            const person = $('#iPersoon').value.trim();
+            if (!name) { $('#iNaam').classList.add('m-fout'); $('#iNaam').focus(); return null; }
+            if (!person) { $('#iPersoon').classList.add('m-fout'); $('#iPersoon').focus(); return null; }
+            return { name, person, phone: $('#iTelefoon').value.trim() };
+        },
+    },
+    bedrijf: {
+        kicker: 'Bedrijfsgegevens 📇', titel: 'Jouw bedrijfsgegevens', sub: 'Met je adres zetten we je zaak ook meteen op de kaart bij je bezorggebied.',
+        mascot: 'behind-laptop', bubble: 'Even de administratie 🧾', kant: 'left',
+        velden: () => `
+            <div><label class="m-label" for="iKvk">KVK-nummer</label><input id="iKvk" class="m-inp" maxlength="8" inputmode="numeric" value="${esc(DATA.kvk || '')}"></div>
+            <div><label class="m-label" for="iStraat">Straat + huisnummer</label><input id="iStraat" class="m-inp" maxlength="80" value="${esc(DATA.street || '')}"></div>
+            <div class="grid grid-cols-[8rem_1fr] gap-3">
+                <div><label class="m-label" for="iPostcode">Postcode</label><input id="iPostcode" class="m-inp" maxlength="10" value="${esc(DATA.zip || '')}"></div>
+                <div><label class="m-label" for="iPlaats">Plaats</label><input id="iPlaats" class="m-inp" maxlength="60" value="${esc(DATA.city || '')}"></div>
+            </div>`,
+        payload: () => ({ kvk: $('#iKvk').value.trim(), street: $('#iStraat').value.trim(), zip: $('#iPostcode').value.trim(), city: $('#iPlaats').value.trim() }),
+    },
+    tijden: {
+        kicker: 'Openingstijden 🕐', titel: 'Wanneer ben je open?', sub: 'Tik op een dag om hem open of dicht te zetten.',
+        mascot: 'pizza-in-oven', bubble: 'De oven staat al aan 🔥', kant: 'right',
+        velden: () => Object.keys(DAGNAMEN_VOL).map((d) => {
+            const aan = !!(DATA.days || {})[d];
+            const t = (DATA.hoursMode === 'perday' && DATA.dayTimes && DATA.dayTimes[d])
+                ? DATA.dayTimes[d]
+                : { open: DATA.open || '16:00', close: DATA.close || '21:30' };
+            return `<div class="flex items-center gap-2 !mt-2">
+                <button type="button" class="keuze-chip !w-32 justify-center shrink-0 ${aan ? 'aan' : ''}" data-i-dag="${d}">${DAGNAMEN_VOL[d]}</button>
+                <input type="time" class="m-inp !py-1.5" value="${t.open}" data-i-open="${d}" ${aan ? '' : 'disabled style="opacity:.4"'}>
+                <span class="text-cacao/40 font-extrabold shrink-0">-</span>
+                <input type="time" class="m-inp !py-1.5" value="${t.close}" data-i-close="${d}" ${aan ? '' : 'disabled style="opacity:.4"'}>
+            </div>`;
+        }).join(''),
+        payload: () => {
+            const days = {};
+            const dayTimes = {};
+            Object.keys(DAGNAMEN_VOL).forEach((d) => {
+                const aan = $(`[data-i-dag="${d}"]`).classList.contains('aan');
+                days[d] = aan;
+                if (aan) dayTimes[d] = { open: $(`[data-i-open="${d}"]`).value || '16:00', close: $(`[data-i-close="${d}"]`).value || '21:30' };
+            });
+            const tijden = Object.values(dayTimes);
+            const zelfde = tijden.length && tijden.every((t) => t.open === tijden[0].open && t.close === tijden[0].close);
+            return zelfde
+                ? { days, hoursMode: 'same', open: tijden[0].open, close: tijden[0].close, dayTimes: {} }
+                : { days, hoursMode: 'perday', dayTimes, open: tijden[0]?.open || '16:00', close: tijden[0]?.close || '21:30' };
+        },
+    },
+    betalen: {
+        kicker: 'Betalen 💶', titel: 'Hoe rekenen klanten af?', sub: 'Online betalen werkt het prettigst voor jou en je klant.',
+        mascot: 'scanning-qr', bubble: 'Kassa! 🤌', kant: 'left',
+        velden: () => {
+            const labels = { mollie: 'Online betalen via Mollie', stripe: 'Online betalen via Stripe', later: 'Kies ik later' };
+            const nu = DATA.payment || 'later';
+            return `<div class="flex flex-col gap-2">${Object.keys(labels).map((p) =>
+                `<button type="button" class="keuze-chip justify-center !py-2.5 ${nu === p ? 'aan' : ''}" data-i-keuze="${p}">${labels[p]}</button>`).join('')}</div>`;
+        },
+        payload: () => ({ payment: $('#instVelden .keuze-chip.aan')?.dataset.iKeuze || 'later' }),
+    },
+    domein: {
+        kicker: 'Jouw domein 🌐', titel: 'Waar bestellen je klanten?', sub: 'Een gratis subdomein, of je eigen domeinnaam.',
+        mascot: 'showing-pizza-order', bubble: 'Lekker professioneel! 😎', kant: 'right',
+        velden: () => {
+            const slug = String(DATA.name || 'jouwpizzeria')
+                .normalize('NFD').replace(/[̀-ͯ]/g, '')
+                .toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 30) || 'jouwpizzeria';
+            const eigen = DATA.domainMode === 'own';
+            return `
+                <div class="flex flex-col gap-2">
+                    <button type="button" class="keuze-chip justify-center !py-2.5 ${eigen ? '' : 'aan'}" data-i-keuze="sub">Gratis subdomein: ${slug}.bestelpagina.nl</button>
+                    <button type="button" class="keuze-chip justify-center !py-2.5 ${eigen ? 'aan' : ''}" data-i-keuze="own">Mijn eigen domein</button>
+                </div>
+                <div id="iEigenDomeinVak" class="${eigen ? '' : 'hidden'}">
+                    <label class="m-label" for="iEigenDomein">Jouw domeinnaam</label>
+                    <input id="iEigenDomein" class="m-inp" maxlength="100" placeholder="pizzeriamario.nl" value="${esc(DATA.ownDomain || '')}">
+                    <p class="m-hint mt-1">Bestellen gaat dan via bestellen.jouwdomein.nl</p>
+                </div>`;
+        },
+        payload: () => ({
+            domainMode: $('#instVelden .keuze-chip.aan')?.dataset.iKeuze || 'sub',
+            ownDomain: $('#iEigenDomein')?.value.trim() || '',
+        }),
+    },
+};
+
+function openInstModal(sectie) {
+    instSectie = sectie;
+    const info = INST_SECTIES[sectie];
+    if (!info) return;
+    $('#instKicker').textContent = info.kicker;
+    $('#instTitel').textContent = info.titel;
+    $('#instSub').textContent = info.sub;
+    $('#instMascotBubble').textContent = info.bubble;
+    $('#instMascotImg').src = `/stickers/${info.mascot}.png`;
+    $('#instMascot').classList.toggle('mascot-left', info.kant === 'left');
+    $('#instMascot').classList.toggle('mascot-right', info.kant !== 'left');
+    $('#instVelden').innerHTML = info.velden();
+    $('#instModal').classList.remove('hidden');
+    setTimeout(() => $('#instVelden input:not([disabled])')?.focus(), 80);
+}
+
+function sluitInstModal() {
+    $('#instModal').classList.add('hidden');
+    instSectie = null;
+}
+
+document.addEventListener('click', (e) => {
+    const knop = e.target.closest('[data-inst]');
+    if (knop && knop.dataset.inst) openInstModal(knop.dataset.inst);
+});
+
+$('#instVelden')?.addEventListener('click', (e) => {
+    const dag = e.target.closest('[data-i-dag]');
+    if (dag) {
+        const aan = dag.classList.toggle('aan');
+        ['open', 'close'].forEach((kant) => {
+            const inp = $(`[data-i-${kant}="${dag.dataset.iDag}"]`);
+            inp.disabled = !aan;
+            inp.style.opacity = aan ? '' : '.4';
+        });
+        return;
+    }
+    const keuze = e.target.closest('[data-i-keuze]');
+    if (keuze) {
+        $$('#instVelden [data-i-keuze]').forEach((el) => el.classList.toggle('aan', el === keuze));
+        $('#iEigenDomeinVak')?.classList.toggle('hidden', keuze.dataset.iKeuze !== 'own');
+        if (keuze.dataset.iKeuze === 'own') $('#iEigenDomein')?.focus();
+    }
+});
+
+$('#instOpslaan')?.addEventListener('click', async () => {
+    if (!instSectie) return;
+    const payload = INST_SECTIES[instSectie].payload();
+    if (!payload) return;
+    const res = await postJson('/instellingen/gegevens', payload).catch(() => null);
+    if (!res || !res.ok) return;
+    /* Verse herlaad zodat drukte, checklist en waarschuwingen overal meebewegen */
+    location.hash = 'instellingen';
+    location.reload();
+});
+
+$('#instModalSluit')?.addEventListener('click', sluitInstModal);
+$('#instModal')?.addEventListener('click', (e) => {
+    if (e.target === $('#instModal') || e.target === $('#instModalMidden')) sluitInstModal();
+});
+$('#instModal')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') sluitInstModal();
+});
+$('#instVelden')?.addEventListener('input', (e) => e.target.classList.remove('m-fout'));
+
+/* Deep-link naar een paneel via de #hash, bijvoorbeeld na het opslaan van instellingen */
+if (location.hash.length > 1) document.querySelector(`.rail-item[data-nav="${location.hash.slice(1)}"]`)?.click();
+

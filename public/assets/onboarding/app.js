@@ -154,21 +154,32 @@ function save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
+function normaliseerState() {
+    if (!STEPS.includes(state.step)) state.step = 'name';
+    if (!state.categories?.length) {
+        state.categories = [{ id: 'klassiekers', emoji: '🍕', name: 'Klassiekers' }];
+    }
+    if (!state.categories.some((c) => c.id === state.activeCat)) state.activeCat = state.categories[0].id;
+    state.menu = (state.menu || []).map((m) => ({
+        cat: m.cat && state.categories.some((c) => c.id === m.cat) ? m.cat : state.categories[0].id,
+        icon: m.icon?.v ? m.icon : { t: 'e', v: m.emoji || '🍕' },
+        name: m.name, price: m.price,
+    }));
+}
+
 function restore() {
+    /* Ingelogd: je opgeslagen onboarding uit de database is leidend,
+       zodat je nooit iets opnieuw hoeft in te vullen */
+    if (IS_AUTH && window.PP_SAVED && typeof window.PP_SAVED === 'object') {
+        state = { ...state, ...window.PP_SAVED, step: 'name', returnTo: null, submitted: false };
+        normaliseerState();
+        return false;
+    }
     try {
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
         if (!saved || saved.submitted) { localStorage.removeItem(STORAGE_KEY); return false; }
         state = { ...state, ...saved, returnTo: null };
-        if (!STEPS.includes(state.step)) state.step = 'name';
-        if (!state.categories?.length) {
-            state.categories = [{ id: 'klassiekers', emoji: '🍕', name: 'Klassiekers' }];
-        }
-        if (!state.categories.some((c) => c.id === state.activeCat)) state.activeCat = state.categories[0].id;
-        state.menu = (state.menu || []).map((m) => ({
-            cat: m.cat && state.categories.some((c) => c.id === m.cat) ? m.cat : state.categories[0].id,
-            icon: m.icon?.v ? m.icon : { t: 'e', v: m.emoji || '🍕' },
-            name: m.name, price: m.price,
-        }));
+        normaliseerState();
         return state.step !== 'name';
     } catch { return false; }
 }
@@ -920,6 +931,24 @@ function launchConfetti() {
     })(start);
 }
 
+/* ── Versturen naar de server ─────────────────────────────────── */
+
+function verstuurOnboarding() {
+    const payload = { ...state };
+    delete payload.returnTo;
+    delete payload.submitted;
+    delete payload.step;
+    return fetch('/onboarding/afronden', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+        },
+        body: JSON.stringify({ state: payload, password: IS_AUTH ? undefined : pw }),
+    });
+}
+
 /* ── Events ───────────────────────────────────────────────────── */
 
 function bindInput(id, key, extra) {
@@ -1177,6 +1206,27 @@ function init() {
     $('#inpPassword')?.addEventListener('input', (e) => { pw = e.target.value; setError('password'); });
     $('#inpPassword2')?.addEventListener('input', (e) => { pw2 = e.target.value; });
 
+    /* Snel opslaan (alleen ingelogd): wijziging bewaren zonder alle stappen af te lopen */
+    $('#quickSave')?.addEventListener('click', async () => {
+        const btn = $('#quickSave');
+        btn.disabled = true;
+        btn.textContent = 'Opslaan…';
+        try {
+            const res = await verstuurOnboarding();
+            if (res.ok) {
+                btn.textContent = 'Opgeslagen ✓';
+                setTimeout(() => { window.location.href = '/dashboard'; }, 500);
+                return;
+            }
+            const data = await res.json().catch(() => ({}));
+            toast(data.errors ? Object.values(data.errors)[0][0] : 'Opslaan lukte niet, probeer het nog eens 🙏', 4000);
+        } catch {
+            toast('Geen verbinding. Check je internet en probeer opnieuw 📶');
+        }
+        btn.disabled = false;
+        btn.textContent = 'Opslaan ✓';
+    });
+
     /* Versturen: maakt het account aan (of werkt het bij) en logt direct in */
     $('#submitBtn').addEventListener('click', async () => {
         const btn = $('#submitBtn');
@@ -1188,21 +1238,8 @@ function init() {
         btn.disabled = true;
         btn.textContent = 'Momentje… 🛵💨';
 
-        const payload = { ...state };
-        delete payload.returnTo;
-        delete payload.submitted;
-        delete payload.step;
-
         try {
-            const res = await fetch('/onboarding/afronden', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                },
-                body: JSON.stringify({ state: payload, password: IS_AUTH ? undefined : pw }),
-            });
+            const res = await verstuurOnboarding();
             if (res.ok) {
                 state.submitted = true;
                 save();
