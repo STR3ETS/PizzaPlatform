@@ -109,7 +109,7 @@
     {{-- Menukaart: inktbalken en dik omrande kaarten --}}
     <main class="max-w-6xl mx-auto px-6 py-10 pb-32">
         @foreach($menu as $categorie => $items)
-            <section class="mt-12 first:mt-0" data-categorie="{{ $categorie }}">
+            <section class="mt-12 first:mt-0 scroll-mt-24" data-categorie="{{ $categorie }}">
                 <div class="flex items-baseline gap-3 border-b border-secundair/15 pb-3">
                     <h2 class="blok text-3xl">{{ $categorie }}</h2>
                     <span class="blok text-sm text-primair">{{ sprintf('%02d', $loop->iteration) }}</span>
@@ -118,7 +118,7 @@
                     @foreach($items as $item)
                         <article data-gerecht="{{ $item['id'] }}" class="group flex items-stretch border border-secundair/20 bg-white hover:border-secundair/40 transition-colors cursor-pointer">
                             @if($item['foto'])
-                                <div class="w-36 sm:w-40 shrink-0 border-r border-secundair/15">
+                                <div class="w-28 sm:w-40 shrink-0 border-r border-secundair/15">
                                     <img src="{{ $item['foto'] }}" alt="" class="w-full aspect-square object-cover">
                                 </div>
                             @endif

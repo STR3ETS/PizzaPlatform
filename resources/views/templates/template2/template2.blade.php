@@ -105,7 +105,7 @@
 
         <main class="lg:col-span-9 mt-10 lg:mt-0">
             @foreach($menu as $categorie => $items)
-                <section class="mt-14 first:mt-0" data-categorie="{{ $categorie }}">
+                <section class="mt-14 first:mt-0 scroll-mt-8" data-categorie="{{ $categorie }}">
                     <div class="flex items-baseline gap-4 border-b border-secundair/15 pb-4">
                         <span class="kopf italic text-xl text-primair">{{ sprintf('%02d', $loop->iteration) }}</span>
                         <h2 class="kopf text-3xl sm:text-4xl">{{ $categorie }}</h2>

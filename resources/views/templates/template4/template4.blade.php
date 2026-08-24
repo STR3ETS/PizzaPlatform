@@ -90,7 +90,7 @@
     {{-- Het menu: horizontale rijen per categorie --}}
     <main class="max-w-6xl mx-auto px-6 py-10 pb-32">
         @foreach($menu as $categorie => $items)
-            <section class="mt-10 first:mt-0" data-categorie="{{ $categorie }}">
+            <section class="mt-10 first:mt-0 scroll-mt-24" data-categorie="{{ $categorie }}">
                 <div class="flex items-center gap-3">
                     <h2 class="text-2xl font-extrabold tracking-tight">{{ $categorie }}</h2>
                     <span class="text-sm font-semibold text-secundair/45">{{ count($items) }} {{ count($items) === 1 ? 'gerecht' : 'gerechten' }}</span>

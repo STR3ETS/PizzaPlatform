@@ -36,7 +36,7 @@
 </head>
 <body>
     <div class="w-full flex">
-        <div class="flex-1 min-w-0 bg-wit-warm">
+        <div class="flex-1 min-w-0 bg-wit-warm pb-24 lg:pb-0">
             {{-- Hero-band met pizzafoto als achtergrond --}}
             <div class="p-3">
                 <div class="relative h-[400px] overflow-hidden rounded-4xl">
@@ -59,7 +59,7 @@
                             <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
                         </button>
                     </div>
-                    <div class="relative w-[600px]">
+                    <div class="relative w-full max-w-[600px]">
                         <div class="flex items-center gap-3 px-5 py-4 rounded-full border border-white/30 bg-white/20 backdrop-blur-md focus-within:border-white/60 transition-colors">
                             <i class="fa-solid fa-location-dot text-primair" aria-hidden="true"></i>
                             <input id="adresInput" type="text" value="Stationsplein 12, 6811 KG Arnhem" placeholder="Vul je adres in" autocomplete="off"
@@ -112,14 +112,14 @@
                             <button type="button" class="cat-chip shrink-0 px-4 py-2 rounded-full text-sm font-bold text-secundair/70 [&.aan]:bg-secundair [&.aan]:text-white transition-colors cursor-pointer">{{ $categorie }}</button>
                         @endforeach
                     </div>
-                    <button type="button" aria-label="Verder scrollen" class="w-9 h-9 shrink-0 rounded-full grid place-items-center border border-black/10 bg-white text-secundair hover:bg-black/5 transition-colors cursor-pointer">
+                    <button type="button" id="catVerder" aria-label="Verder scrollen" class="w-9 h-9 shrink-0 rounded-full grid place-items-center border border-black/10 bg-white text-secundair hover:bg-black/5 transition-colors cursor-pointer">
                         <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
                     </button>
                 </div>
 
                 {{-- Menukaart per categorie --}}
                 @foreach($menu as $categorie => $items)
-                    <section class="mt-8" data-categorie="{{ $categorie }}">
+                    <section class="mt-8 scroll-mt-6" data-categorie="{{ $categorie }}">
                         <h2 class="text-xl font-extrabold text-secundair">{{ $categorie }}</h2>
                         <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
                             @foreach($items as $item)
@@ -163,7 +163,19 @@
                 </div>
             </div>
         </div>
-        <div class="w-[400px] shrink-0 sticky top-0 self-start h-screen bg-secundair p-5 flex flex-col">
+        {{-- Onderbalk op mobiel: samenvatting van de mand en knop naar het paneel --}}
+        <div class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-secundair px-5 py-3.5 flex items-center gap-3">
+            <i class="fa-solid fa-basket-shopping text-white/70" aria-hidden="true"></i>
+            <p id="mandBalkTekst" class="flex-1 min-w-0 truncate text-sm font-bold text-white">Je winkelmand is nog leeg</p>
+            <button type="button" id="mandBalkOpen" class="px-5 py-2 rounded-full bg-primair text-sm font-bold text-white hover:bg-primair-donker transition-colors cursor-pointer">Bekijk</button>
+        </div>
+
+        {{-- Winkelmand: op groot scherm een vaste zijbalk, op mobiel een schermvullend paneel --}}
+        <div id="mandPaneel" class="hidden lg:flex flex-col fixed lg:sticky inset-0 lg:inset-auto lg:top-0 z-50 lg:z-auto w-full lg:w-[400px] shrink-0 lg:self-start h-screen bg-secundair p-5">
+            <button type="button" id="mandSluit" aria-label="Winkelmand sluiten"
+                class="lg:hidden absolute top-4 right-4 w-10 h-10 rounded-full grid place-items-center bg-white/10 text-white cursor-pointer">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
             <p class="text-white font-bold text-lg mb-4 text-center">Winkelmand</p>
             <div id="typeToggle" class="relative grid grid-cols-2 p-1 rounded-full bg-white/10">
                 {{-- Het schuifje dat achter de actieve keuze langs glijdt --}}
@@ -691,6 +703,13 @@
             document.querySelector('#mandLeeg').classList.toggle('hidden', !leeg);
             document.querySelector('#mandLijst').classList.toggle('hidden', leeg);
             document.querySelector('#mandOnder').classList.toggle('hidden', leeg);
+            const balk = document.querySelector('#mandBalkTekst');
+            if (balk) {
+                const stuks = mand.reduce((som, regel) => som + regel.aantal, 0);
+                balk.textContent = leeg
+                    ? 'Je winkelmand is nog leeg'
+                    : `${stuks} ${stuks === 1 ? 'product' : 'producten'} voor ${euro(mand.reduce((som, regel) => som + regelPrijs(regel), 0))}`;
+            }
             document.querySelector('#mandRegels').innerHTML = mand.map((regel, i) => `
                 <div class="py-4">
                     <div data-mand-open="${i}" class="cursor-pointer group">
@@ -814,10 +833,28 @@
             document.querySelector('#menuLeegMelding').classList.toggle('hidden', gevonden > 0);
         });
 
-        /* Categorie-chips: actieve chip wisselen */
-        document.querySelectorAll('.cat-chip').forEach((chip) => chip.addEventListener('click', () => {
+        /* Categorie-chips: actieve chip wisselen en naar de categorie scrollen.
+           De eerste chip is "Uitgelicht" en brengt je terug naar boven. */
+        document.querySelectorAll('.cat-chip').forEach((chip, idx) => chip.addEventListener('click', () => {
             document.querySelectorAll('.cat-chip').forEach((c) => c.classList.toggle('aan', c === chip));
+            if (idx === 0) window.scrollTo({ top: 0, behavior: 'smooth' });
+            else document.querySelectorAll('[data-categorie]')[idx - 1]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }));
+        document.querySelector('#catVerder')?.addEventListener('click', () => {
+            document.querySelector('#catRij').scrollBy({ left: 220, behavior: 'smooth' });
+        });
+
+        /* Mobiel: winkelmand-paneel openen en sluiten */
+        document.querySelector('#mandBalkOpen')?.addEventListener('click', () => {
+            const paneel = document.querySelector('#mandPaneel');
+            paneel.classList.remove('hidden');
+            paneel.classList.add('flex');
+        });
+        document.querySelector('#mandSluit')?.addEventListener('click', () => {
+            const paneel = document.querySelector('#mandPaneel');
+            paneel.classList.add('hidden');
+            paneel.classList.remove('flex');
+        });
 
         /* Toggle Bezorgen of Afhalen: het schuifje glijdt naar de actieve keuze */
         document.querySelectorAll('#typeToggle button').forEach((knop) => knop.addEventListener('click', () => {
