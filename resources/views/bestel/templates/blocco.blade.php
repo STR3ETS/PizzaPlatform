@@ -29,8 +29,8 @@
         <div class="b-fotovak aspect-square">
             <img class="b-foto" src="{{ $held ? $fotos[$held->id] : asset('assets/eten/pepperoni.jpg') }}" alt="{{ $held?->naam ?: 'Pizza' }}">
         </div>
-        <span class="b-zweef" style="top: -4%; left: -3%;">🌶️</span>
-        <span class="b-zweef" style="bottom: -5%; right: -3%; animation-delay: -3s;">🔥</span>
+        <span class="b-zweef" style="top: -4%; left: -3%; color: var(--accent)"><i class="fa-solid fa-pepper-hot" aria-hidden="true"></i></span>
+        <span class="b-zweef" style="bottom: -5%; right: -3%; animation-delay: -3s; color: var(--accent)"><i class="fa-solid fa-fire" aria-hidden="true"></i></span>
     </div>
 </section>
 
@@ -60,7 +60,7 @@
         <div class="grid sm:grid-cols-{{ min(3, $perCategorie->count()) }} gap-4">
             @foreach($perCategorie->take(3) as $categorie => $items)
                 <a href="{{ route('bestel.menu', $slug) }}#cat-{{ Str::slug($categorie) }}" class="b-kaart p-5 flex items-center gap-4" style="background: var(--accent)">
-                    <span class="text-4xl">{{ $items->first()->icoon ?: '🍕' }}</span>
+                    <span class="w-14 h-14 grid place-items-center text-2xl shrink-0" style="background: #111; color: var(--accent)"><i class="fa-solid fa-pizza-slice" aria-hidden="true"></i></span>
                     <span>
                         <span class="b-kop block text-lg">{{ $categorie }}</span>
                         <span class="font-black uppercase text-xs opacity-70">vanaf &euro; {{ number_format($items->min('prijs') / 100, 2, ',', '') }}</span>
@@ -91,7 +91,7 @@
 <!-- Eén dikke quote -->
 <section data-anim class="max-w-3xl mx-auto px-4 py-8 text-center">
     <p class="b-kop text-2xl sm:text-3xl leading-snug">"Dikke bodem, dikke smaak, dik in orde."</p>
-    <p class="font-black uppercase text-xs opacity-50 mt-3">Vaste gast ★ ⭐⭐⭐⭐⭐</p>
+    <p class="font-black uppercase text-xs opacity-60 mt-3">Vaste gast ★ <span style="color: var(--accent)">@for($s = 0; $s < 5; $s++)<i class="fa-solid fa-star" aria-hidden="true"></i>@endfor</span></p>
 </section>
 
 <!-- Mega CTA -->

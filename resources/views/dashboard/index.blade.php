@@ -180,7 +180,7 @@
                     <div class="grid grid-cols-2 gap-3">
                         <button type="button" data-nav="menukaart" class="qa-btn"><span class="q-ico">📋</span> Menu aanpassen</button>
                         <a href="{{ route('onboarding') }}?stap=hours" class="qa-btn"><span class="q-ico">🕐</span> Tijden wijzigen</a>
-                        <a href="{{ route('onboarding') }}?stap=style" class="qa-btn"><span class="q-ico">🎨</span> Pagina stylen</a>
+                        <button type="button" data-inst="stijl" class="qa-btn"><span class="q-ico">🎨</span> Pagina stylen</button>
                         <span class="qa-btn uit"><span class="q-ico">📦</span> Dozen bestellen <span class="n-soon !absolute !-top-2 !-right-2">Binnenkort</span></span>
                     </div>
                 </div>
@@ -202,33 +202,21 @@
 
                 <!-- Toppers deze week -->
                 <div class="dash-card rise" style="--d:.35s">
-                    <div class="flex items-center justify-between mb-3">
-                        <p class="font-display text-xl">Toppers deze week</p>
-                        <span class="text-[10px] font-extrabold uppercase tracking-wide bg-crema-dark text-cacao/50 rounded-full px-2 py-0.5">Voorbeeld</span>
-                    </div>
+                    <p class="font-display text-xl mb-3">Toppers deze week</p>
                     <div id="topGerechten" class="space-y-3"></div>
                 </div>
 
                 <!-- Gemiddelde doorlooptijd -->
                 <div class="dash-card rise" style="--d:.4s">
-                    <div class="flex items-center justify-between">
-                        <p class="lbl !ml-0">Gemiddelde doorlooptijd</p>
-                        <span class="text-[10px] font-extrabold uppercase tracking-wide bg-crema-dark text-cacao/50 rounded-full px-2 py-0.5">Voorbeeld</span>
-                    </div>
-                    <p class="font-display text-4xl mt-1">24 min</p>
-                    <div class="mt-2.5 space-y-1.5 text-xs font-extrabold text-cacao/50">
-                        <p>🔥 In de oven: gemiddeld 14 min</p>
-                        <p>🛵 Onderweg: gemiddeld 10 min</p>
-                    </div>
+                    <p class="lbl !ml-0">Gemiddelde doorlooptijd</p>
+                    <p id="doorloopTijd" class="font-display text-4xl mt-1">&ndash;</p>
+                    <p id="doorloopSub" class="mt-2.5 text-xs font-extrabold text-cacao/50"></p>
                 </div>
             </div>
 
             <!-- Omzet afgelopen 7 dagen -->
             <div class="dash-card rise mt-4" style="--d:.45s">
-                <div class="flex items-center justify-between">
-                    <p class="font-display text-xl">Omzet afgelopen 7 dagen</p>
-                    <span class="text-[10px] font-extrabold uppercase tracking-wide bg-crema-dark text-cacao/50 rounded-full px-2 py-0.5">Voorbeeld</span>
-                </div>
+                <p class="font-display text-xl">Omzet afgelopen 7 dagen</p>
                 <div id="omzetWeek" class="flex items-end gap-2 h-24 mt-3"></div>
             </div>
         </section>
@@ -277,8 +265,28 @@
                 <div class="flex-1 text-center sm:text-left">
                     <p class="font-display text-2xl mb-1">Jouw bestelpagina</p>
                     <p id="paginaSamenvatting" class="text-sm font-extrabold text-cacao/50 mb-4">Kies je template, kleur en logo.</p>
-                    <a href="{{ route('onboarding') }}?stap=style" class="btn-primary inline-block !text-lg !px-8 !py-3">Pagina stylen</a>
+                    <button type="button" data-inst="stijl" class="btn-primary !text-lg !px-8 !py-3">Pagina stylen</button>
                 </div>
+            </div>
+
+            <!-- Link naar de pagina -->
+            <div class="dash-card mt-4">
+                <p class="font-display text-xl mb-1">🔗 Jouw bestel-adres</p>
+                <p id="paginaLink" class="text-sm font-extrabold text-cacao/60 break-all mb-4"></p>
+                <div class="flex flex-wrap gap-3">
+                    <a id="paginaOpen" href="#" target="_blank" rel="noopener" class="btn-primary inline-block !text-base !px-6 !py-2.5">Bekijk je pagina</a>
+                    <button type="button" id="paginaKopieer" class="btn-primary btn-grey !text-base !px-6 !py-2.5">Kopieer link</button>
+                </div>
+            </div>
+
+            <!-- Live voorbeeld van de eigen pagina -->
+            <div class="dash-card mt-4">
+                <p class="font-display text-xl mb-1">📱 Live voorbeeld</p>
+                <p class="text-sm font-extrabold text-cacao/50 mb-4">Zo ziet je bestelpagina er op dit moment uit voor je klanten.</p>
+                <div class="relative w-full aspect-video rounded-2xl border-4 border-crema-dark overflow-hidden bg-white">
+                    <iframe id="paginaPreview" title="Voorbeeld van je bestelpagina" class="absolute inset-0 pointer-events-none select-none" style="width:200%; height:200%; transform:scale(.5); transform-origin:top left; border:0"></iframe>
+                </div>
+                <p class="text-xs font-extrabold text-cacao/40 mt-2">Het voorbeeld ververst vanzelf na het opslaan van je stijl.</p>
             </div>
         </section>
 
@@ -366,11 +374,11 @@
             </div>
 
             <!-- Bezorggebied (kaart, alleen ter inzage) en bezorgkosten per straal -->
-            <div class="grid lg:grid-cols-[1fr_24rem] gap-4 items-start">
+            <div class="grid lg:grid-cols-2 gap-4 items-start">
                 <div class="dash-card">
                     <p class="font-display text-xl mb-1">🗺️ Jouw bezorggebied</p>
                     <p class="text-sm font-extrabold text-cacao/50 mb-4">Zo ver bezorg je op dit moment. De ringen horen bij de tarieven hiernaast.</p>
-                    <div id="bezorgMap" class="aspect-square w-full rounded-2xl border-4 border-crema-dark z-0" style="background:var(--color-crema)"></div>
+                    <div id="bezorgMap" class="aspect-square w-full max-w-lg mx-auto rounded-2xl border-4 border-crema-dark z-0" style="background:var(--color-crema)"></div>
                     <p id="bezorgHint" class="text-xs font-extrabold text-cacao/40 mt-2"></p>
                 </div>
                 <div class="dash-card">
@@ -397,7 +405,7 @@
     <!-- Instellingen bewerken: popup per sectie, in dezelfde stijl als de gerecht-editor -->
     <div id="instModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-cacao/60 backdrop-blur-sm">
         <div id="instModalMidden" class="min-h-full flex items-center justify-center p-4 py-10">
-            <div class="relative w-full max-w-xl">
+            <div id="instKaartWrap" class="relative w-full max-w-xl">
                 <div id="instMascot" class="mascot mascot-right" aria-hidden="true">
                     <div id="instMascotBubble" class="bubble"></div>
                     <img id="instMascotImg" src="{{ asset('stickers/waving-hello.png') }}" alt="">
@@ -446,6 +454,24 @@
                     </div>
                     <div data-mstap="beschrijving" class="m-stap hidden">
                         <textarea id="mBeschrijving" class="inp !h-28" rows="3" maxlength="300" placeholder="bijv. Tomatensaus, mozzarella en verse basilicum"></textarea>
+                    </div>
+                    <div data-mstap="foto" class="m-stap hidden">
+                        <input id="mFotoInp" type="file" accept="image/jpeg,image/png,image/webp" class="hidden">
+                        <div id="mFotoLeeg">
+                            <button type="button" id="mFotoKies" class="w-full max-w-xs mx-auto flex flex-col items-center gap-2 rounded-3xl border-4 border-dashed border-crema-dark px-6 py-8 cursor-pointer hover:border-tomato/50 transition-colors" style="background:var(--color-crema)">
+                                <i class="fa-solid fa-camera text-3xl text-cacao/35" aria-hidden="true"></i>
+                                <span class="font-extrabold">Foto uploaden</span>
+                                <span class="text-xs font-bold text-cacao/45">JPG, PNG of WebP</span>
+                            </button>
+                        </div>
+                        <div id="mFotoVol" class="hidden">
+                            <img id="mFotoPreview" src="" alt="Foto van het gerecht" class="w-40 h-40 mx-auto rounded-3xl object-cover border-4 border-crema-dark shadow-lg">
+                            <div class="mt-4 flex items-center justify-center gap-4">
+                                <button type="button" id="mFotoAnders" class="skip-link !mt-0">Andere foto kiezen</button>
+                                <button type="button" id="mFotoWeg" class="skip-link !mt-0">Foto verwijderen</button>
+                            </div>
+                        </div>
+                        <p class="err" id="mFotoErr"></p>
                     </div>
                     <div data-mstap="ingredienten" class="m-stap hidden">
                         <div id="mIngChips" class="flex flex-wrap justify-center gap-2 mb-3"></div>
@@ -505,9 +531,36 @@
     @endphp
     <script>window.PP_ORDERS = @json($ppOrders);</script>
     <script>window.PP_SLUG = @json(auth()->user()->slug);</script>
+    <script>window.PP_KLEUREN = @json(\App\Http\Controllers\BestelController::KLEUREN);</script>
+    @php
+        // Echte cijfers voor de overzicht-widgets, over de afgelopen 7 dagen
+        $weekOrders = auth()->user()->orders()->where('created_at', '>=', now()->subDays(7))->get();
+        $toppers = collect($weekOrders)
+            ->flatMap(fn ($o) => $o->items)
+            ->reject(fn ($i) => in_array($i['naam'], ['Bezorgkosten', 'Fooi bezorger'], true))
+            ->groupBy('naam')
+            ->map(fn ($groep, $naam) => ['naam' => $naam, 'aantal' => $groep->sum('aantal')])
+            ->sortByDesc('aantal')->values()->take(3);
+        // Alleen realistische doorlooptijden meetellen (tot 4 uur), anders vertekenen oude orders het beeld
+        $doorlooptijden = $weekOrders->where('status', 'bezorgd')
+            ->map(fn ($o) => max(1, $o->created_at->diffInMinutes($o->updated_at)))
+            ->filter(fn ($m) => $m <= 240);
+        $klaar = $doorlooptijden;
+        $doorloop = $doorlooptijden->count() ? (int) round($doorlooptijden->avg()) : null;
+        $omzet = collect(range(6, 0))->map(function ($terug) use ($weekOrders) {
+            $dag = now()->subDays($terug);
+            return [
+                'label' => $dag->locale('nl')->isoFormat('dd'),
+                'bedrag' => $weekOrders->filter(fn ($o) => $o->created_at->isSameDay($dag))->sum('totaal'),
+            ];
+        });
+        $ppStats = ['toppers' => $toppers, 'doorloop' => $doorloop, 'klaarAantal' => $klaar->count(), 'omzet' => $omzet];
+    @endphp
+    <script>window.PP_STATS = @json($ppStats);</script>
     <script>window.PP_MENU = @json(auth()->user()->menuItems()->orderBy('volgorde')->orderBy('id')->get());</script>
     <script>window.PP_INTRO = @json(! auth()->user()->intro_seen);</script>
     <script>window.PP_STATUS = @json(['online' => (bool) auth()->user()->is_online, 'mode' => auth()->user()->order_mode ?? 'bezorgen_afhalen']);</script>
+    <script src="{{ asset('assets/stijl-tiles.js') }}?v={{ filemtime(public_path('assets/stijl-tiles.js')) }}"></script>
     <script src="{{ asset('assets/dashboard.js') }}?v={{ filemtime(public_path('assets/dashboard.js')) }}"></script>
 </body>
 </html>

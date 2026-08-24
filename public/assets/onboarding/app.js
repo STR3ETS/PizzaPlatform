@@ -67,56 +67,79 @@ const CATEGORY_SUGGESTIONS = [
 
 const PICKER_EMOJIS = ['🍕', '🧀', '🍄', '🌶️', '🥩', '🍗', '🥓', '🥙', '🐟', '🍤', '🦐', '🍣', '🥦', '🫑', '🍅', '🌿', '🥗', '🍍', '🫒', '🥟', '🍝', '🥖', '🥤', '🍊', '🧋', '☕', '🍺', '🍷', '🍰', '🍨', '🍩', '🍫', '⭐', '🔥', '👨‍🍳', '🧄'];
 
-const COLORS = [
-    { hex: '#E63946', name: 'Tomatenrood' },
-    { hex: '#2F8F46', name: 'Basilicumgroen' },
-    { hex: '#F5B301', name: 'Goudgeel' },
-    { hex: '#7C3AED', name: 'Paars' },
-    { hex: '#2563EB', name: 'Blauw' },
-    { hex: '#38221A', name: 'Cacao' },
-];
+/* Alle kleurstijlen komen uit dezelfde bron als de templates (gehydrateerd door de server) */
+const KLEUREN = window.PP_KLEUREN || [{ hex: '#E63946', naam: 'Tomatenrood', stijl: 'warm', palet: { primair: '#E63946', primairDonker: '#B02A35', secundair: '#38151A', secundairLicht: '#54262C', witWarm: '#FFF6F5' } }];
+const KLEUR_TABS = [['alle', 'Alle'], ['warm', 'Warm'], ['fris', 'Fris'], ['modern', 'Modern'], ['klassiek', 'Klassiek']];
+let kleurTab = 'alle';
 
-/* Zes stijlen die echt van elkaar verschillen; de accentkleur komt van de klant */
+/* De templates: Presto (licht en modern) en Notte (donker en chic). De hoofdkleur bepaalt de rest van het palet. */
 const THEMES = [
     {
-        id: 'fresco', emoji: '🍕', name: 'Fresco', desc: 'Speels en vrolijk',
-        font: '"Lilita One", cursive', uppercase: false,
-        cardBg: '#FFFFFF', itemBg: '#FFF6E8', text: '#38221A', priceCol: 'rgba(56,34,26,.55)',
+        id: 'template1', emoji: '🛵', name: 'Presto', desc: 'Licht en modern',
+        font: '"Inter Tight", sans-serif', uppercase: false,
+        cardBg: '#FFF7F0', itemBg: '#FFFFFF', text: '#3E2716', priceCol: 'rgba(62,39,22,.55)',
         headerUseAccent: true, itemRadius: '.7rem', btnRadius: '9999px',
     },
     {
-        id: 'nero', emoji: '🌙', name: 'Nero', desc: 'Donker en chic',
-        font: 'Georgia, serif', uppercase: false,
-        cardBg: '#1C1512', itemBg: '#2A211C', text: '#F3EAD9', priceCol: '#C9A96A',
-        headerUseAccent: false, headerBg: '#1C1512', itemRadius: '.45rem', btnRadius: '.45rem',
+        id: 'template2', emoji: '🍷', name: 'Notte', desc: 'Klassiek en verfijnd',
+        font: '"Fraunces", serif', uppercase: false,
+        cardBg: '#FFF7F0', itemBg: '#FFFFFF', text: '#3E2716', priceCol: '#8A5A2B',
+        headerUseAccent: false, itemRadius: '.4rem', btnRadius: '.25rem',
     },
     {
-        id: 'napoli', emoji: '🍝', name: 'Napoli', desc: 'Klassieke menukaart',
-        font: '"Times New Roman", serif', uppercase: false,
-        cardBg: '#FFFDF6', itemBg: '#FFF8E7', text: '#3A2A1A', priceCol: '#8A6A3B',
-        headerUseAccent: true, stripe: true, itemRadius: '.35rem', btnRadius: '.35rem',
-        itemBorder: '1px solid #E8DCC2',
-    },
-    {
-        id: 'puro', emoji: '🌿', name: 'Puro', desc: 'Strak met foto-grid',
-        font: '"Nunito", sans-serif', uppercase: false,
-        cardBg: '#FFFFFF', itemBg: '#F4F7F4', text: '#233029', priceCol: '#5B6B60',
-        headerUseAccent: true, itemRadius: '.7rem', btnRadius: '.7rem',
-    },
-    {
-        id: 'blocco', emoji: '⚡', name: 'Blocco', desc: 'Bold en street',
-        font: '"Arial Black", Impact, sans-serif', uppercase: true,
-        cardBg: '#FFFFFF', itemBg: '#FFFFFF', text: '#111111', priceCol: '#111111',
+        id: 'template3', emoji: '⚡', name: 'Forza', desc: 'Bold en vol energie',
+        font: '"Anton", sans-serif', uppercase: true,
+        cardBg: '#FFF7F0', itemBg: '#FFFFFF', text: '#3E2716', priceCol: '#3E2716',
         headerUseAccent: true, itemRadius: '0', btnRadius: '0',
-        itemBorder: '2px solid #111111', btnBorder: '2px solid #111111', btnShadow: '3px 3px 0 0 #111111',
     },
     {
-        id: 'retro', emoji: '🪩', name: 'Retro', desc: 'Vintage jaren 70',
-        font: '"Cooper Black", Georgia, serif', uppercase: false,
-        cardBg: '#FBEED3', itemBg: '#F5E0B4', text: '#5B3A21', priceCol: '#8A5A2B',
-        headerUseAccent: true, itemRadius: '1.1rem', btnRadius: '2rem',
+        id: 'template4', emoji: '📸', name: 'Giro', desc: 'Fris met grote fotos',
+        font: '"Plus Jakarta Sans", sans-serif', uppercase: false,
+        cardBg: '#FFFFFF', itemBg: '#FFFFFF', text: '#3E2716', priceCol: '#3E2716',
+        headerUseAccent: false, itemRadius: '1rem', btnRadius: '9999px',
     },
 ];
+
+/* Van één hoofdkleur naar het volledige palet: zelfde tint, vaste rollen */
+function hexNaarHsl(hex) {
+    const n = hex.replace('#', '');
+    const r = parseInt(n.slice(0, 2), 16) / 255;
+    const g = parseInt(n.slice(2, 4), 16) / 255;
+    const b = parseInt(n.slice(4, 6), 16) / 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+    if (max === min) return [0, 0, l * 100];
+    const d = max - min;
+    const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    let h;
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0));
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    return [h * 60, s * 100, l * 100];
+}
+
+function hslNaarHex(h, s, l) {
+    s /= 100; l /= 100;
+    const k = (n) => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    const kanaal = (x) => Math.round(255 * x).toString(16).padStart(2, '0');
+    return '#' + kanaal(f(0)) + kanaal(f(8)) + kanaal(f(4));
+}
+
+function paletVoor(hex) {
+    const kleur = KLEUREN.find((k) => k.hex === hex);
+    if (kleur) return kleur.palet;
+    const [h] = hexNaarHsl(hex || '#F97316');
+    return {
+        primair: hex || '#F97316',
+        primairDonker: hslNaarHex(h, 88, 32),
+        secundair: hslNaarHex(h, 35, 17),
+        secundairLicht: hslNaarHex(h, 45, 24),
+        witWarm: hslNaarHex(h, 100, 97),
+    };
+}
 
 let state = {
     step: 'name',
@@ -132,7 +155,7 @@ let state = {
     payment: null,
     domainMode: 'sub', ownDomain: '',
     color: '#E63946',
-    theme: 'fresco',
+    theme: 'template1',
     logo: null,
     returnTo: null,
     submitted: false,
@@ -156,15 +179,42 @@ function save() {
 
 function normaliseerState() {
     if (!STEPS.includes(state.step)) state.step = 'name';
+    if (!THEMES.some((t) => t.id === state.theme)) state.theme = 'template1';
     if (!state.categories?.length) {
         state.categories = [{ id: 'klassiekers', emoji: '🍕', name: 'Klassiekers' }];
     }
     if (!state.categories.some((c) => c.id === state.activeCat)) state.activeCat = state.categories[0].id;
     state.menu = (state.menu || []).map((m) => ({
+        ...(m.id ? { id: m.id } : {}),
         cat: m.cat && state.categories.some((c) => c.id === m.cat) ? m.cat : state.categories[0].id,
-        icon: m.icon?.v ? m.icon : { t: 'e', v: m.emoji || '🍕' },
+        icon: m.icon?.t === 'p' && m.icon.v ? m.icon : null,   /* geen emoji-icoontjes meer: foto of niets */
         name: m.name, price: m.price,
     }));
+}
+
+/* Heb je al een echte menukaart in je dashboard, dan is die hier leidend:
+   je ziet en bewerkt in deze stap gewoon je huidige menu. */
+function laadEchteMenukaart() {
+    const echt = window.PP_MENU;
+    if (!Array.isArray(echt) || !echt.length) return;
+    const cats = [];
+    const catVoor = (naam) => {
+        let cat = cats.find((c) => c.name === naam);
+        if (!cat) {
+            cat = { id: 'cat-' + slugify(naam) + '-' + cats.length, emoji: '🍽️', name: naam };
+            cats.push(cat);
+        }
+        return cat.id;
+    };
+    state.menu = echt.map((m) => ({
+        id: m.id,
+        cat: catVoor(m.categorie || 'Menu'),
+        icon: m.foto ? { t: 'p', v: m.foto } : null,
+        name: m.naam,
+        price: ((m.prijs || 0) / 100).toFixed(2).replace('.', ','),
+    }));
+    state.categories = cats;
+    state.activeCat = cats[0].id;
 }
 
 function restore() {
@@ -172,6 +222,7 @@ function restore() {
        zodat je nooit iets opnieuw hoeft in te vullen */
     if (IS_AUTH && window.PP_SAVED && typeof window.PP_SAVED === 'object') {
         state = { ...state, ...window.PP_SAVED, step: 'name', returnTo: null, submitted: false };
+        laadEchteMenukaart();
         normaliseerState();
         return false;
     }
@@ -224,8 +275,40 @@ function show(id, { animate = true } = {}) {
     }
 }
 
-function next() {
+/* Bestaat er al een account met dit adres? Dan houden we het hier al tegen,
+   niet pas bij het versturen. De server telt het eigen account niet mee. */
+let emailCheckBezig = false;
+async function emailVrij() {
+    if (emailCheckBezig) return false;
+    emailCheckBezig = true;
+    try {
+        const res = await fetch('/onboarding/email-check', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify({ email: state.email.trim() }),
+        });
+        const data = res.ok ? await res.json() : { bestaat: false };
+        if (data.bestaat) {
+            const el = $('[data-err="email"]');
+            if (el) el.innerHTML = 'Er bestaat al een account met dit e-mailadres. <a href="/login" class="underline font-extrabold">Log hier in</a> om verder te gaan.';
+            nudge($('#inpEmail'));
+            return false;
+        }
+        return true;
+    } catch {
+        return true;   /* server even niet bereikbaar: bij het afronden checken we sowieso opnieuw */
+    } finally {
+        emailCheckBezig = false;
+    }
+}
+
+async function next() {
     if (!validate(state.step)) return;
+    if (state.step === 'contact' && ! await emailVrij()) return;
     if (state.returnTo) {
         const target = state.returnTo;
         state.returnTo = null;
@@ -319,7 +402,7 @@ function onEnterStep(id) {
         $$('[data-slug]').forEach((el) => (el.textContent = slugify(state.name) || 'jouwpizzeria'));
         runDomainCheck();
     }
-    if (id === 'style') { pvCart = {}; pvActiveCat = null; pvMode = 'bezorgen'; renderThemes(); renderColors(); renderLogoUI(); renderPreview(); }
+    if (id === 'style') { pvCart = {}; pvActiveCat = null; pvMode = 'bezorgen'; renderThemes(); renderColors(); renderLogoUI(); renderPreview(); obPagina = 'menu'; updateObPreview(); }
     if (id === 'overview') renderSummary();
 }
 
@@ -341,8 +424,8 @@ function formatPrice(raw) {
 }
 
 function iconHtml(item, cls) {
-    if (item.icon.t === 'p') return `<img src="${item.icon.v}" class="${cls} rounded-md object-cover inline-block align-middle" alt="">`;
-    return `<span class="inline-block align-middle">${item.icon.v}</span>`;
+    if (item.icon?.t === 'p') return `<img src="${item.icon.v}" class="${cls} rounded-md object-cover inline-block align-middle" alt="">`;
+    return '<span class="inline-block align-middle opacity-40">📷</span>';
 }
 
 function toast(msg, ms = 2600) {
@@ -472,7 +555,6 @@ function renderPresets() {
     $('#presetGrid').innerHTML = sug.presets.map((p, i) => {
         const added = state.menu.some((m) => m.cat === state.activeCat && m.name === p.name);
         return `<button type="button" class="preset-card ${added ? 'added' : ''}" data-preset="${i}">
-            <span class="p-emoji">${p.emoji}</span>
             <span class="p-name">${p.name}</span>
             <span class="p-price">€ ${p.price}</span>
         </button>`;
@@ -493,7 +575,7 @@ function renderMenuList(popIdx = null) {
     }
     list.innerHTML = items.map((m) =>
         `<div class="menu-row${m.gi === popIdx ? ' pop' : ''}">
-            <button type="button" class="m-icon" data-icon-idx="${m.gi}" title="Plaatje of foto kiezen">${iconHtml(m, 'w-full h-full')}</button>
+            <button type="button" class="m-icon" data-icon-idx="${m.gi}" title="Foto kiezen">${iconHtml(m, 'w-full h-full')}</button>
             <span class="m-name">${esc(m.name)}</span>
             <span class="font-extrabold text-cacao/40 text-sm">€</span>
             <input type="text" inputmode="decimal" value="${m.price}" data-price-idx="${m.gi}" aria-label="Prijs van ${esc(m.name)}">
@@ -516,9 +598,9 @@ function ensureCategory() {
     if (!state.activeCat) state.activeCat = state.categories[0].id;
 }
 
-function addMenuItem(emoji, name, price) {
+function addMenuItem(name, price) {
     ensureCategory();
-    state.menu.push({ cat: state.activeCat, icon: { t: 'e', v: emoji }, name, price });
+    state.menu.push({ cat: state.activeCat, icon: null, name, price });
     renderMenuUI(state.menu.length - 1);    /* alleen de nieuwe rij krijgt de pop-animatie */
     save();
 }
@@ -529,7 +611,7 @@ function addCustomItem() {
     const name = nameInp.value.trim();
     const price = formatPrice(priceInp.value) || '12,50';
     if (name.length < 2) { nudge(nameInp); return; }
-    addMenuItem('⭐', name, price);
+    addMenuItem(name, price);
     nameInp.value = '';
     priceInp.value = '';
     nameInp.focus();
@@ -538,18 +620,15 @@ function addCustomItem() {
 /* ── Icoon/foto-kiezer ────────────────────────────────────────── */
 
 function openIconPicker(idx) {
+    /* Geen emoji-kiezer meer: direct de bestandskiezer voor een eigen foto */
     pickerIdx = idx;
-    const picker = $('#iconPicker');
-    picker.classList.remove('hidden');
-    picker.classList.add('flex');
+    $('#photoInp').click();
 }
 
 function closeIconPicker() {
     pickerIdx = null;
-    $('#photoInp').value = '';
-    const picker = $('#iconPicker');
-    picker.classList.add('hidden');
-    picker.classList.remove('flex');
+    const inp = $('#photoInp');
+    if (inp) inp.value = '';
 }
 
 function setItemIcon(icon) {
@@ -603,20 +682,13 @@ function currentTheme() {
     return THEMES.find((t) => t.id === state.theme) || THEMES[0];
 }
 
-/* Mini-wireframes die de lay-out van elk template laten zien */
-const TILES = {
-    fresco: (c) => `<span class="flex flex-col gap-[3px] w-full h-full p-[6px]"><span class="h-3 rounded-b-[8px] rounded-t-[3px]" style="background:${c}"></span><span class="h-1.5 rounded-full bg-white"></span><span class="h-1.5 rounded-full bg-white"></span></span>`,
-    nero: (c) => `<span class="flex flex-col items-center justify-center gap-[3px] w-full h-full"><span class="w-2.5 h-2.5 rounded-full" style="border:1px solid #C9A96A"></span><span class="w-8" style="height:2px; background:#C9A96A"></span><span class="w-6" style="height:2px; background:rgba(255,255,255,.35)"></span></span>`,
-    napoli: (c) => `<span class="flex flex-col gap-[4px] w-full h-full p-[6px]"><span class="flex w-full" style="height:3px"><span style="flex:1;background:#2F8F46"></span><span style="flex:1;background:#fff"></span><span style="flex:1;background:#E63946"></span></span><span class="w-10 mx-auto" style="height:2px; background:#3A2A1A"></span><span class="w-full" style="height:2px; background:#D9C9A8"></span><span class="w-full" style="height:2px; background:#D9C9A8"></span></span>`,
-    puro: (c) => `<span class="grid grid-cols-2 gap-[3px] w-full h-full p-[6px]"><span class="rounded-[3px] bg-white"></span><span class="rounded-[3px] bg-white"></span><span class="rounded-[3px] bg-white"></span><span class="rounded-[3px]" style="background:${c}"></span></span>`,
-    blocco: (c) => `<span class="flex flex-col gap-[3px] w-full h-full p-[6px]"><span class="h-2.5" style="background:${c}; border:2px solid #111"></span><span class="h-2 bg-white" style="border:2px solid #111"></span></span>`,
-    retro: (c) => `<span class="flex flex-col gap-[3px] w-full h-full p-[5px]"><span class="h-3" style="background:${c}; border-radius:0 0 50% 50%"></span><span class="h-1.5 rounded-full bg-white"></span><span class="h-1.5 rounded-full" style="background:#E9CD9B"></span></span>`,
-};
+/* De 16:9 mini-weergaven staan in assets/stijl-tiles.js (gedeeld met het dashboard) */
+const TILES = window.PP_TILES;
 
 function renderThemes() {
     $('#themeGrid').innerHTML = THEMES.map((t) =>
         `<button type="button" class="theme-card ${state.theme === t.id ? 'selected' : ''}" data-theme="${t.id}">
-            <span class="t-tile" style="background:${t.itemBg}; ${t.itemBorder ? 'border:' + t.itemBorder + ';' : ''}">${TILES[t.id](state.color)}</span>
+            <span class="t-tile" style="background:${t.itemBg}; height:auto; aspect-ratio:16/9; padding:0;">${TILES[t.id](state.color)}</span>
             <span class="t-name">${t.emoji} ${t.name}</span>
             <span class="t-desc">${t.desc}</span>
         </button>`
@@ -633,16 +705,19 @@ function renderLogoUI() {
 }
 
 function renderColors() {
-    const isCustom = !COLORS.some((c) => c.hex === state.color);
-    const customStyle = isCustom
-        ? `background:${state.color}`
-        : 'background:conic-gradient(#E63946, #F5B301, #2F8F46, #2563EB, #7C3AED, #E63946)';
-    $('#colorGrid').innerHTML = COLORS.map((c) =>
-        `<button type="button" class="swatch ${state.color === c.hex ? 'selected' : ''}" data-color="${c.hex}"
-            style="background:${c.hex}" title="${c.name}" aria-label="${c.name}"></button>`
-    ).join('') +
-        `<button type="button" id="customSwatch" class="swatch ${isCustom ? 'selected' : ''}" style="${customStyle}"
-            title="Eigen kleur" aria-label="Eigen kleur kiezen">${isCustom ? '' : '<span class="swatch-plus">+</span>'}</button>`;
+    // Alleen de vaste kleuren: het bijbehorende palet leiden we zelf af
+    if (!KLEUREN.some((k) => k.hex === state.color)) state.color = KLEUREN[0].hex;
+    const lijst = KLEUREN.filter((k) => kleurTab === 'alle' || k.stijl === kleurTab);
+    const gekozen = KLEUREN.find((k) => k.hex === state.color);
+    $('#colorGrid').innerHTML = `
+        <div class="flex flex-wrap gap-2 mb-4">${KLEUR_TABS.map(([id, label]) =>
+            `<button type="button" data-kleurtab="${id}" class="keuze-chip !py-1.5 !px-3.5 !text-xs ${kleurTab === id ? 'aan' : ''}">${label}</button>`).join('')}
+        </div>
+        <div class="flex flex-wrap gap-3">${lijst.map((k) =>
+            `<button type="button" class="swatch ${state.color === k.hex ? 'selected' : ''}" data-color="${k.hex}"
+                style="background:${k.palet.primair}" title="${esc(k.naam)}" aria-label="${esc(k.naam)}"></button>`).join('')}
+        </div>
+        <p class="mt-3 text-sm font-extrabold text-cacao/50">${gekozen ? 'Gekozen: ' + esc(gekozen.naam) : ''}</p>`;
 }
 
 /* De preview is een werkende mini-bestelpagina: categorieën, plusjes, mandje */
@@ -700,8 +775,41 @@ function pvViewData() {
 const pvLogoInner = () => (state.logo ? `<img src="${state.logo}" class="w-full h-full object-cover" alt="">` : null);
 const pvQty = (key) => pvCart[key] || '+';
 
-/* Zes echt verschillende lay-outs voor de bestelpagina */
+/* Lay-outs voor de preview; Presto (template1) is de actieve */
 const PV_TEMPLATES = {
+    template1(d) {
+        const pal = paletVoor(d.color);
+        const logo = pvLogoInner() || `<span class="font-extrabold text-[11px]" style="color:${pal.primair}">${d.initial}</span>`;
+        const rows = d.shown.map((m) => `
+            <div class="flex items-center gap-2 rounded-[10px] bg-white px-2.5 py-2" style="border:1px solid rgba(0,0,0,.08)">
+                <span class="flex-1 min-w-0 text-left">
+                    <span class="block truncate text-[10px] font-bold" style="color:${pal.secundair}">${esc(m.name)}</span>
+                    <span class="block text-[9px] font-semibold" style="color:rgba(0,0,0,.4)">&euro; ${m.price}</span>
+                </span>
+                <button type="button" data-pv-add="${m.key}" class="w-5 h-5 shrink-0 rounded-full grid place-items-center text-[10px] font-bold bg-white" style="border:1px solid rgba(0,0,0,.12); color:${pal.primair}">${pvQty(m.key)}</button>
+            </div>`).join('');
+        return `
+        <div class="shrink-0 relative" style="background:${pal.witWarm}">
+            <div class="h-14" style="background:linear-gradient(135deg, ${pal.secundairLicht}, ${pal.secundair}); border-radius:0 0 14px 14px"></div>
+            <span class="absolute left-3 -bottom-3 w-8 h-8 rounded-[9px] overflow-hidden grid place-items-center bg-white shadow" style="border:2px solid rgba(255,255,255,.6)">${logo}</span>
+        </div>
+        <div class="shrink-0 px-3 pt-4 pb-2 text-left" style="background:${pal.witWarm}">
+            <p class="text-[12px] font-extrabold leading-tight" style="color:${pal.secundair}">${d.nm}</p>
+            <p class="text-[8px] font-bold" style="color:${pal.secundair}"><span style="color:${pal.primair}">★</span> 4,8 (1.200+)</p>
+            <div class="mt-1.5 px-2.5 py-1.5 rounded-full bg-white text-[8px] font-semibold" style="border:1px solid rgba(0,0,0,.08); color:rgba(0,0,0,.35)">Zoeken ${d.nm}</div>
+            <div class="mt-1.5 flex gap-1 overflow-hidden">
+                ${d.cats.map((c) => `<button type="button" data-pv-cat="${c.id}" class="shrink-0 px-2 py-1 rounded-full text-[8px] font-bold" style="${c.active ? `background:${pal.secundair}; color:#fff` : 'color:rgba(0,0,0,.5)'}">${c.name}</button>`).join('')}
+            </div>
+        </div>
+        <div class="flex-1 overflow-auto px-3 py-1.5 space-y-1.5" style="background:${pal.witWarm}">${rows}</div>
+        <div class="shrink-0 p-2 space-y-1.5" style="background:${pal.secundair}">
+            <div class="grid grid-cols-2 gap-1 rounded-full p-0.5" style="background:rgba(255,255,255,.12)">
+                <button type="button" data-pv-mode="bezorgen" class="py-1 rounded-full text-[8px] font-bold" style="${pvMode === 'bezorgen' ? `background:${pal.primair}; color:#fff` : 'color:rgba(255,255,255,.6)'}">Bezorgen</button>
+                <button type="button" data-pv-mode="afhalen" class="py-1 rounded-full text-[8px] font-bold" style="${pvMode === 'afhalen' ? `background:${pal.primair}; color:#fff` : 'color:rgba(255,255,255,.6)'}">Afhalen</button>
+            </div>
+            <div class="py-1.5 rounded-full text-center text-[9px] font-bold text-white" style="background:${pal.primair}">${d.count ? `Afrekenen (${d.count}) &euro; ${d.totalStr}` : 'Ga naar afrekenen'}</div>
+        </div>`;
+    },
     /* Speels: ronde banner, gecentreerd logo, pill-vormen */
     fresco(d) {
         const logo = pvLogoInner() || `<span class="font-display" style="color:${d.color}">${d.initial}</span>`;
@@ -719,7 +827,7 @@ const PV_TEMPLATES = {
         </div>
         <div class="p-3 pt-2 space-y-1.5 flex-1 overflow-hidden">
             ${d.shown.map((m) => `<div class="flex items-center justify-between gap-1.5 rounded-xl px-2.5 py-1.5 text-[9px] font-extrabold" style="background:#FFF6E8; color:#38221A">
-                <span class="flex items-center gap-1.5 min-w-0">${m.icon.t === 'p' ? iconHtml(m, 'w-4 h-4') : ''}<span class="truncate">${esc(m.name)}</span></span>
+                <span class="flex items-center gap-1.5 min-w-0">${m.icon?.t === 'p' ? iconHtml(m, 'w-4 h-4') : ''}<span class="truncate">${esc(m.name)}</span></span>
                 <span class="flex items-center gap-1.5 shrink-0"><span class="opacity-60">€ ${m.price}</span><button type="button" data-pv-add="${m.key}" class="pv-add rounded-full" style="background:${d.color}">${pvQty(m.key)}</button></span>
             </div>`).join('')}
         </div>
@@ -850,9 +958,37 @@ const PV_TEMPLATES = {
 };
 
 function renderPreview() {
+    /* De telefoon-preview is vervallen; de templatekaart toont de pagina al in het echt */
+    if (!$('#pvFrame')) return;
     const t = currentTheme();
-    $('#pvFrame').style.background = t.cardBg;
-    $('#pvScreen').innerHTML = (PV_TEMPLATES[t.id] || PV_TEMPLATES.fresco)(pvViewData());
+    $('#pvFrame').style.background = t.id === 'template1' ? paletVoor(state.color).witWarm : t.cardBg;
+    $('#pvScreen').innerHTML = (PV_TEMPLATES[t.id] || PV_TEMPLATES.template1)(pvViewData());
+}
+
+/* Live voorbeeld in de stijl-stap: de echte demopagina in gekozen template en kleur.
+   Kijken en scrollen mag; klikken in het voorbeeld wordt geblokkeerd. */
+let obPagina = 'menu';
+
+function updateObPreview() {
+    const frame = $('#obStijlPreview');
+    if (!frame) return;
+    document.querySelectorAll('[data-ob-pagina]').forEach((el) => el.classList.toggle('aan', el.dataset.obPagina === obPagina));
+    const laad = $('#obStijlLaad');
+    const klaar = () => { if (laad) laad.style.display = 'none'; };
+    if (laad) laad.style.display = '';
+    clearTimeout(updateObPreview.timer);
+    updateObPreview.timer = setTimeout(klaar, 12000);   /* vangnet als laden blijft hangen */
+    const q = `kleur=${encodeURIComponent(state.color)}`;
+    frame.src = obPagina === 'menu'
+        ? `${location.origin}/${state.theme}?${q}`
+        : `${location.origin}/${state.theme}/${obPagina === 'status' ? 'bestelling' : 'afrekenen'}?voorbeeld=1&${q}`;
+    frame.onload = () => {
+        try {
+            frame.contentDocument.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); }, true);
+        } catch { /* geen toegang: dan blijft het voorbeeld gewoon staan */ }
+        clearTimeout(updateObPreview.timer);
+        klaar();
+    };
 }
 
 /* ── Overzicht ────────────────────────────────────────────────── */
@@ -863,7 +999,7 @@ function renderSummary() {
     const orderUrl = state.domainMode === 'own' && state.ownDomain
         ? `bestellen.${cleanDomain(state.ownDomain)}`
         : `${slugify(state.name) || 'jouwpizzeria'}.bestelpagina.nl`;
-    const colorName = COLORS.find((c) => c.hex === state.color)?.name || 'Eigen kleur';
+    const colorName = KLEUREN.find((k) => k.hex === state.color)?.naam || 'Eigen kleur';
     const theme = currentTheme();
     const usedCats = state.categories.filter((c) => state.menu.some((m) => m.cat === c.id));
     const menuValue = state.menu.length
@@ -880,7 +1016,7 @@ function renderSummary() {
         { label: 'Menu',          value: menuValue, step: 'menu' },
         { label: 'Betaling',      value: payLabels[state.payment] || 'Regelen we samen later', step: 'payment' },
         { label: 'Bestel-adres',  value: esc(orderUrl), step: 'domain' },
-        { label: 'Template',      value: `${theme.emoji} ${esc(theme.name)}, <span class="inline-block w-4 h-4 rounded-full align-middle mx-1" style="background:${state.color}"></span>${colorName}${state.logo ? ', met logo' : ''}`, step: 'style' },
+        { label: 'Template',      value: `${theme.emoji} ${esc(theme.name)}, <span class="inline-block w-4 h-4 rounded-full align-middle mx-1" style="background:${paletVoor(state.color).primair}"></span>${colorName}${state.logo ? ', met logo' : ''}`, step: 'style' },
     ];
 
     $('#summary').innerHTML = rows.map((r) =>
@@ -1041,7 +1177,7 @@ function init() {
         if (!p) return;
         const idx = state.menu.findIndex((m) => m.cat === state.activeCat && m.name === p.name);
         if (idx >= 0) { state.menu.splice(idx, 1); renderMenuUI(); save(); }
-        else addMenuItem(p.emoji, p.name, p.price);
+        else addMenuItem(p.name, p.price);
     });
     $('#menuList').addEventListener('click', (e) => {
         const icon = e.target.closest('[data-icon-idx]');
@@ -1062,14 +1198,7 @@ function init() {
     });
     $('#customAdd').addEventListener('click', addCustomItem);
 
-    /* Icoon/foto-kiezer */
-    $('#emojiGrid').innerHTML = PICKER_EMOJIS.map((e) =>
-        `<button type="button" class="emoji-opt" data-emoji="${e}">${e}</button>`
-    ).join('');
-    $('#emojiGrid').addEventListener('click', (e) => {
-        const opt = e.target.closest('[data-emoji]');
-        if (opt) setItemIcon({ t: 'e', v: opt.dataset.emoji });
-    });
+    /* Foto-kiezer */
     $('#photoInp').addEventListener('change', async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -1079,10 +1208,6 @@ function init() {
         } catch {
             toast('Hmm, die afbeelding lukt niet. Probeer een andere 🙈');
         }
-    });
-    $('#pickerClose').addEventListener('click', closeIconPicker);
-    $('#iconPicker').addEventListener('click', (e) => {
-        if (e.target.id === 'iconPicker') closeIconPicker();
     });
 
     /* Betaling: automatisch door naar de volgende stap */
@@ -1137,15 +1262,24 @@ function init() {
         state.theme = card.dataset.theme;
         renderThemes();
         renderPreview();
+        updateObPreview();
         save();
     });
 
-    /* Kleuren */
+    /* Paginaknoppen bij het live voorbeeld */
+    document.addEventListener('click', (e) => {
+        const knop = e.target.closest('[data-ob-pagina]');
+        if (!knop) return;
+        obPagina = knop.dataset.obPagina;
+        updateObPreview();
+    });
+
+    /* Kleuren: filter-tabs en de kleurstijlen zelf */
     $('#colorGrid').addEventListener('click', (e) => {
-        if (e.target.closest('#customSwatch')) {
-            const inp = $('#customColor');
-            inp.value = /^#[0-9a-f]{6}$/i.test(state.color) ? state.color : '#E63946';
-            inp.click();
+        const tab = e.target.closest('[data-kleurtab]');
+        if (tab) {
+            kleurTab = tab.dataset.kleurtab;
+            renderColors();
             return;
         }
         const sw = e.target.closest('[data-color]');
@@ -1154,13 +1288,7 @@ function init() {
         renderColors();
         renderThemes();
         renderPreview();
-        save();
-    });
-    $('#customColor').addEventListener('input', (e) => {
-        state.color = e.target.value;
-        renderColors();
-        renderThemes();
-        renderPreview();
+        updateObPreview();
         save();
     });
 
@@ -1187,7 +1315,7 @@ function init() {
     });
 
     /* Mini-bestelpagina in de preview (één luisteraar voor alle templates) */
-    $('#pvScreen').addEventListener('click', (e) => {
+    $('#pvScreen')?.addEventListener('click', (e) => {
         const add = e.target.closest('[data-pv-add]');
         if (add) { pvCart[add.dataset.pvAdd] = (pvCart[add.dataset.pvAdd] || 0) + 1; renderPreview(); return; }
         const chip = e.target.closest('[data-pv-cat]');

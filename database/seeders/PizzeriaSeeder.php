@@ -59,7 +59,7 @@ class PizzeriaSeeder extends Seeder
             'order_mode' => 'bezorgen_afhalen',
             'lat' => 51.9926,
             'lng' => 5.9312,
-            'bezorgkosten' => [['km' => 2, 'kosten' => 100], ['km' => 4, 'kosten' => 250], ['km' => 7, 'kosten' => 400]],
+            'bezorgkosten' => [['km' => 2, 'kosten' => 100, 'min' => 1000], ['km' => 4, 'kosten' => 250, 'min' => 1500], ['km' => 7, 'kosten' => 400, 'min' => 2000]],
         ])->save();
 
         $formaat = ['naam' => 'Formaat', 'type' => 'een', 'keuzes' => [['naam' => '25 cm', 'prijs' => 0], ['naam' => '30 cm', 'prijs' => 250], ['naam' => '35 cm', 'prijs' => 450]]];

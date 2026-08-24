@@ -14,6 +14,18 @@ class OnboardingController extends Controller
      * De onboarding is tegelijk de registratie: bij afronden maken we het
      * account aan (of werken we het bij voor wie al ingelogd is).
      */
+    /** Snelle check bij de e-mailstap: bestaat er al een account met dit adres? */
+    public function emailCheck(Request $request)
+    {
+        $email = strtolower(trim((string) $request->input('email')));
+        $bestaat = $email !== ''
+            && User::whereRaw('LOWER(email) = ?', [$email])
+                ->when($request->user(), fn ($q) => $q->where('id', '!=', $request->user()->id))
+                ->exists();
+
+        return response()->json(['bestaat' => $bestaat]);
+    }
+
     public function finish(Request $request)
     {
         $request->validate([
@@ -36,6 +48,7 @@ class OnboardingController extends Controller
 
         if (Auth::check()) {
             Auth::user()->forceFill(['onboarding' => $state])->save();
+            $this->syncMenukaart(Auth::user(), $state);
 
             return response()->json(['ok' => true]);
         }
@@ -59,5 +72,47 @@ class OnboardingController extends Controller
         $request->session()->regenerate();
 
         return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Bestaat er al een echte menukaart, dan is de menustap in de onboarding
+     * daar een bewerking van: wijzigingen schrijven we terug. We syncen alleen
+     * als de stap uit de echte kaart is opgebouwd (items dragen dan een id mee),
+     * zodat verouderde onboarding-staat nooit een menukaart kan wissen.
+     */
+    private function syncMenukaart(User $user, array $state): void
+    {
+        $items = array_values($state['menu'] ?? []);
+        if (! $user->menuItems()->exists() || ! collect($items)->contains(fn ($m) => ! empty($m['id']))) {
+            return;
+        }
+
+        $cats = collect($state['categories'] ?? [])->keyBy('id');
+        $bestaand = $user->menuItems()->get()->keyBy('id');
+        $gezien = [];
+
+        foreach ($items as $i => $m) {
+            if (empty($m['name'])) {
+                continue;
+            }
+            $velden = [
+                'categorie' => $cats[$m['cat'] ?? '']['name'] ?? 'Menu',
+                'naam' => $m['name'],
+                'prijs' => (int) round(((float) str_replace(',', '.', (string) ($m['price'] ?? 0))) * 100),
+                'volgorde' => $i,
+            ];
+            if (($m['icon']['t'] ?? '') === 'p' && ! empty($m['icon']['v'])) {
+                $velden['foto'] = $m['icon']['v'];
+            }
+
+            if (! empty($m['id']) && $bestaand->has($m['id'])) {
+                $bestaand[$m['id']]->update($velden);
+                $gezien[] = (int) $m['id'];
+            } else {
+                $gezien[] = $user->menuItems()->create($velden)->id;
+            }
+        }
+
+        $user->menuItems()->whereNotIn('id', $gezien)->delete();
     }
 }

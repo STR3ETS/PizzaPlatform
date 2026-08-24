@@ -12,12 +12,12 @@ class BestelController extends Controller
 {
     /** Kleurpaletten per template, gelijk aan de previews in de onboarding */
     public const THEMAS = [
-        'fresco' => ['kopFont' => '"Lilita One", cursive', 'font' => 'family=Lilita+One', 'upper' => false, 'pagina' => '#FFF6E8', 'kaart' => '#FFFFFF', 'tekst' => '#38221A', 'prijs' => 'rgba(56,34,26,.55)', 'radius' => '.7rem', 'knopRadius' => '9999px', 'rand' => 'none', 'accentKop' => true],
-        'nero' => ['kopFont' => '"Playfair Display", Georgia, serif', 'font' => 'family=Playfair+Display:wght@500;600;700', 'upper' => false, 'pagina' => '#171310', 'kaart' => '#1C1512', 'tekst' => '#F3EAD9', 'prijs' => '#C9A96A', 'radius' => '.45rem', 'knopRadius' => '.45rem', 'rand' => 'none', 'accentKop' => false],
-        'napoli' => ['kopFont' => '"Libre Baskerville", "Times New Roman", serif', 'font' => 'family=Libre+Baskerville:wght@400;700', 'upper' => false, 'pagina' => '#FFF8E7', 'kaart' => '#FFFDF6', 'tekst' => '#3A2A1A', 'prijs' => '#8A6A3B', 'radius' => '.35rem', 'knopRadius' => '.35rem', 'rand' => '1px solid #E8DCC2', 'accentKop' => true],
-        'puro' => ['kopFont' => '"Nunito", sans-serif', 'font' => '', 'upper' => false, 'pagina' => '#F4F7F4', 'kaart' => '#FFFFFF', 'tekst' => '#233029', 'prijs' => '#5B6B60', 'radius' => '.7rem', 'knopRadius' => '.7rem', 'rand' => 'none', 'accentKop' => true],
-        'blocco' => ['kopFont' => '"Archivo Black", "Arial Black", sans-serif', 'font' => 'family=Archivo+Black', 'upper' => true, 'pagina' => '#FFFFFF', 'kaart' => '#FFFFFF', 'tekst' => '#111111', 'prijs' => '#111111', 'radius' => '0', 'knopRadius' => '0', 'rand' => '2px solid #111111', 'accentKop' => true],
-        'retro' => ['kopFont' => '"Alfa Slab One", "Cooper Black", serif', 'font' => 'family=Alfa+Slab+One', 'upper' => false, 'pagina' => '#F5E0B4', 'kaart' => '#FBEED3', 'tekst' => '#5B3A21', 'prijs' => '#8A5A2B', 'radius' => '1.1rem', 'knopRadius' => '2rem', 'rand' => 'none', 'accentKop' => true],
+        'fresco' => ['kopFont' => '"Lilita One", cursive', 'bodyFont' => "'Nunito', sans-serif", 'font' => 'family=Lilita+One', 'upper' => false, 'pagina' => '#FFF6E8', 'kaart' => '#FFFFFF', 'tekst' => '#38221A', 'prijs' => 'rgba(56,34,26,.55)', 'radius' => '.7rem', 'knopRadius' => '9999px', 'rand' => 'none', 'accentKop' => true],
+        'nero' => ['kopFont' => '"Playfair Display", Georgia, serif', 'bodyFont' => "Georgia, 'Times New Roman', serif", 'font' => 'family=Playfair+Display:wght@500;600;700', 'upper' => false, 'pagina' => '#171310', 'kaart' => '#1C1512', 'tekst' => '#F3EAD9', 'prijs' => '#C9A96A', 'radius' => '.45rem', 'knopRadius' => '.45rem', 'rand' => 'none', 'accentKop' => false],
+        'napoli' => ['kopFont' => '"Libre Baskerville", "Times New Roman", serif', 'bodyFont' => "'Libre Baskerville', Georgia, serif", 'font' => 'family=Libre+Baskerville:ital,wght@0,400;0,700;1,400', 'upper' => false, 'pagina' => '#FFF8E7', 'kaart' => '#FFFDF6', 'tekst' => '#3A2A1A', 'prijs' => '#8A6A3B', 'radius' => '.35rem', 'knopRadius' => '.35rem', 'rand' => '1px solid #E8DCC2', 'accentKop' => true],
+        'puro' => ['kopFont' => '"Nunito", sans-serif', 'bodyFont' => "'Nunito', sans-serif", 'font' => '', 'upper' => false, 'pagina' => '#F4F7F4', 'kaart' => '#FFFFFF', 'tekst' => '#233029', 'prijs' => '#5B6B60', 'radius' => '.7rem', 'knopRadius' => '.7rem', 'rand' => 'none', 'accentKop' => true],
+        'blocco' => ['kopFont' => '"Archivo Black", "Arial Black", sans-serif', 'bodyFont' => 'Arial, Helvetica, sans-serif', 'font' => 'family=Archivo+Black', 'upper' => true, 'pagina' => '#FFFFFF', 'kaart' => '#FFFFFF', 'tekst' => '#111111', 'prijs' => '#111111', 'radius' => '0', 'knopRadius' => '0', 'rand' => '2px solid #111111', 'accentKop' => true],
+        'retro' => ['kopFont' => '"Alfa Slab One", "Cooper Black", serif', 'bodyFont' => "'Nunito', sans-serif", 'font' => 'family=Alfa+Slab+One', 'upper' => false, 'pagina' => '#F5E0B4', 'kaart' => '#FBEED3', 'tekst' => '#5B3A21', 'prijs' => '#8A5A2B', 'radius' => '1.1rem', 'knopRadius' => '2rem', 'rand' => 'none', 'accentKop' => true],
     ];
 
     private const DAGEN = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'];
@@ -56,6 +56,9 @@ class BestelController extends Controller
      */
     public static function fotoVoor($item): string
     {
+        if (!empty($item->foto)) {
+            return $item->foto;
+        }
         $naam = mb_strtolower($item->naam);
         $opNaam = [
             'margherita' => 'margherita.jpg',
@@ -185,7 +188,11 @@ class BestelController extends Controller
 
     public function home(string $slug)
     {
-        $d = $this->gegevens($this->pizzeria($slug), $slug);
+        $user = $this->pizzeria($slug);
+        if (in_array(($user->onboarding ?? [])['theme'] ?? 'template1', ['template1', 'template2', 'template3', 'template4'], true)) {
+            return $this->t1Home($user, '/bestellen/' . $slug);
+        }
+        $d = $this->gegevens($user, $slug);
         $d['toppers'] = $d['menu']->take(6);
 
         return view('bestel.home', $d);
@@ -193,7 +200,11 @@ class BestelController extends Controller
 
     public function menu(string $slug)
     {
-        $d = $this->gegevens($this->pizzeria($slug), $slug);
+        $user = $this->pizzeria($slug);
+        if (in_array(($user->onboarding ?? [])['theme'] ?? 'template1', ['template1', 'template2', 'template3', 'template4'], true)) {
+            return redirect('/bestellen/' . $slug);
+        }
+        $d = $this->gegevens($user, $slug);
         $d['menuJsonld'] = $this->menuJsonLd($d['menu']);
         $d['menuJs'] = $d['menu']->map(fn ($m) => [
             'id' => $m->id,
@@ -212,7 +223,12 @@ class BestelController extends Controller
 
     public function contact(string $slug)
     {
-        return view('bestel.contact', $this->gegevens($this->pizzeria($slug), $slug));
+        $user = $this->pizzeria($slug);
+        if (in_array(($user->onboarding ?? [])['theme'] ?? 'template1', ['template1', 'template2', 'template3', 'template4'], true)) {
+            return redirect('/bestellen/' . $slug);
+        }
+
+        return view('bestel.contact', $this->gegevens($user, $slug));
     }
 
     /** Bestelling plaatsen: prijzen worden altijd server-side opnieuw berekend */
@@ -285,6 +301,10 @@ class BestelController extends Controller
                     if (! $tier) {
                         return response()->json(['ok' => false, 'melding' => 'Helaas, dit adres ligt buiten ons bezorggebied (' . number_format($afstand, 1, ',', '') . ' km).'], 422);
                     }
+                    $minimum = (int) ($tier['min'] ?? 0);
+                    if ($minimum > 0 && $totaal < $minimum) {
+                        return response()->json(['ok' => false, 'melding' => 'Voor bezorging op jouw adres geldt een minimaal bestelbedrag van € ' . number_format($minimum / 100, 2, ',', '.') . '.'], 422);
+                    }
                     $bezorgkosten = (int) $tier['kosten'];
                 }
             }
@@ -308,6 +328,507 @@ class BestelController extends Controller
         ]);
 
         return response()->json(['ok' => true, 'nummer' => $order->nummer, 'totaal' => $totaal, 'bezorgkosten' => $bezorgkosten]);
+    }
+
+    /* ── Template1 (Presto): de moderne bestelshop ─────────────────────────── */
+
+    /** Alle kleurstijlen: per kleur een handgemaakt palet, plus een stijl-tab om op te filteren */
+    public const KLEUREN = [
+        // Warm
+        ['hex' => '#E63946', 'naam' => 'Tomatenrood', 'stijl' => 'warm', 'palet' => ['primair' => '#E63946', 'primairDonker' => '#B02A35', 'secundair' => '#38151A', 'secundairLicht' => '#54262C', 'witWarm' => '#FFF6F5']],
+        ['hex' => '#C65D3B', 'naam' => 'Terracotta', 'stijl' => 'warm', 'palet' => ['primair' => '#C65D3B', 'primairDonker' => '#A04528', 'secundair' => '#33190F', 'secundairLicht' => '#4E2A1B', 'witWarm' => '#FBF4EF']],
+        ['hex' => '#F97316', 'naam' => 'Oranje', 'stijl' => 'warm', 'palet' => ['primair' => '#F97316', 'primairDonker' => '#C2410C', 'secundair' => '#3E2716', 'secundairLicht' => '#5B3A21', 'witWarm' => '#FFF7F0']],
+        ['hex' => '#F5B301', 'naam' => 'Goudgeel', 'stijl' => 'warm', 'palet' => ['primair' => '#E8A400', 'primairDonker' => '#B57F00', 'secundair' => '#332708', 'secundairLicht' => '#4F3D12', 'witWarm' => '#FFFAEC']],
+        ['hex' => '#E8604C', 'naam' => 'Koraal', 'stijl' => 'warm', 'palet' => ['primair' => '#E8604C', 'primairDonker' => '#C24634', 'secundair' => '#3A1712', 'secundairLicht' => '#57291F', 'witWarm' => '#FFF6F4']],
+        ['hex' => '#38221A', 'naam' => 'Karamelbruin', 'stijl' => 'warm', 'palet' => ['primair' => '#9C5B2E', 'primairDonker' => '#7A4522', 'secundair' => '#2A1810', 'secundairLicht' => '#44301F', 'witWarm' => '#FAF5F0']],
+        // Fris
+        ['hex' => '#2F8F46', 'naam' => 'Basilicumgroen', 'stijl' => 'fris', 'palet' => ['primair' => '#2F8F46', 'primairDonker' => '#227235', 'secundair' => '#132B1B', 'secundairLicht' => '#25462F', 'witWarm' => '#F3FAF4']],
+        ['hex' => '#12805C', 'naam' => 'Smaragd', 'stijl' => 'fris', 'palet' => ['primair' => '#12805C', 'primairDonker' => '#0D6247', 'secundair' => '#0F291F', 'secundairLicht' => '#1D4534', 'witWarm' => '#F2FAF6']],
+        ['hex' => '#0F8A80', 'naam' => 'Zeegroen', 'stijl' => 'fris', 'palet' => ['primair' => '#0F8A80', 'primairDonker' => '#0B6B63', 'secundair' => '#0E2B28', 'secundairLicht' => '#1C4642', 'witWarm' => '#F1FAF9']],
+        ['hex' => '#6B7A3A', 'naam' => 'Olijf', 'stijl' => 'fris', 'palet' => ['primair' => '#6B7A3A', 'primairDonker' => '#52602B', 'secundair' => '#22271A', 'secundairLicht' => '#3A4228', 'witWarm' => '#F9FAF2']],
+        // Modern
+        ['hex' => '#2563EB', 'naam' => 'Kobaltblauw', 'stijl' => 'modern', 'palet' => ['primair' => '#2563EB', 'primairDonker' => '#1A47B8', 'secundair' => '#0F1D3D', 'secundairLicht' => '#1D3263', 'witWarm' => '#F4F8FF']],
+        ['hex' => '#4F46E5', 'naam' => 'Indigo', 'stijl' => 'modern', 'palet' => ['primair' => '#4F46E5', 'primairDonker' => '#3730A3', 'secundair' => '#191A3C', 'secundairLicht' => '#2B2C5E', 'witWarm' => '#F5F5FF']],
+        ['hex' => '#7C3AED', 'naam' => 'Paars', 'stijl' => 'modern', 'palet' => ['primair' => '#7C3AED', 'primairDonker' => '#5B21B6', 'secundair' => '#221338', 'secundairLicht' => '#37215A', 'witWarm' => '#FAF7FF']],
+        ['hex' => '#D6336C', 'naam' => 'Framboos', 'stijl' => 'modern', 'palet' => ['primair' => '#D6336C', 'primairDonker' => '#A82454', 'secundair' => '#380F20', 'secundairLicht' => '#551C33', 'witWarm' => '#FFF5F8']],
+        ['hex' => '#33658A', 'naam' => 'Staalblauw', 'stijl' => 'modern', 'palet' => ['primair' => '#33658A', 'primairDonker' => '#274E6B', 'secundair' => '#14222E', 'secundairLicht' => '#24384A', 'witWarm' => '#F3F7FA']],
+        ['hex' => '#1F2937', 'naam' => 'Antraciet', 'stijl' => 'modern', 'palet' => ['primair' => '#1F2937', 'primairDonker' => '#111827', 'secundair' => '#111827', 'secundairLicht' => '#2A3441', 'witWarm' => '#F7F8F9']],
+        // Klassiek
+        ['hex' => '#7D1D3F', 'naam' => 'Bordeaux', 'stijl' => 'klassiek', 'palet' => ['primair' => '#7D1D3F', 'primairDonker' => '#5E1630', 'secundair' => '#260A14', 'secundairLicht' => '#421426', 'witWarm' => '#FBF4F6']],
+        ['hex' => '#1F5130', 'naam' => 'Flessengroen', 'stijl' => 'klassiek', 'palet' => ['primair' => '#1F5130', 'primairDonker' => '#173D24', 'secundair' => '#0F2015', 'secundairLicht' => '#1E3626', 'witWarm' => '#F4F8F5']],
+        ['hex' => '#1E3A8A', 'naam' => 'Marineblauw', 'stijl' => 'klassiek', 'palet' => ['primair' => '#1E3A8A', 'primairDonker' => '#172C69', 'secundair' => '#101A34', 'secundairLicht' => '#1E2C52', 'witWarm' => '#F4F6FB']],
+        ['hex' => '#6F4425', 'naam' => 'Espresso', 'stijl' => 'klassiek', 'palet' => ['primair' => '#6F4425', 'primairDonker' => '#55341C', 'secundair' => '#241509', 'secundairLicht' => '#3C2814', 'witWarm' => '#F9F5F1']],
+    ];
+
+    /** Van één hoofdkleur naar het volledige palet; onbekende kleuren worden afgeleid */
+    public static function paletVoor(?string $hex): array
+    {
+        $hex = ($hex && preg_match('/^#[0-9a-fA-F]{6}$/', $hex)) ? $hex : '#F97316';
+        foreach (self::KLEUREN as $kleur) {
+            if (strcasecmp($kleur['hex'], $hex) === 0) {
+                return $kleur['palet'];
+            }
+        }
+        $r = hexdec(substr($hex, 1, 2)) / 255;
+        $g = hexdec(substr($hex, 3, 2)) / 255;
+        $b = hexdec(substr($hex, 5, 2)) / 255;
+        $max = max($r, $g, $b);
+        $min = min($r, $g, $b);
+        $h = 0.0;
+        if ($max !== $min) {
+            $d = $max - $min;
+            if ($max === $r) {
+                $h = fmod(($g - $b) / $d + ($g < $b ? 6 : 0), 6);
+            } elseif ($max === $g) {
+                $h = ($b - $r) / $d + 2;
+            } else {
+                $h = ($r - $g) / $d + 4;
+            }
+            $h *= 60;
+        }
+        $maak = function (float $s, float $l) use ($h): string {
+            $s /= 100;
+            $l /= 100;
+            $f = function (float $n) use ($h, $s, $l): float {
+                $k = fmod($n + $h / 30, 12);
+                $a = $s * min($l, 1 - $l);
+
+                return $l - $a * max(-1, min($k - 3, min(9 - $k, 1)));
+            };
+
+            return sprintf('#%02x%02x%02x', (int) round($f(0) * 255), (int) round($f(8) * 255), (int) round($f(4) * 255));
+        };
+
+        return [
+            'primair' => $hex,
+            'primairDonker' => $maak(88, 32),
+            'secundair' => $maak(35, 17),
+            'secundairLicht' => $maak(45, 24),
+            'witWarm' => $maak(100, 97),
+        ];
+    }
+
+    /** Welk Presto-familielid er getoond wordt: template1 (Presto) of template2 (Notte) */
+    private function t1Thema(User $user, ?string $forceer = null): string
+    {
+        // ?thema= toont een ander template als voorbeeld zonder iets op te slaan (stijl-popup)
+        $thema = $forceer ?? request('thema') ?? (($user->onboarding ?? [])['theme'] ?? 'template1');
+
+        return in_array($thema, ['template1', 'template2', 'template3', 'template4'], true) ? $thema : 'template1';
+    }
+
+    /** Gedeelde basis voor alle template1-pagina's */
+    private function t1Basis(User $user, string $basis): array
+    {
+        $ob = $user->onboarding ?? [];
+
+        // ?kleur= toont een andere kleurstijl als voorbeeld zonder iets op te slaan (stijl-popup)
+        $kleur = request('kleur');
+        if (! is_string($kleur) || ! preg_match('/^#[0-9A-Fa-f]{6}$/', $kleur)) {
+            $kleur = null;
+        }
+
+        return [
+            'basis' => $basis,
+            'slug' => $user->slug ?: 'demo',
+            'logo' => $ob['logo'] ?? null,
+            'naam' => $ob['name'] ?? 'Pizzeria',
+            'palet' => self::paletVoor($kleur ?? $ob['color'] ?? null),
+        ];
+    }
+
+    /** Openingstijd van een dag, rekening houdend met tijden per dag */
+    private function t1Tijden(array $ob, string $dagKey): array
+    {
+        return (($ob['hoursMode'] ?? 'same') === 'perday' && isset($ob['dayTimes'][$dagKey]))
+            ? $ob['dayTimes'][$dagKey]
+            : ['open' => $ob['open'] ?? '16:00', 'close' => $ob['close'] ?? '21:30'];
+    }
+
+    /** Open of gesloten, plus voorbestel-sloten zolang de zaak dicht is */
+    private function t1OpenInfo(User $user): array
+    {
+        $ob = $user->onboarding ?? [];
+        $nu = now();
+        $openNu = false;
+        $slots = [];
+        for ($i = 0; $i < 7 && $slots === [] && ! $openNu; $i++) {
+            $dag = $nu->copy()->addDays($i);
+            $key = self::DAGEN[$dag->dayOfWeek];
+            if (! (($ob['days'] ?? [])[$key] ?? false)) {
+                continue;
+            }
+            $tijd = $this->t1Tijden($ob, $key);
+            $van = $dag->copy()->setTimeFromTimeString($tijd['open']);
+            $tot = $dag->copy()->setTimeFromTimeString($tijd['close']);
+            if ($i === 0 && $nu->between($van, $tot)) {
+                $openNu = true;
+                break;
+            }
+            if ($i === 0 && $nu->gt($tot)) {
+                continue;
+            }
+            $label = $i === 0 ? 'Vandaag' : ($i === 1 ? 'Morgen' : self::DAGNAMEN[$key]);
+            for ($slot = $van->copy(); $slot->lte($tot) && count($slots) < 24; $slot->addMinutes(30)) {
+                $slots[] = $label . ' ' . $slot->format('H:i');
+            }
+        }
+
+        // Online bepaalt of er besteld kan worden; de tijden bepalen alleen de voorbestel-sloten.
+        // Offline binnen openingstijden is een pauze: dan ook geen voorbestellingen.
+        return [
+            'open' => (bool) $user->is_online,
+            'pauze' => ! $user->is_online && $openNu,
+            'slots' => $user->is_online || $openNu ? [] : $slots,
+        ];
+    }
+
+    /** Sloten voor de gewenste bezorgtijd op de afrekenpagina */
+    private function t1AfrekenSlots(User $user): array
+    {
+        $ob = $user->onboarding ?? [];
+        $nu = now();
+        $direct = false;
+        $slots = [];
+        for ($i = 0; $i < 7 && count($slots) < 24; $i++) {
+            $dag = $nu->copy()->addDays($i);
+            $key = self::DAGEN[$dag->dayOfWeek];
+            if (! (($ob['days'] ?? [])[$key] ?? false)) {
+                continue;
+            }
+            $tijd = $this->t1Tijden($ob, $key);
+            $van = $dag->copy()->setTimeFromTimeString($tijd['open']);
+            $tot = $dag->copy()->setTimeFromTimeString($tijd['close']);
+            $begin = $van->copy();
+            if ($i === 0) {
+                if ($nu->between($van, $tot)) {
+                    $direct = true;
+                }
+                $vroegste = $nu->copy()->addMinutes(30);
+                $vroegste->second(0);
+                $minuut = $vroegste->minute;
+                $vroegste->minute(0);
+                if ($minuut > 30) {
+                    $vroegste->addHour();
+                } elseif ($minuut > 0) {
+                    $vroegste->minute(30);
+                }
+                $begin = $vroegste->gt($van) ? $vroegste : $van;
+                if ($begin->gt($tot)) {
+                    continue;
+                }
+            }
+            $label = $i === 0 ? 'Vandaag' : ($i === 1 ? 'Morgen' : self::DAGNAMEN[$key]);
+            for ($slot = $begin->copy(); $slot->lte($tot) && count($slots) < 24; $slot->addMinutes(30)) {
+                $slots[] = $label . ' ' . $slot->format('H:i');
+            }
+        }
+
+        // "Zo snel mogelijk" kan alleen als de zaak online staat
+        return ['direct' => (bool) $user->is_online, 'slots' => $slots];
+    }
+
+    /** De shop zelf: menu, tarieven en openingsstatus */
+    public function t1Home(User $user, string $basis, ?string $forceer = null)
+    {
+        $thema = $this->t1Thema($user, $forceer);
+        $items = $user->menuItems()->where('actief', true)->orderBy('volgorde')->orderBy('id')->get();
+        $tiers = collect($user->bezorgkosten ?? [])->sortBy('km')->values();
+
+        return view("templates.$thema.$thema", [
+            ...$this->t1Basis($user, $basis),
+            'categorieen' => $items->pluck('categorie')->unique()->values(),
+            'menu' => $items->groupBy('categorie')->map(fn ($groep) => $groep->map(fn ($item) => [
+                'id' => $item->id,
+                'naam' => $item->naam,
+                'beschrijving' => $item->beschrijving,
+                'prijs' => number_format($item->prijs / 100, 2, ',', '.'),
+                'foto' => $item->foto ?: null,
+                'allergenen' => $item->allergenen ?? [],
+            ])),
+            'menuJs' => $items->mapWithKeys(fn ($item) => [$item->id => [
+                'naam' => $item->naam,
+                'beschrijving' => $item->beschrijving,
+                'prijsCenten' => $item->prijs,
+                'foto' => $item->foto ?: null,
+                'allergenen' => $item->allergenen ?? [],
+                'opties' => $item->opties ?? [],
+            ]]),
+            'bezorg' => ['lat' => $user->lat, 'lng' => $user->lng, 'tiers' => $tiers],
+            'laagsteTier' => $tiers->first(),
+            'openInfo' => $this->t1OpenInfo($user),
+            'overInfo' => $this->t1OverInfo($user),
+        ]);
+    }
+
+    /** Gegevens voor de Over-popup: adres, openingstijden per dag */
+    private function t1OverInfo(User $user): array
+    {
+        $ob = $user->onboarding ?? [];
+
+        return [
+            'straat' => $ob['street'] ?? '',
+            'postcode' => $ob['zip'] ?? '',
+            'plaats' => $ob['city'] ?? '',
+            'dagen' => collect(self::DAGNAMEN)->map(function ($naam, $key) use ($ob) {
+                $tijd = $this->t1Tijden($ob, $key);
+
+                return [
+                    'naam' => $naam,
+                    'open' => (bool) (($ob['days'] ?? [])[$key] ?? false),
+                    'van' => $tijd['open'],
+                    'tot' => $tijd['close'],
+                ];
+            })->values(),
+        ];
+    }
+
+    /** Demo-mandje voor het live voorbeeld in het dashboard (?voorbeeld=1) */
+    private function t1VoorbeeldMand(User $user)
+    {
+        return $user->menuItems()->where('actief', true)->take(3)->get()->values()
+            ->map(fn ($item, $i) => [
+                'sleutel' => 'voorbeeld-' . $item->id,
+                'naam' => $item->naam,
+                'prijsCenten' => (int) $item->prijs,
+                'aantal' => $i === 0 ? 2 : 1,
+                'opties' => [],
+                'opmerking' => '',
+            ]);
+    }
+
+    /** Gerechtfoto's op naam, voor de thumbnails in de bestelsamenvatting */
+    private function t1Fotos(User $user)
+    {
+        return $user->menuItems()->where('actief', true)->get()
+            ->mapWithKeys(fn ($item) => [$item->naam => $item->foto ?: null])
+            ->filter();
+    }
+
+    public function t1Afrekenen(User $user, string $basis, ?string $forceer = null)
+    {
+        $thema = $this->t1Thema($user, $forceer);
+        $tijden = $this->t1AfrekenSlots($user);
+
+        return view("templates.$thema.$thema-afrekenen", [
+            ...$this->t1Basis($user, $basis),
+            'direct' => $tijden['direct'],
+            'slots' => $tijden['slots'],
+            'bezorg' => ['lat' => $user->lat, 'lng' => $user->lng, 'tiers' => collect($user->bezorgkosten ?? [])->sortBy('km')->values()],
+            'fotos' => $this->t1Fotos($user),
+            'voorbeeldMand' => request('voorbeeld') ? $this->t1VoorbeeldMand($user) : null,
+        ]);
+    }
+
+    public function t1Bestelling(User $user, string $basis, ?string $token = null, ?string $forceer = null)
+    {
+        $thema = $this->t1Thema($user, $forceer);
+        $ob = $user->onboarding ?? [];
+
+        // Demo-bestelling voor het live voorbeeld in het dashboard (?voorbeeld=1)
+        $voorbeeld = null;
+        if (request('voorbeeld')) {
+            $items = $this->t1VoorbeeldMand($user);
+            $subtotaal = $items->sum(fn ($r) => $r['prijsCenten'] * $r['aantal']);
+            $ob = $user->onboarding ?? [];
+            $voorbeeld = [
+                'token' => null,
+                'nummer' => 241,
+                'items' => $items,
+                'type' => 'bezorgen',
+                'klant' => ['naam' => 'Anna'],
+                'adres' => 'Voorbeeldstraat 12, ' . ($ob['city'] ?? 'Arnhem'),
+                'lat' => $user->lat !== null ? (float) $user->lat + 0.012 : null,
+                'lng' => $user->lng !== null ? (float) $user->lng + 0.006 : null,
+                'subtotaal' => $subtotaal,
+                'kosten' => 250,
+                'fooi' => 0,
+                'totaal' => $subtotaal + 250,
+                'tijd' => 'Zo snel mogelijk',
+                'geplaatst' => now()->getTimestampMs(),
+                'opmerking' => '',
+            ];
+        }
+
+        return view("templates.$thema.$thema-bestelling", [
+            ...$this->t1Basis($user, $basis),
+            'token' => $token,
+            'fotos' => $this->t1Fotos($user),
+            'voorbeeldBestelling' => $voorbeeld,
+            'bezorg' => ['lat' => $user->lat, 'lng' => $user->lng],
+            'adresZaak' => trim(($ob['street'] ?? '') !== '' ? ($ob['street'] . ', ' . trim(($ob['zip'] ?? '') . ' ' . ($ob['city'] ?? ''))) : ''),
+            'telefoonZaak' => $ob['phone'] ?? null,
+            'mailZaak' => $ob['email'] ?? $user->email,
+        ]);
+    }
+
+    /** De bestelling terughalen op token, zodat de statuspagina ook zonder lokale opslag werkt */
+    public function t1OrderData(User $user, Request $request)
+    {
+        $order = $user->orders()->where('token', (string) $request->query('token'))->first();
+        abort_unless($order, 404);
+
+        $kosten = 0;
+        $fooi = 0;
+        $items = [];
+        foreach ($order->items as $item) {
+            if ($item['naam'] === 'Bezorgkosten') {
+                $kosten = (int) $item['prijs'];
+                continue;
+            }
+            if ($item['naam'] === 'Fooi bezorger') {
+                $fooi = (int) $item['prijs'];
+                continue;
+            }
+            $items[] = [
+                'naam' => $item['naam'],
+                'prijsCenten' => (int) $item['prijs'],
+                'aantal' => (int) $item['aantal'],
+                'opties' => array_map(fn ($o) => ['naam' => $o['naam'], 'prijs' => (int) $o['prijs']], $item['opties'] ?? []),
+            ];
+        }
+
+        return response()->json([
+            'nummer' => $order->nummer,
+            'token' => $order->token,
+            'geplaatst' => $order->created_at->valueOf(),
+            'type' => $order->type,
+            'adres' => $order->adres,
+            'lat' => null,
+            'lng' => null,
+            'tijd' => '',
+            'klant' => ['naam' => $order->klant],
+            'opmerking' => '',
+            'items' => $items,
+            'subtotaal' => $order->totaal - $kosten - $fooi,
+            'kosten' => $kosten,
+            'fooi' => $fooi,
+            'totaal' => $order->totaal,
+        ]);
+    }
+
+    public function t1Status(User $user, Request $request)
+    {
+        $order = $request->query('token')
+            ? $user->orders()->where('token', (string) $request->query('token'))->first()
+            : $user->orders()->where('nummer', (int) $request->query('nummer'))->orderByDesc('id')->first();
+        abort_unless($order, 404);
+
+        return response()->json([
+            'status' => $order->status,
+            'eta' => $order->eta_minuten,
+            'rond' => $order->eta_minuten ? $order->created_at->clone()->addMinutes((int) $order->eta_minuten)->format('H:i') : null,
+            'bezorgdOm' => $order->status === 'bezorgd' ? $order->updated_at->format('H:i') : null,
+        ]);
+    }
+
+    /** Bestelling plaatsen vanuit template1: prijzen altijd server-side opnieuw opgebouwd */
+    public function t1Plaats(User $user, Request $request)
+    {
+        $data = $request->validate([
+            'type' => ['required', 'in:bezorgen,afhalen'],
+            'klant' => ['required', 'string', 'max:80'],
+            'adres' => ['nullable', 'string', 'max:160'],
+            'tijd' => ['nullable', 'string', 'max:40'],
+            'opmerking' => ['nullable', 'string', 'max:300'],
+            'bezorgkosten' => ['required', 'integer', 'min:0', 'max:2500'],
+            'fooi' => ['required', 'integer', 'min:0', 'max:10000'],
+            'items' => ['required', 'array', 'min:1', 'max:30'],
+            'items.*.id' => ['required', 'integer'],
+            'items.*.aantal' => ['required', 'integer', 'min:1', 'max:20'],
+            'items.*.opties' => ['sometimes', 'array', 'max:15'],
+            'items.*.opties.*.naam' => ['required', 'string', 'max:60'],
+            'items.*.opties.*.prijs' => ['required', 'integer', 'min:0', 'max:9900'],
+            'items.*.opmerking' => ['sometimes', 'nullable', 'string', 'max:140'],
+        ]);
+
+        $open = $this->t1OpenInfo($user);
+        if (! $open['open'] && ($open['pauze'] || ($data['tijd'] ?? '') === '')) {
+            return response()->json(['ok' => false, 'melding' => 'De zaak neemt op dit moment geen bestellingen aan.'], 422);
+        }
+
+        $menuItems = $user->menuItems()->where('actief', true)->get()->keyBy('id');
+        $orderItems = [];
+        $totaal = 0;
+        $regelOpmerkingen = [];
+        foreach ($data['items'] as $regel) {
+            $item = $menuItems->get($regel['id']);
+            if (! $item) {
+                return response()->json(['ok' => false, 'melding' => 'Een gerecht in je mandje staat niet meer op de kaart.'], 422);
+            }
+            $keuzes = collect($item->opties ?? [])->flatMap(fn ($groep) => $groep['keuzes'])->keyBy('naam');
+            $opties = [];
+            $regelPrijs = $item->prijs;
+            foreach ($regel['opties'] ?? [] as $optie) {
+                $keuze = $keuzes->get($optie['naam']);
+                if (! $keuze) {
+                    return response()->json(['ok' => false, 'melding' => 'Een gekozen optie bestaat niet meer.'], 422);
+                }
+                $opties[] = ['naam' => $keuze['naam'], 'prijs' => (int) $keuze['prijs'], 'type' => 'extra'];
+                $regelPrijs += (int) $keuze['prijs'];
+            }
+            $orderItems[] = ['naam' => $item->naam, 'prijs' => $item->prijs, 'aantal' => (int) $regel['aantal'], 'opties' => $opties];
+            $totaal += $regelPrijs * (int) $regel['aantal'];
+            if (! empty($regel['opmerking'])) {
+                $regelOpmerkingen[] = $item->naam . ': ' . $regel['opmerking'];
+            }
+        }
+        if ($data['type'] === 'bezorgen' && $data['bezorgkosten'] > 0) {
+            $orderItems[] = ['naam' => 'Bezorgkosten', 'prijs' => (int) $data['bezorgkosten'], 'aantal' => 1, 'opties' => []];
+            $totaal += (int) $data['bezorgkosten'];
+        }
+        if ($data['fooi'] > 0) {
+            $orderItems[] = ['naam' => 'Fooi bezorger', 'prijs' => (int) $data['fooi'], 'aantal' => 1, 'opties' => []];
+            $totaal += (int) $data['fooi'];
+        }
+
+        $opmerking = collect([
+            ($data['tijd'] ?? '') !== '' && $data['tijd'] !== 'Zo snel mogelijk' ? 'Gewenste tijd: ' . $data['tijd'] : null,
+            $data['opmerking'] ?? null,
+            ...$regelOpmerkingen,
+        ])->filter()->implode(' | ');
+
+        $order = Order::create([
+            'user_id' => $user->id,
+            'nummer' => ((int) $user->orders()->max('nummer') ?: 411) + 1,
+            'token' => (string) Str::uuid(),
+            'klant' => $data['klant'],
+            'items' => $orderItems,
+            'totaal' => $totaal,
+            'status' => 'nieuw',
+            'type' => $data['type'],
+            'adres' => $data['type'] === 'bezorgen' ? ($data['adres'] ?? null) : null,
+            'opmerking' => $opmerking !== '' ? $opmerking : null,
+            'is_demo' => false,
+        ]);
+
+        return response()->json(['ok' => true, 'nummer' => $order->nummer, 'token' => $order->token, 'totaal' => $totaal]);
+    }
+
+    /* Slug-varianten voor de publieke routes */
+    public function afrekenen1(string $slug)
+    {
+        return $this->t1Afrekenen($this->pizzeria($slug), '/bestellen/' . $slug);
+    }
+
+    public function bestelling1(string $slug, ?string $token = null)
+    {
+        return $this->t1Bestelling($this->pizzeria($slug), '/bestellen/' . $slug, $token);
+    }
+
+    public function orderdata1(Request $request, string $slug)
+    {
+        return $this->t1OrderData($this->pizzeria($slug), $request);
+    }
+
+    public function status1(Request $request, string $slug)
+    {
+        return $this->t1Status($this->pizzeria($slug), $request);
+    }
+
+    public function plaats1(Request $request, string $slug)
+    {
+        return $this->t1Plaats($this->pizzeria($slug), $request);
     }
 
     /** Afstand hemelsbreed in km tussen de zaak en het klantadres, of null als het adres niet gevonden wordt */

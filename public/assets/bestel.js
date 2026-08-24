@@ -108,7 +108,7 @@ function renderItemSheet() {
         ${m.foto ? `<div class="b-fotovak overflow-hidden mb-4" style="aspect-ratio: 16 / 7"><img class="b-foto" src="${esc(m.foto)}" alt="${esc(m.naam)}"></div>` : ''}
         <div class="flex items-start gap-3">
             <div class="flex-1 min-w-0">
-                <p class="b-kop text-2xl">${m.icoon ? esc(m.icoon) + ' ' : ''}${esc(m.naam)}</p>
+                <p class="b-kop text-2xl">${esc(m.naam)}</p>
                 ${m.beschrijving ? `<p class="text-sm opacity-70 mt-1">${esc(m.beschrijving)}</p>` : ''}
                 ${(m.ingredienten || []).length ? `<p class="text-sm opacity-70 mt-1">${m.ingredienten.map(esc).join(', ')}</p>` : ''}
                 ${Array.isArray(m.allergenen) && m.allergenen.length ? `<p class="b-allergeen mt-1">Allergenen: ${m.allergenen.map((a) => esc(a.charAt(0).toUpperCase() + a.slice(1))).join(', ')}</p>` : ''}
@@ -212,8 +212,8 @@ function renderMand() {
             <input id="cNaam" class="b-veld" placeholder="Je naam" maxlength="60" value="${esc(klantGeg.naam)}">
             ${B.alleenAfhalen ? '<p class="text-sm opacity-70">Op dit moment alleen afhalen.</p>' : `
             <div class="flex gap-2">
-                <button type="button" class="b-chip flex-1 justify-center ${bezorgen ? 'aan' : ''}" data-c-type="bezorgen">🛵 Bezorgen</button>
-                <button type="button" class="b-chip flex-1 justify-center ${bezorgen ? '' : 'aan'}" data-c-type="afhalen">🥡 Afhalen</button>
+                <button type="button" class="b-chip flex-1 justify-center ${bezorgen ? 'aan' : ''}" data-c-type="bezorgen"><i class="fa-solid fa-motorcycle" aria-hidden="true"></i> Bezorgen</button>
+                <button type="button" class="b-chip flex-1 justify-center ${bezorgen ? '' : 'aan'}" data-c-type="afhalen"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> Afhalen</button>
             </div>`}
             ${bezorgen && !B.alleenAfhalen ? `
             <input id="cAdres" class="b-veld" placeholder="Straat + huisnummer" maxlength="120" value="${esc(klantGeg.adres)}">
@@ -233,7 +233,7 @@ function renderMand() {
 function renderSucces() {
     $('#mandSheet').innerHTML = `
         <div class="text-center py-6" id="besteldOk">
-            <span class="inline-grid place-items-center w-16 h-16 rounded-full text-white text-3xl mb-4" style="background:#2F8F46">✓</span>
+            <span class="inline-grid place-items-center w-16 h-16 rounded-full text-white text-2xl mb-4" style="background:#2F8F46"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
             <p class="b-kop text-2xl mb-1">Bedankt, ${esc(klantGeg.naam)}!</p>
             <p class="opacity-75 mb-1">Je bestelling <b>#${besteld.nummer}</b> is binnen bij de zaak.</p>
             ${besteld.bezorgkosten ? `<p class="text-sm opacity-70">Bezorgkosten: ${euro(besteld.bezorgkosten)}</p>` : ''}

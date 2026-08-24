@@ -22,7 +22,7 @@
     <div class="max-w-4xl mx-auto px-4 pt-12 pb-12 text-center relative">
         <p class="text-xs font-extrabold tracking-[.3em] uppercase opacity-60 mb-5">Eten, slapen en... pizza</p>
         <div class="r-badge mb-7">
-            <span class="text-3xl">🍕</span>
+            <i class="fa-solid fa-pizza-slice text-2xl" aria-hidden="true" style="color: var(--accent)"></i>
             <span class="b-kop text-lg leading-tight px-3">{{ $naam }}</span>
             <span class="text-[10px] font-black uppercase tracking-widest opacity-60">al jaren lekker</span>
         </div>
@@ -57,7 +57,7 @@
 <!-- Over ons -->
 <section data-anim class="pt-4 pb-8" style="background: var(--kaart)">
     <div class="max-w-4xl mx-auto px-4 grid sm:grid-cols-[auto_1fr] gap-6 items-center">
-        <div class="text-7xl text-center">👨‍🍳</div>
+        <div class="w-24 h-24 rounded-full grid place-items-center mx-auto -rotate-6" style="border: 4px double var(--tekst); background: var(--pagina)"><i class="fa-solid fa-utensils text-3xl" aria-hidden="true" style="color: var(--accent)"></i></div>
         <div>
             <h2 class="b-kop text-2xl mb-2">Huisgemaakt, zoals vroeger</h2>
             <p class="opacity-70">Bij {{ $naam }} draait alles om rustig gerezen deeg, verse ingrediënten en een oven die nooit koud wordt. Bestel online en proef het verschil.@if($telefoon) Liever bellen? {{ $telefoon }}.@endif</p>
@@ -101,7 +101,7 @@
                 'Die krokante bodem... ik bestel nergens anders meer.',
             ] as $quote)
                 <div class="b-kaart p-5 text-center" style="background: var(--pagina)">
-                    <p class="text-sm mb-2">⭐⭐⭐⭐⭐</p>
+                    <p class="text-sm mb-2" style="color: var(--accent)">@for($s = 0; $s < 5; $s++)<i class="fa-solid fa-star" aria-hidden="true"></i> @endfor</p>
                     <p class="text-sm opacity-75">"{{ $quote }}"</p>
                     <p class="text-xs font-extrabold opacity-50 mt-3">Vaste gast</p>
                 </div>
@@ -117,5 +117,5 @@
         <p class="opacity-90 mt-1 mb-5 max-w-md mx-auto">Bestel online en wij doen de rest.</p>
         <a href="{{ route('bestel.menu', $slug) }}" class="inline-flex items-center justify-center font-black px-8 py-3.5 text-lg" style="background: #fff; color: var(--accent); border-radius: var(--knop-radius)">Naar de menukaart</a>
     </div>
-    @if($adres)<p class="text-center text-sm opacity-60 mt-5">📍 {{ $adres }}</p>@endif
+    @if($adres)<p class="text-center text-sm opacity-60 mt-5"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> {{ $adres }}</p>@endif
 </section>

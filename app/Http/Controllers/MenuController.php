@@ -21,6 +21,7 @@ class MenuController extends Controller
             'categorie' => [...$kern, 'string', 'max:50'],
             'beschrijving' => ['sometimes', 'nullable', 'string', 'max:300'],
             'icoon' => ['sometimes', 'nullable', 'string', 'max:16'],
+            'foto' => ['sometimes', 'nullable', 'string', 'max:500000', 'regex:/^data:image\/(jpeg|png|webp);base64,/'],
             'ingredienten' => ['sometimes', 'nullable', 'array', 'max:30'],
             'ingredienten.*' => ['string', 'max:50'],
             'allergenen' => ['sometimes', 'nullable', 'array'],

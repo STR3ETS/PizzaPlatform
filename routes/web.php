@@ -15,7 +15,21 @@ Route::get('/onboarding', function () {
     return view('onboarding');
 })->name('onboarding');
 Route::post('/onboarding/afronden', [OnboardingController::class, 'finish'])->name('onboarding.finish');
+Route::post('/onboarding/email-check', [OnboardingController::class, 'emailCheck'])->name('onboarding.emailcheck');
 Route::redirect('/registreren', '/onboarding');
+
+// Speeltuinen: dezelfde code als de echte bestelpagina, gevuld met de demo-pizzeria.
+// /template1 dwingt Presto af, /template2 dwingt Notte af, ongeacht het thema van de demo.
+$demoPizzeria = fn () => \App\Models\User::where('email', 'demo@pizzeria.nl')->firstOrFail();
+foreach (['template1', 'template2', 'template3', 'template4'] as $speeltuin) {
+    Route::get("/$speeltuin", fn () => app(BestelController::class)->t1Home($demoPizzeria(), "/$speeltuin", $speeltuin));
+    Route::get("/$speeltuin/afrekenen", fn () => app(BestelController::class)->t1Afrekenen($demoPizzeria(), "/$speeltuin", $speeltuin));
+    Route::post("/$speeltuin/afrekenen", fn (\Illuminate\Http\Request $request) => app(BestelController::class)->t1Plaats($demoPizzeria(), $request));
+    Route::get("/$speeltuin/bestelling/status", fn (\Illuminate\Http\Request $request) => app(BestelController::class)->t1Status($demoPizzeria(), $request));
+    Route::get("/$speeltuin/bestelling/data", fn (\Illuminate\Http\Request $request) => app(BestelController::class)->t1OrderData($demoPizzeria(), $request));
+    Route::get("/$speeltuin/bestelling/{token}", fn (string $token) => app(BestelController::class)->t1Bestelling($demoPizzeria(), "/$speeltuin", $token, $speeltuin));
+    Route::get("/$speeltuin/bestelling", fn () => app(BestelController::class)->t1Bestelling($demoPizzeria(), "/$speeltuin", null, $speeltuin));
+}
 
 // De publieke bestelpagina per pizzeria (straks op het eigen (sub)domein)
 Route::prefix('/bestellen/{slug}')->group(function () {
@@ -23,6 +37,14 @@ Route::prefix('/bestellen/{slug}')->group(function () {
     Route::get('/menu', [BestelController::class, 'menu'])->name('bestel.menu');
     Route::get('/contact', [BestelController::class, 'contact'])->name('bestel.contact');
     Route::post('/plaatsen', [BestelController::class, 'plaats'])->name('bestel.plaats');
+
+    // Template1 (Presto): afrekenen en de statuspagina van de klant
+    Route::get('/afrekenen', [BestelController::class, 'afrekenen1'])->name('bestel.afrekenen');
+    Route::post('/afrekenen', [BestelController::class, 'plaats1'])->name('bestel.plaats1');
+    Route::get('/bestelling/status', [BestelController::class, 'status1'])->name('bestel.bestelstatus');
+    Route::get('/bestelling/data', [BestelController::class, 'orderdata1'])->name('bestel.besteldata');
+    Route::get('/bestelling/{token}', [BestelController::class, 'bestelling1'])->name('bestel.bestelling.token');
+    Route::get('/bestelling', [BestelController::class, 'bestelling1'])->name('bestel.bestelling');
 });
 
 Route::middleware('guest')->group(function () {
@@ -57,6 +79,7 @@ Route::middleware('auth')->group(function () {
                     'naam' => $m['name'],
                     'prijs' => (int) round(((float) str_replace(',', '.', (string) ($m['price'] ?? 0))) * 100),
                     'icoon' => ($m['icon']['t'] ?? '') === 'e' ? ($m['icon']['v'] ?? null) : null,
+                    'foto' => ($m['icon']['t'] ?? '') === 'p' ? ($m['icon']['v'] ?? null) : null,
                     'volgorde' => $i,
                 ]);
             }
@@ -119,6 +142,9 @@ Route::middleware('auth')->group(function () {
             'payment' => ['sometimes', 'in:mollie,stripe,later'],
             'domainMode' => ['sometimes', 'in:sub,own'],
             'ownDomain' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'color' => ['sometimes', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'logo' => ['sometimes', 'nullable', 'string', 'max:300000', 'regex:/^data:image\/(png|jpeg|webp);base64,/'],
+            'theme' => ['sometimes', 'in:template1,template2,template3,template4'],
         ]);
 
         $dagen = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'];
@@ -146,6 +172,7 @@ Route::middleware('auth')->group(function () {
             'tiers' => ['nullable', 'array', 'max:8'],
             'tiers.*.km' => ['required', 'numeric', 'min:0.1', 'max:30'],
             'tiers.*.kosten' => ['required', 'integer', 'min:0', 'max:2500'],
+            'tiers.*.min' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:50000'],
         ]);
         $request->user()->forceFill([
             'lat' => $data['lat'] ?? null,

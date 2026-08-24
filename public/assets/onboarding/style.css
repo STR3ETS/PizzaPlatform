@@ -536,8 +536,9 @@
 
 /* Kleur-swatches */
 .swatch {
-    width: 100%;
-    aspect-ratio: 1 / 1;
+    width: 3rem;
+    height: 3rem;
+    flex: 0 0 auto;
     border-radius: 1.1rem;
     cursor: pointer;
     border: 4px solid #fff;

@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900{{ $thema['font'] ? '&' . $thema['font'] : '' }}&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('fontawesome/css/all.min.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
     <style>
@@ -24,7 +25,7 @@
             --accent-zacht: color-mix(in srgb, {{ $accent }} 12%, transparent);
         }
         html { scroll-behavior: smooth; }
-        body { background: var(--pagina); color: var(--tekst); font-family: 'Nunito', sans-serif; font-weight: 700; }
+        body { background: var(--pagina); color: var(--tekst); font-family: {!! $thema['bodyFont'] !!}; font-weight: 700; }
         .b-kop { font-family: {!! $thema['kopFont'] !!}; @if($thema['upper']) text-transform: uppercase; letter-spacing: .02em; @endif font-weight: 700; }
         .b-kaart { background: var(--kaart); border-radius: var(--radius); @if($thema['rand'] !== 'none') border: {{ $thema['rand'] }}; @endif }
         .b-knop {
@@ -107,7 +108,11 @@
 
         /* Shop-layout op de menukaart */
         :root { --plak-top: 3.55rem; }
-        body[data-thema="nero"] { --plak-top: 6.4rem; }
+        body[data-thema="nero"] { --plak-top: 6.6rem; }
+        body[data-thema="blocco"] { --plak-top: 5.8rem; }
+        body[data-thema="napoli"] { --plak-top: 5.4rem; }
+        body[data-thema="retro"] { --plak-top: 4.5rem; }
+        body[data-thema="puro"] { --plak-top: 4.2rem; }
         .m-held { position: relative; min-height: 17rem; display: flex; align-items: flex-end; overflow: hidden; }
         .m-held-tint { position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / .72), rgb(0 0 0 / .18)); }
         body[data-thema="blocco"] .m-held-tint { background: linear-gradient(to top, rgb(0 0 0 / .82), rgb(0 0 0 / .28)); }
@@ -178,58 +183,15 @@
 </head>
 <body class="min-h-screen antialiased" data-thema="{{ $themaId }}">
 
-    <div class="b-marquee" aria-hidden="true"><div>
-        @for($i = 0; $i < 2; $i++)
-            Vers uit de oven ★ {{ $alleenAfhalen ? 'Snel afhalen' : 'Bezorgen en afhalen' }} ★ Direct bij de zaak bestellen ★ {{ $naam }} ★&nbsp;
-        @endfor
-    </div></div>
+    {{-- Statusbalk helemaal bovenaan, boven de header --}}
+    <div class="text-center text-xs font-extrabold py-1.5 px-3" style="background: {{ $online ? '#2F8F46' : '#454545' }}; color: #fff">
+        {{ $online ? '● Open' : '● Gesloten' }}{{ $online
+            ? ($vandaag['open'] ? ', vandaag te bestellen tot ' . $vandaag['tot'] : '')
+            : ($vandaag['open'] ? ', vandaag open van ' . $vandaag['van'] . ' tot ' . $vandaag['tot'] : ', vandaag zijn we dicht') }}
+    </div>
 
-    @if($themaId === 'nero')
-    <!-- Klassieke restaurant-navigatie: gecentreerd -->
-    <nav class="b-nav">
-        <div class="max-w-5xl mx-auto px-4 pt-4 pb-3 text-center">
-            <a href="{{ route('bestel.home', $slug) }}" class="inline-flex items-center gap-2.5">
-                @if($logo)
-                    <img src="{{ $logo }}" alt="Logo {{ $naam }}" class="h-9 w-9 rounded-full object-cover">
-                @endif
-                <span class="b-kop text-2xl">{{ $naam }}</span>
-            </a>
-            <div class="flex items-center justify-center gap-6 mt-2.5 text-sm">
-                <a href="{{ route('bestel.home', $slug) }}" class="b-nav-link {{ request()->routeIs('bestel.home') ? 'actief' : '' }}">Home</a>
-                <a href="{{ route('bestel.menu', $slug) }}" class="b-nav-link {{ request()->routeIs('bestel.menu') ? 'actief' : '' }}">De kaart</a>
-                <a href="{{ route('bestel.contact', $slug) }}" class="b-nav-link {{ request()->routeIs('bestel.contact') ? 'actief' : '' }}">Contact</a>
-                <span class="text-xs font-extrabold rounded-full px-3 py-1" style="background: {{ $online ? '#2F8F46' : 'rgb(120 120 120 / .35)' }}; color: #fff">{{ $online ? '● Open' : '● Gesloten' }}</span>
-                <a href="{{ route('bestel.menu', $slug) }}" class="b-knop !py-1.5 !px-4 !text-sm">Bestel nu</a>
-            </div>
-        </div>
-    </nav>
-    @else
-    <nav class="b-nav">
-        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-4">
-            <a href="{{ route('bestel.home', $slug) }}" class="flex items-center gap-2.5 min-w-0">
-                @if($logo)
-                    <img src="{{ $logo }}" alt="Logo {{ $naam }}" class="h-10 w-10 rounded-full object-cover shrink-0">
-                @else
-                    <span class="text-2xl">🍕</span>
-                @endif
-                <span class="b-kop text-xl truncate">{{ $naam }}</span>
-            </a>
-            <div class="flex-1"></div>
-            <div class="hidden sm:flex items-center gap-5 text-sm mr-2">
-                <a href="{{ route('bestel.home', $slug) }}" class="b-nav-link {{ request()->routeIs('bestel.home') ? 'actief' : '' }}">Home</a>
-                <a href="{{ route('bestel.menu', $slug) }}" class="b-nav-link {{ request()->routeIs('bestel.menu') ? 'actief' : '' }}">Menukaart</a>
-                <a href="{{ route('bestel.contact', $slug) }}" class="b-nav-link {{ request()->routeIs('bestel.contact') ? 'actief' : '' }}">Contact</a>
-            </div>
-            <span class="hidden md:inline-flex shrink-0 text-xs font-extrabold rounded-full px-3 py-1" style="background: {{ $online ? '#2F8F46' : 'rgb(120 120 120 / .35)' }}; color: #fff">{{ $online ? '● Open' : '● Gesloten' }}</span>
-            <a href="{{ route('bestel.menu', $slug) }}" class="b-knop !py-2 !px-4 !text-sm shrink-0">Bestel nu</a>
-        </div>
-        <div class="sm:hidden flex gap-5 px-4 pb-2.5 text-sm">
-            <a href="{{ route('bestel.home', $slug) }}" class="b-nav-link {{ request()->routeIs('bestel.home') ? 'actief' : '' }}">Home</a>
-            <a href="{{ route('bestel.menu', $slug) }}" class="b-nav-link {{ request()->routeIs('bestel.menu') ? 'actief' : '' }}">Menukaart</a>
-            <a href="{{ route('bestel.contact', $slug) }}" class="b-nav-link {{ request()->routeIs('bestel.contact') ? 'actief' : '' }}">Contact</a>
-        </div>
-    </nav>
-    @endif
+    {{-- Elke template heeft zijn eigen navigatie --}}
+    @include('bestel.nav.' . $themaId)
 
     @unless($online)
         <div class="max-w-5xl mx-auto px-4 mt-4">
@@ -243,32 +205,8 @@
 
     @yield('inhoud')
 
-    <footer class="mt-14" style="background: var(--kaart)">
-        <div class="max-w-5xl mx-auto px-4 py-10 grid sm:grid-cols-3 gap-8 text-sm">
-            <div>
-                <p class="b-kop text-xl mb-2">{{ $naam }}</p>
-                <p class="opacity-70">Vers bereide pizza's{{ $plaats ? ' in ' . $plaats : '' }}. Direct bij ons besteld, zodat je bestelling meteen in onze keuken ligt.</p>
-            </div>
-            <div>
-                <p class="b-kop text-lg mb-2">Openingstijden</p>
-                @foreach($dagen as $dag)
-                    <div class="flex justify-between gap-4 {{ $dag['open'] ? 'opacity-80' : 'opacity-50' }}">
-                        <span>{{ $dag['naam'] }}</span>
-                        <span>{{ $dag['open'] ? $dag['van'] . ' - ' . $dag['tot'] : 'Gesloten' }}</span>
-                    </div>
-                @endforeach
-            </div>
-            <div>
-                <p class="b-kop text-lg mb-2">Contact</p>
-                @if($adres)<p class="opacity-80">{{ $adres }}</p>@endif
-                @if($telefoon)<p class="mt-1"><a href="tel:{{ $telefoon }}" class="underline underline-offset-2 opacity-80">{{ $telefoon }}</a></p>@endif
-                <a href="{{ route('bestel.menu', $slug) }}" class="b-knop !py-2 !px-4 !text-sm mt-4">Online bestellen</a>
-            </div>
-        </div>
-        <div class="border-t px-4 py-4 text-center text-xs opacity-55" style="border-color: color-mix(in srgb, var(--tekst) 12%, transparent)">
-            &copy; {{ date('Y') }} {{ $naam }}. Alle rechten voorbehouden.
-        </div>
-    </footer>
+    {{-- Elke template heeft zijn eigen footer --}}
+    @include('bestel.voet.' . $themaId)
 
     <!-- GSAP: subtiele scroll-animaties, per template een eigen karakter -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>

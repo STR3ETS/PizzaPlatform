@@ -35,10 +35,10 @@
                     <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm font-bold mt-1.5 opacity-95">
                         <span style="color: {{ $online ? '#7ADC96' : '#f3b1b1' }}">● {{ $online ? 'Open' : 'Gesloten' }}</span>
                         @if(! $alleenAfhalen && $tiers->isNotEmpty())
-                            <span>🛵 Bezorging vanaf &euro; {{ number_format($tiers->first()['kosten'] / 100, 2, ',', '') }}</span>
+                            <span><i class="fa-solid fa-motorcycle" aria-hidden="true"></i> Bezorging vanaf &euro; {{ number_format($tiers->first()['kosten'] / 100, 2, ',', '') }}</span>
                         @endif
-                        <span>🥡 Afhalen gratis</span>
-                        @if($vandaag['open'])<span>🕐 Vandaag {{ $vandaag['van'] }} - {{ $vandaag['tot'] }}</span>@endif
+                        <span><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> Afhalen gratis</span>
+                        @if($vandaag['open'])<span><i class="fa-solid fa-clock" aria-hidden="true"></i> Vandaag {{ $vandaag['van'] }} - {{ $vandaag['tot'] }}</span>@endif
                     </div>
                 </div>
             </div>
@@ -49,7 +49,7 @@
     <div class="m-plakbalk">
         <div class="max-w-7xl mx-auto px-4 py-2.5 flex items-center gap-3">
             <div class="relative flex-1 min-w-0 max-w-sm">
-                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-45">🔍</span>
+                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-45"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span>
                 <input id="menuZoek" class="b-veld !py-2 !pl-10 !text-sm" placeholder="Zoeken bij {{ $naam }}">
             </div>
             @if($categorieen->count() > 1)
@@ -173,12 +173,12 @@
                 <p class="b-kop text-xl mb-3">Winkelmandje</p>
                 @unless($alleenAfhalen)
                     <div class="m-typetoggle grid grid-cols-2 gap-1 p-1 mb-4" id="zijType">
-                        <button type="button" class="aan" data-zij-type="bezorgen">🛵 Bezorgen</button>
-                        <button type="button" data-zij-type="afhalen">🥡 Afhalen</button>
+                        <button type="button" class="aan" data-zij-type="bezorgen"><i class="fa-solid fa-motorcycle" aria-hidden="true"></i> Bezorgen</button>
+                        <button type="button" data-zij-type="afhalen"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> Afhalen</button>
                     </div>
                 @endunless
                 <div id="zijLeeg" class="text-center py-8 opacity-60">
-                    <span class="text-3xl block mb-2">🧺</span>
+                    <i class="fa-solid fa-basket-shopping text-3xl block mb-2 opacity-70" aria-hidden="true"></i>
                     <p class="b-kop">Vul je mandje</p>
                     <p class="text-xs mt-1">Je winkelmandje is nog leeg</p>
                 </div>

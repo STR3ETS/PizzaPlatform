@@ -17,7 +17,8 @@
 @endphp
 
 <div class="f-strip">
-    🛵 {{ $tiers->isNotEmpty() ? 'Bezorgen al vanaf ' . '€ ' . number_format($tiers->first()['kosten'] / 100, 2, ',', '') : 'Vers bereid' }}
+    <i class="fa-solid fa-motorcycle" aria-hidden="true"></i>
+    {{ $tiers->isNotEmpty() ? 'Bezorgen al vanaf ' . '€ ' . number_format($tiers->first()['kosten'] / 100, 2, ',', '') : 'Vers bereid' }}
     en afhalen is altijd gratis. Bestel direct online!
 </div>
 
@@ -44,10 +45,10 @@
             <div class="b-fotobord">
                 <img class="b-foto" src="{{ $held ? $fotos[$held->id] : asset('assets/eten/pepperoni.jpg') }}" alt="{{ $held?->naam ?: 'Pizza' }}">
             </div>
-            <span class="b-zweef" style="top: 4%; left: 12%;">🍅</span>
-            <span class="b-zweef" style="top: 16%; right: 8%; animation-delay: -2s;">🌿</span>
-            <span class="b-zweef" style="bottom: 10%; left: 6%; animation-delay: -4s;">🧀</span>
-            <span class="b-zweef" style="bottom: 2%; right: 14%; animation-delay: -1s;">🌶️</span>
+            <span class="b-zweef" style="top: 4%; left: 12%; color: #E63946"><i class="fa-solid fa-pepper-hot" aria-hidden="true"></i></span>
+            <span class="b-zweef" style="top: 16%; right: 8%; animation-delay: -2s; color: #2F8F46"><i class="fa-solid fa-leaf" aria-hidden="true"></i></span>
+            <span class="b-zweef" style="bottom: 10%; left: 6%; animation-delay: -4s; color: #F5B301"><i class="fa-solid fa-cheese" aria-hidden="true"></i></span>
+            <span class="b-zweef" style="bottom: 2%; right: 14%; animation-delay: -1s; color: #2F8F46"><i class="fa-solid fa-seedling" aria-hidden="true"></i></span>
         </div>
     </div>
 </section>
@@ -118,10 +119,10 @@
 <!-- Features -->
 <section data-anim class="max-w-5xl mx-auto px-4 mt-12">
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-center text-sm">
-        <div class="b-kaart px-4 py-5"><span class="text-2xl block mb-1.5">🔥</span><span class="b-kop block">Steenoven vers</span><span class="opacity-60 text-xs">Bereid op bestelling</span></div>
-        <div class="b-kaart px-4 py-5"><span class="text-2xl block mb-1.5">🥗</span><span class="b-kop block">Verse ingrediënten</span><span class="opacity-60 text-xs">Elke dag geleverd</span></div>
-        <div class="b-kaart px-4 py-5"><span class="text-2xl block mb-1.5">👨‍🍳</span><span class="b-kop block">Eigen recepten</span><span class="opacity-60 text-xs">Met liefde gemaakt</span></div>
-        <div class="b-kaart px-4 py-5"><span class="text-2xl block mb-1.5">{{ $alleenAfhalen ? '🥡' : '🛵' }}</span><span class="b-kop block">{{ $alleenAfhalen ? 'Snel afhalen' : 'Snel bezorgd' }}</span><span class="opacity-60 text-xs">{{ $alleenAfhalen ? 'Klaar wanneer jij er bent' : 'Warm bij je thuis' }}</span></div>
+        <div class="b-kaart px-4 py-5"><span class="w-11 h-11 mx-auto rounded-full grid place-items-center mb-2" style="background: var(--accent-zacht); color: var(--accent)"><i class="fa-solid fa-fire" aria-hidden="true"></i></span><span class="b-kop block">Steenoven vers</span><span class="opacity-60 text-xs">Bereid op bestelling</span></div>
+        <div class="b-kaart px-4 py-5"><span class="w-11 h-11 mx-auto rounded-full grid place-items-center mb-2" style="background: var(--accent-zacht); color: var(--accent)"><i class="fa-solid fa-leaf" aria-hidden="true"></i></span><span class="b-kop block">Verse ingrediënten</span><span class="opacity-60 text-xs">Elke dag geleverd</span></div>
+        <div class="b-kaart px-4 py-5"><span class="w-11 h-11 mx-auto rounded-full grid place-items-center mb-2" style="background: var(--accent-zacht); color: var(--accent)"><i class="fa-solid fa-utensils" aria-hidden="true"></i></span><span class="b-kop block">Eigen recepten</span><span class="opacity-60 text-xs">Met liefde gemaakt</span></div>
+        <div class="b-kaart px-4 py-5"><span class="w-11 h-11 mx-auto rounded-full grid place-items-center mb-2" style="background: var(--accent-zacht); color: var(--accent)"><i class="fa-solid {{ $alleenAfhalen ? 'fa-bag-shopping' : 'fa-motorcycle' }}" aria-hidden="true"></i></span><span class="b-kop block">{{ $alleenAfhalen ? 'Snel afhalen' : 'Snel bezorgd' }}</span><span class="opacity-60 text-xs">{{ $alleenAfhalen ? 'Klaar wanneer jij er bent' : 'Warm bij je thuis' }}</span></div>
     </div>
 </section>
 
@@ -130,12 +131,12 @@
     <h2 class="b-kop text-3xl text-center mb-6">Wat onze gasten zeggen</h2>
     <div class="grid sm:grid-cols-3 gap-4">
         @foreach([
-            ['⭐⭐⭐⭐⭐', 'De bodem is nog knapperig als hij aankomt. Dat lukt bijna niemand.'],
-            ['⭐⭐⭐⭐⭐', 'Binnen een minuut besteld en precies op tijd. Zo hoort het.'],
-            ['⭐⭐⭐⭐⭐', 'Eindelijk direct bij de zaak zelf bestellen. De pizza is er alleen maar beter op geworden.'],
-        ] as [$sterren, $quote])
+            'De bodem is nog knapperig als hij aankomt. Dat lukt bijna niemand.',
+            'Binnen een minuut besteld en precies op tijd. Zo hoort het.',
+            'Eindelijk direct bij de zaak zelf bestellen. De pizza is er alleen maar beter op geworden.',
+        ] as $quote)
             <div class="b-kaart p-5">
-                <p class="text-sm mb-2">{{ $sterren }}</p>
+                <p class="text-sm mb-2" style="color: #F5B301">@for($s = 0; $s < 5; $s++)<i class="fa-solid fa-star" aria-hidden="true"></i> @endfor</p>
                 <p class="text-sm opacity-75">"{{ $quote }}"</p>
                 <p class="text-xs font-extrabold opacity-50 mt-3">Vaste gast</p>
             </div>

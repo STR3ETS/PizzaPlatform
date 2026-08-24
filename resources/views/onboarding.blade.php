@@ -8,7 +8,8 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+    {{-- Alle template-fonts, zodat de previews in de stijl-stap kloppen met de echte bestelpagina's --}}
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;700;800;900&family=Inter+Tight:wght@500;600;700;800;900&display=swap" rel="stylesheet">
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style type="text/tailwindcss">
@@ -256,7 +257,7 @@
                 <button id="customAdd" type="button"
                     class="shrink-0 self-stretch w-[3.8rem] rounded-2xl bg-basil text-white font-display text-2xl shadow-[0_4px_0_0_var(--color-basil-dark)] hover:translate-y-0.5 hover:shadow-[0_2px_0_0_var(--color-basil-dark)] active:translate-y-1 active:shadow-none transition-all cursor-pointer">+</button>
             </div>
-            <p class="mt-3 text-xs font-extrabold text-cacao/35">Tip: tik op het icoontje voor een gerecht om een ander plaatje of eigen foto te kiezen 📷</p>
+            <p class="mt-3 text-xs font-extrabold text-cacao/35">Tip: tik op het fotovakje voor een gerecht om een eigen foto toe te voegen 📷</p>
 
             <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
                 <button data-back type="button" class="btn-primary btn-grey">Terug</button>
@@ -346,41 +347,60 @@
         </section>
 
         <!-- STAP: huisstijl -->
-        <section data-step="style" class="step hidden w-full max-w-3xl lg:max-w-4xl text-center">
+        <section data-step="style" class="step hidden w-full max-w-3xl lg:max-w-6xl text-center">
             <p class="step-kicker">De finishing touch 🎨</p>
             <h2 class="step-title">Maak 'm helemaal van jou</h2>
             <p class="step-sub">Kies een template dat bij jouw zaak past, maak 'm af met jouw kleur en logo. Je ziet meteen hoe je bestelpagina eruit gaat zien.</p>
 
-            <div class="flex flex-col lg:flex-row items-center justify-center gap-10">
-                <!-- Links: de twee vragen -->
-                <div class="flex-1 w-full max-w-xl">
-                    <p class="lbl !ml-0 !text-center mb-3">Kies een template</p>
-                    <div id="themeGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8"></div>
-
-                    <p class="lbl !ml-0 !text-center mb-3">Jouw kleur</p>
-                    <div id="colorGrid" class="grid grid-cols-7 gap-3 mb-8"></div>
-                    <input id="customColor" type="color" class="sr-only" tabindex="-1" aria-label="Eigen kleur kiezen">
-
-                    <p class="lbl !ml-0 !text-center mb-3">Jouw logo</p>
-                    <div class="relative">
-                        <label for="logoInp" class="logo-drop">
-                            <div id="logoDropThumb" class="hidden w-12 h-12 rounded-full border-2 border-crema-dark overflow-hidden bg-white mx-auto mb-2">
-                                <img class="w-full h-full object-cover" alt="Jouw logo">
-                            </div>
-                            <span id="logoDropText">Logo uploaden</span>
-                            <span id="logoDropHint" class="block text-xs font-extrabold text-cacao/35 mt-1">Nog geen logo bij de hand? Mag ook later.</span>
-                        </label>
-                        <button id="logoRemove" type="button" title="Logo verwijderen" aria-label="Logo verwijderen" style="display:none"
-                            class="absolute -top-2.5 -right-2.5 z-10 w-7 h-7 rounded-full bg-white border-2 border-crema-dark place-items-center text-sm font-extrabold text-cacao/45 shadow-sm hover:text-tomato hover:border-tomato/50 transition-colors cursor-pointer">✕</button>
+            <div class="text-left">
+                <div class="grid lg:grid-cols-[1fr_1.2fr] gap-8 items-stretch">
+                    <!-- Links: de templates -->
+                    <div>
+                        <div class="h-8 mb-2 flex items-center">
+                            <p class="lbl !ml-0 !mb-0">Jouw template</p>
+                        </div>
+                        <div id="themeGrid" class="grid grid-cols-2 gap-3"></div>
                     </div>
-                    <input id="logoInp" type="file" accept="image/*" class="hidden">
+
+                    <!-- Rechts: het live voorbeeld met paginaknoppen -->
+                    <div class="flex flex-col">
+                        <div class="h-8 mb-2 flex items-center justify-between gap-3">
+                            <p class="lbl !ml-0 !mb-0">Live voorbeeld</p>
+                            <div class="flex gap-1.5">
+                                <button type="button" data-ob-pagina="menu" class="keuze-chip !py-1 !px-3 !text-xs aan">Menu</button>
+                                <button type="button" data-ob-pagina="afrekenen" class="keuze-chip !py-1 !px-3 !text-xs">Afrekenen</button>
+                                <button type="button" data-ob-pagina="status" class="keuze-chip !py-1 !px-3 !text-xs">Status</button>
+                            </div>
+                        </div>
+                        <div class="relative flex-1 min-h-0 w-full overflow-hidden rounded-2xl border-2 border-crema-dark bg-white aspect-video lg:aspect-auto">
+                            <iframe id="obStijlPreview" title="Voorbeeld van je bestelpagina" style="width:200%;height:200%;transform:scale(.5);transform-origin:top left;border:0"></iframe>
+                            <div id="obStijlLaad" class="absolute inset-0 grid place-items-center bg-white/75" style="display:none">
+                                <div class="text-center">
+                                    <span class="inline-block text-3xl animate-spin">🍕</span>
+                                    <p class="mt-2 text-sm font-extrabold text-cacao/60">Voorbeeld laden…</p>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-xs font-extrabold text-cacao/45 mt-2">Scrollen kan, klikken staat uit in het voorbeeld.</p>
+                    </div>
                 </div>
 
-                <!-- Rechts: telefoon-preview; elk template rendert zijn eigen lay-out -->
-                <div class="phone-frame shrink-0" id="pvFrame">
-                    <div class="phone-notch"></div>
-                    <div id="pvScreen" class="flex-1 flex flex-col overflow-hidden text-left"></div>
+                <p class="lbl !ml-0 mt-8 mb-3">Jouw kleurstijl</p>
+                <div id="colorGrid" class="mb-8"></div>
+
+                <p class="lbl !ml-0 mb-3">Jouw logo</p>
+                <div class="relative">
+                    <label for="logoInp" class="logo-drop">
+                        <div id="logoDropThumb" class="hidden w-12 h-12 rounded-full border-2 border-crema-dark overflow-hidden bg-white mx-auto mb-2">
+                            <img class="w-full h-full object-cover" alt="Jouw logo">
+                        </div>
+                        <span id="logoDropText">Logo uploaden</span>
+                        <span id="logoDropHint" class="block text-xs font-extrabold text-cacao/35 mt-1">Nog geen logo bij de hand? Mag ook later.</span>
+                    </label>
+                    <button id="logoRemove" type="button" title="Logo verwijderen" aria-label="Logo verwijderen" style="display:none"
+                        class="absolute -top-2.5 -right-2.5 z-10 w-7 h-7 rounded-full bg-white border-2 border-crema-dark place-items-center text-sm font-extrabold text-cacao/45 shadow-sm hover:text-tomato hover:border-tomato/50 transition-colors cursor-pointer">✕</button>
                 </div>
+                <input id="logoInp" type="file" accept="image/*" class="hidden">
             </div>
 
             <div class="mt-9 flex flex-wrap items-center justify-center gap-3">
@@ -410,21 +430,8 @@
 
     </main>
 
-    <!-- Icoon-kiezer voor menu-items -->
-    <div id="iconPicker" class="fixed inset-0 z-50 hidden items-center justify-center bg-cacao/40 backdrop-blur-sm p-5">
-        <div class="bg-white rounded-3xl border-4 border-crema-dark p-6 sm:p-7 max-w-sm w-full text-center shadow-2xl animate-pop">
-            <p class="font-display text-2xl mb-1">Kies een plaatje 🖼️</p>
-            <p class="text-sm font-bold text-cacao/50 mb-5">Of upload een foto van je eigen gerecht.</p>
-            <div id="emojiGrid" class="grid grid-cols-6 gap-1.5 mb-5"></div>
-            <label class="btn-photo">
-                📷 Eigen foto kiezen
-                <input id="photoInp" type="file" accept="image/*" class="hidden">
-            </label>
-            <div>
-                <button id="pickerClose" type="button" class="skip-link !mt-4">sluiten</button>
-            </div>
-        </div>
-    </div>
+    <!-- Foto-kiezer voor menu-items: opent direct de bestandskiezer -->
+    <input id="photoInp" type="file" accept="image/*" class="hidden">
 
     <!-- Opnieuw beginnen (alleen zichtbaar als er bewaarde antwoorden zijn) -->
     <button id="resetLink" type="button"
@@ -439,7 +446,16 @@
     <canvas id="confetti" class="pointer-events-none fixed inset-0 z-50 hidden"></canvas>
 
     <script>window.PP_AUTH = @json(auth()->check());</script>
+    <script>window.PP_KLEUREN = @json(\App\Http\Controllers\BestelController::KLEUREN);</script>
     <script>window.PP_SAVED = @json(auth()->check() ? auth()->user()->onboarding : null);</script>
+    @php
+        $ppMenu = auth()->check()
+            ? auth()->user()->menuItems()->orderBy('categorie')->orderBy('volgorde')->get()
+                ->map(fn ($m) => ['id' => $m->id, 'categorie' => $m->categorie, 'naam' => $m->naam, 'prijs' => (int) $m->prijs, 'foto' => $m->foto ?: null])->values()
+            : null;
+    @endphp
+    <script>window.PP_MENU = @json($ppMenu);</script>
+    <script src="{{ asset('assets/stijl-tiles.js') }}?v={{ filemtime(public_path('assets/stijl-tiles.js')) }}"></script>
     <script src="{{ asset('assets/onboarding/app.js') }}?v={{ filemtime(public_path('assets/onboarding/app.js')) }}"></script>
 </body>
 </html>

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'categorie', 'naam', 'beschrijving', 'prijs', 'icoon', 'ingredienten', 'allergenen', 'opties', 'actief', 'volgorde'])]
+#[Fillable(['user_id', 'categorie', 'naam', 'beschrijving', 'prijs', 'icoon', 'foto', 'ingredienten', 'allergenen', 'opties', 'actief', 'volgorde'])]
 class MenuItem extends Model
 {
     protected function casts(): array

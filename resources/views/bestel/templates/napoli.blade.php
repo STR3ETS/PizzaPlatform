@@ -45,9 +45,9 @@
 </section>
 
 <section data-anim class="max-w-3xl mx-auto px-4 mt-6 grid sm:grid-cols-3 gap-3 text-center text-sm">
-    <div class="b-kaart p-4"><span class="text-xl block mb-1">🍕</span><span class="b-kop">Napoletaans deeg</span><p class="opacity-55 text-xs">48 uur gerezen</p></div>
-    <div class="b-kaart p-4"><span class="text-xl block mb-1">🍅</span><span class="b-kop">San Marzano</span><p class="opacity-55 text-xs">Echte Italiaanse tomaten</p></div>
-    <div class="b-kaart p-4"><span class="text-xl block mb-1">👨‍🍳</span><span class="b-kop">Familierecepten</span><p class="opacity-55 text-xs">Van generatie op generatie</p></div>
+    <div class="b-kaart p-4"><i class="fa-solid fa-wheat-awn text-xl block mb-1.5" aria-hidden="true" style="color: var(--prijs)"></i><span class="b-kop">Napoletaans deeg</span><p class="opacity-55 text-xs">48 uur gerezen</p></div>
+    <div class="b-kaart p-4"><i class="fa-solid fa-seedling text-xl block mb-1.5" aria-hidden="true" style="color: #2F8F46"></i><span class="b-kop">San Marzano</span><p class="opacity-55 text-xs">Echte Italiaanse tomaten</p></div>
+    <div class="b-kaart p-4"><i class="fa-solid fa-utensils text-xl block mb-1.5" aria-hidden="true" style="color: var(--prijs)"></i><span class="b-kop">Familierecepten</span><p class="opacity-55 text-xs">Van generatie op generatie</p></div>
 </section>
 
 <section data-anim class="max-w-3xl mx-auto px-4 mt-8 text-center text-sm opacity-70">
