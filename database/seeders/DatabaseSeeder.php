@@ -10,13 +10,10 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
-     *
-     * Bewust leeg: accounts ontstaan via de onboarding, en op de server
-     * draait Composer zonder dev-dependencies (dus zonder Faker).
+     * Zonder Faker (draait ook op de server zonder dev-dependencies).
      */
     public function run(): void
     {
-        //
+        $this->call(PizzeriaSeeder::class);
     }
 }

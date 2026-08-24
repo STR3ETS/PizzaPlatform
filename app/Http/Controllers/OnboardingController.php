@@ -51,6 +51,8 @@ class OnboardingController extends Controller
             'email' => $state['email'],
             'password' => Hash::make($request->input('password')),
             'onboarding' => $state,
+            // Eenmalig vastgelegd: deze slug komt straks op gedrukte QR-dozen en mag niet meer verschuiven
+            'slug' => BestelController::uniekeSlug($state['name']),
         ]);
 
         Auth::login($user);

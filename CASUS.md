@@ -81,20 +81,33 @@ De doos wordt onderdeel van de digitale strategie. QR-codes op de dozen ("Volgen
 * **Advertenties:** vanuit het dashboard te activeren ("Meer bestellingen dit weekend? Bereik mensen binnen 5 km"), budget €5/€10/€20 of aangepast per dag. AI helpt met aanbieding, copy, creative, doelgroep en locatie. Resultaten vertaald naar omzet en ROAS.
 * **Social media:** kanalen koppelen, AI stelt content voor ("Je Pizza Burrata was deze week het populairst. Zal ik hier een post van maken?") met preview → goedkeuren → publiceren. Premium: contentkalender, automatische posts, reels, shoots en beheer door Eazyonline.
 
-## 9. Marketplace (fase 3)
+## 9. Standaard sterke lokale vindbaarheid (SEO by default)
+
+Een kale bestelpagina is slecht vindbaar. Daarom krijgt **elke aangesloten pizzeria automatisch een kleine, indexeerbare mini-website**, gegenereerd uit data die het platform toch al heeft. De ondernemer doet hier niets voor.
+
+* **Mini-site per pizzeria:** homepage (naam, verhaal, USP's, openingstijden), menukaart als echte HTML-pagina (gerechten, beschrijvingen, prijzen, ingrediënten en allergenen: precies de content waar Google op kauwt), contactpagina met adres en kaart, en daarbovenop de bestelflow. Server-side gerenderd en razendsnel.
+* **Landingspagina's per bezorggebied:** uit de locatie en de bezorgstralen genereren we automatisch pagina's als "Pizza bezorgen in Oosterhout" voor elke plaats en wijk binnen het gebied; exact de zoektermen waarop een pizzeria gevonden wil worden. Cruciaal: elke pagina wordt per zaak uniek gevuld (eigen menu, toppers, verhaal, reviews), anders prikt Google door de templates heen. De AI-laag schrijft deze teksten per zaak.
+* **Structured data standaard:** schema.org Restaurant met GeoCoordinates, OpeningHoursSpecification, Menu en MenuItem inclusief prijzen en allergenen. Alle data zit al in het systeem. Dit levert rijke zoekresultaten op en maakt de zaken ook vindbaar in AI-zoekmachines (GEO), wat naast Google steeds belangrijker wordt.
+* **Google Business Profile als grootste hefboom:** voor "pizzeria bij mij in de buurt" wint het kaartblok altijd. Als growth service: GBP claimen en optimaliseren, de bestellink in het profiel naar de eigen bestelpagina zetten in plaats van Thuisbezorgd, en een reviewflow na elke bestelling ("tevreden? laat een review achter"). Reviews zijn dé lokale rankingfactor.
+* **Domeinstrategie:** een subdomein bouwt zijn autoriteit los op; een eigen domein is sterker voor SEO en merk. Subdomein gratis als instap, eigen domein actief aanraden, en de mini-site white-label op dat eigen domein serveren zodat alle opgebouwde autoriteit van de pizzeria zelf is. Ook een verkoopargument tegenover Thuisbezorgd, waar reviews en vindbaarheid van het platform blijven.
+* **De dozen sluiten de cirkel:** QR-scans leiden tot merkzoekopdrachten ("pizzeria mario bestellen") en die versterken op hun beurt de lokale ranking.
+
+**Fasering:** de mini-site met structured data bouwen we mee in het MVP (zelfde data en templates als de bestelpagina). De wijk-landingspagina's en de GBP/review-service volgen in fase 2 als growth-laag.
+
+## 10. Marketplace (fase 3)
 
 Bovenop alle aangesloten pizzeria's komt een centrale consumenten-marketplace. Belangrijk verschil met bestaande spelers: **pizza-first in plaats van restaurant-first.** Zoeken op "Pepperoni" en dan pizza's vergelijken op prijs, rating, afstand en bezorgtijd, met filters als Napolitaans, halal, vegan, glutenvrij, deals en gratis bezorgen.
 
 **Verdienmodel marketplace:** eigen bestellingen van de pizzeria blijven zonder hoge commissie; alleen over nieuwe klanten die de marketplace aanbrengt kan een beperkte fee worden gerekend. Eerlijke propositie: **wij verdienen extra wanneer wij jou extra omzet brengen.** Later kan hier ook consumenten-AI bij ("Twee volwassenen, twee kinderen, één vegetariër, maximaal €45": AI stelt de bestelling samen).
 
-## 10. Het vliegwiel
+## 11. Het vliegwiel
 
 Dozenleverancier → pizzeria sluit aan → €19,95 software → AI-onboarding → eigen bestelomgeving → meer directe bestellingen → meer klantdata → AI ontdekt groeikansen → website/SEO/ads/social upsells → meer bestellingen → meer pizzadozen → meer omzet voor pizzeria én platform → marketplace groeit → meer nieuwe consumenten → nog meer bestellingen.
 
-## 11. Roadmap
+## 12. Roadmap
 
 ### MVP (fase 1), doel: eerste 10 founding pizzeria's live
-Multi-tenant SaaS-architectuur, account- en AI-begeleide onboarding, menu-import en -beheer, productvarianten en toppings, openingstijden, bezorggebieden, afhalen, online bestellen, checkout en payments, ordermanagement, printer/KDS-basis, klantaccounts, orderstatus, basis-CRM, kortingscodes, basis-analytics, pizzadozen bestellen, AI-assistent en upsellomgeving.
+Multi-tenant SaaS-architectuur, account- en AI-begeleide onboarding, menu-import en -beheer, productvarianten en toppings, openingstijden, bezorggebieden, afhalen, online bestellen, checkout en payments, ordermanagement, printer/KDS-basis, klantaccounts, orderstatus, basis-CRM, kortingscodes, basis-analytics, pizzadozen bestellen, AI-assistent, upsellomgeving en de SEO-basis (mini-site per pizzeria met structured data, zie hoofdstuk 9).
 
 ### Fase 2 (na validatie)
 Loyalty, geavanceerde CRM, AI-marketing en win-back automation, driver-interface en routefunctionaliteit, website-generator, SEO-integratie, social-integraties, advertising, multi-location, geavanceerde analytics en QR-box-tracking. Daarna versnelde migratie van de overige pizzeria's.
@@ -109,27 +122,30 @@ Marketplace: centrale consumentenwebsite/app, pizza discovery, vergelijking, rev
 4. Overige circa 50 pizzeria's gefaseerd migreren.
 5. Distributie via de dozenleverancier opschalen.
 
-## 12. Technisch uitgangspunt
+## 13. Technisch uitgangspunt
 
 Vanaf dag één een **multi-tenant platform**: één centrale infrastructuur voor honderden tot duizenden pizzeria's. Nieuwe pizzeria: aanmelden → AI-onboarding → menu importeren → payments → bezorggebied → branding → test → live. Provisioning uiteindelijk vrijwel volledig geautomatiseerd.
 
-## 13. Belangrijkste KPI's
+## 14. Belangrijkste KPI's
 
 Actieve pizzeria's, nieuwe pizzeria's per maand, onboarding completion rate en -tijd, MRR software, dozen per klant en marge per doos, orders per pizzeria, GMV, gemiddelde orderwaarde, repeat order rate, churn, supporttickets per pizzeria, AI resolution rate, attach rates (website, SEO, ads, social), ARPU, CAC en LTV.
 
-## 14. Visie
+## 15. Visie
 
 Niet simpelweg een alternatief voor bestaande bestelsoftware, maar **het digitale operating system voor de pizzeria.** Geen vijf leveranciers meer voor bestellingen, website, marketing, SEO, social, ads, CRM, loyalty en dozen; alles vanuit één omgeving. **AI begeleidt. De ondernemer beslist. Het platform voert uit.** De software blijft goedkoop om snel marktaandeel op te bouwen; de waarde ontstaat uit de combinatie van software, fysieke distributie, data, marketingdiensten en uiteindelijk de marketplace.
 
-## 15. Status van de ontwikkeling (22 augustus 2026)
+## 16. Status van de ontwikkeling (22 augustus 2026)
 
 Als proof-of-concept staat er al een werkende basis (Laravel, multi-page, nog merkloos):
 
 * Speelse stap-voor-stap onboarding die tegelijk de registratie is (menu met categorieën en foto's, openingstijden per dag, bezorgen/afhalen, zes bestelpagina-templates met live preview, logo-upload)
-* Login, wachtwoord-herstel en een app-achtig dashboard met online/offline-schakelaar, openstaande bestellingen (database-gedreven met statusflow), drukteschatting, checklist, deel-link met QR en introvideo-placeholder
-* De AI-laag (herkenning, menu-import, assistent) is nog niet gebouwd en is de volgende grote stap richting het MVP
+* Login, wachtwoord-herstel en een app-achtig dashboard met online/offline-schakelaar, openstaande bestellingen, drukteschatting, checklist, deel-link met QR en introvideo-placeholder
+* Touch-first ordermanagement met zes statussen (Betaald → Bevestigd → Wordt bereid → In de oven → Onderweg of Af te halen → Bezorgd of Afgehaald), tijdsindicatie bij het bevestigen en een geanimeerde statustijdlijn; aparte afhandeling voor bezorgen en afhalen, inclusief adres, opmerkingen en wijzigingen per gerecht
+* Volledig menukaart-beheer via een speelse stappen-wizard: gerechten met categorieën, beschrijvingen, ingrediënten (straks door de klant weg te laten), de 14 officiële allergenen met automatische herkenning uit ingrediënten, en optiegroepen (formaat, sauzen, extra's, drankjes) met meerprijzen
+* Instellingenpaneel met alle zaakgegevens (bewerken via popups), openingstijden per dag, en bezorgkosten per afstandsstraal met een kaart in eigen huisstijl waarop de zaak automatisch wordt geplaatst op basis van het adres
+* De klant-bestelpagina is de eerstvolgende bouwstap; de AI-laag (herkenning, menu-import, assistent) volgt daarna richting het MVP
 
-## 16. Openstaande punten om te valideren
+## 17. Openstaande punten om te valideren
 
 1. **Dozen:** is afname via het platform verplicht of vrijwillig, en klopt de marge-indicatie van €0,39 per doos?
 2. **Payments:** welke PSP(s) worden het (Mollie, Stripe, Adyen), en betaalt de consument rechtstreeks aan de pizzeria of via split payments?

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BestelController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OnboardingController;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +17,14 @@ Route::get('/onboarding', function () {
 Route::post('/onboarding/afronden', [OnboardingController::class, 'finish'])->name('onboarding.finish');
 Route::redirect('/registreren', '/onboarding');
 
+// De publieke bestelpagina per pizzeria (straks op het eigen (sub)domein)
+Route::prefix('/bestellen/{slug}')->group(function () {
+    Route::get('/', [BestelController::class, 'home'])->name('bestel.home');
+    Route::get('/menu', [BestelController::class, 'menu'])->name('bestel.menu');
+    Route::get('/contact', [BestelController::class, 'contact'])->name('bestel.contact');
+    Route::post('/plaatsen', [BestelController::class, 'plaats'])->name('bestel.plaats');
+});
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.attempt');
@@ -29,6 +38,11 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
         $user = $request->user();
+
+        // Accounts van voor het slug-veld krijgen er alsnog een
+        if ($user->slug === null) {
+            $user->forceFill(['slug' => BestelController::uniekeSlug($user->onboarding['name'] ?? null)])->save();
+        }
 
         // Eenmalig: de menukaart uit de onboarding overnemen naar de echte menukaart
         $onboarding = $user->onboarding ?? [];

@@ -504,6 +504,7 @@
             ->latest()->get();
     @endphp
     <script>window.PP_ORDERS = @json($ppOrders);</script>
+    <script>window.PP_SLUG = @json(auth()->user()->slug);</script>
     <script>window.PP_MENU = @json(auth()->user()->menuItems()->orderBy('volgorde')->orderBy('id')->get());</script>
     <script>window.PP_INTRO = @json(! auth()->user()->intro_seen);</script>
     <script>window.PP_STATUS = @json(['online' => (bool) auth()->user()->is_online, 'mode' => auth()->user()->order_mode ?? 'bezorgen_afhalen']);</script>

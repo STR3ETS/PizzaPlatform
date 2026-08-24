@@ -697,15 +697,12 @@ renderStatus();
     const linkEl = $('#shareLink');
     if (!linkEl) return;
 
-    const slug = String(DATA.name || 'jouwpizzeria')
+    const slug = window.PP_SLUG || String(DATA.name || 'jouwpizzeria')
         .normalize('NFD').replace(/[̀-ͯ]/g, '')
         .toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 30) || 'jouwpizzeria';
-    let link = `https://${slug}.bestelpagina.nl`;
-    if (DATA.domainMode === 'own' && DATA.ownDomain) {
-        const d = String(DATA.ownDomain).trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
-        if (d) link = `https://bestellen.${d}`;
-    }
-    linkEl.textContent = link;
+    /* Zolang de (sub)domeinen nog niet gekoppeld zijn, wijst de link naar de werkende bestelpagina */
+    const link = `${location.origin}/bestellen/${slug}`;
+    linkEl.innerHTML = `<a href="${link}" target="_blank" rel="noopener" class="hover:underline">${link}</a>`;
 
     if (window.QRCode) {
         new QRCode($('#qrBox'), { text: link, width: 90, height: 90, correctLevel: QRCode.CorrectLevel.M });
