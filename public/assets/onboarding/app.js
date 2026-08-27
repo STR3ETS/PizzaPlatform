@@ -2,7 +2,7 @@
 
 /* De onboarding is ook de registratie: ingelogde gebruikers slaan de wachtwoord-stap over */
 const IS_AUTH = window.PP_AUTH === true;
-const STEPS = ['name', 'person', 'contact', ...(IS_AUTH ? [] : ['wachtwoord']), 'company', 'hours', 'menu', 'payment', 'domain', 'style', 'overview'];
+const STEPS = ['name', 'person', 'contact', ...(IS_AUTH ? [] : ['wachtwoord']), 'company', 'hours', 'menu', 'payment', 'punten', 'domain', 'style', 'overview'];
 const QUESTION_STEPS = STEPS.filter((s) => s !== 'overview');
 const STORAGE_KEY = 'pp_onboarding_v2';
 
@@ -153,6 +153,7 @@ let state = {
     activeCat: 'klassiekers',
     menu: [],                    // { cat, icon: {t:'e'|'p', v:emoji|dataURL}, name, price }
     payment: null,
+    spaarpunten: true,           // klanten sparen automatisch punten voor korting
     domainMode: 'sub', ownDomain: '',
     color: '#E63946',
     theme: 'template1',
@@ -180,6 +181,7 @@ function save() {
 function normaliseerState() {
     if (!STEPS.includes(state.step)) state.step = 'name';
     if (!THEMES.some((t) => t.id === state.theme)) state.theme = 'template1';
+    state.spaarpunten = state.spaarpunten !== false;   // standaard aan
     if (!state.categories?.length) {
         state.categories = [{ id: 'klassiekers', emoji: '🍕', name: 'Klassiekers' }];
     }
@@ -713,7 +715,7 @@ function renderColors() {
         <div class="flex flex-wrap gap-2 mb-4">${KLEUR_TABS.map(([id, label]) =>
             `<button type="button" data-kleurtab="${id}" class="keuze-chip !py-1.5 !px-3.5 !text-xs ${kleurTab === id ? 'aan' : ''}">${label}</button>`).join('')}
         </div>
-        <div class="flex flex-wrap gap-3">${lijst.map((k) =>
+        <div class="grid grid-cols-5 sm:grid-cols-10 gap-3 w-fit">${lijst.map((k) =>
             `<button type="button" class="swatch ${state.color === k.hex ? 'selected' : ''}" data-color="${k.hex}"
                 style="background:${k.palet.primair}" title="${esc(k.naam)}" aria-label="${esc(k.naam)}"></button>`).join('')}
         </div>
@@ -998,7 +1000,7 @@ function renderSummary() {
     const address = [state.street, [state.zip, state.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
     const orderUrl = state.domainMode === 'own' && state.ownDomain
         ? `bestellen.${cleanDomain(state.ownDomain)}`
-        : `${slugify(state.name) || 'jouwpizzeria'}.bestelpagina.nl`;
+        : `${slugify(state.name) || 'jouwpizzeria'}.mijnpizzeria.nl`;
     const colorName = KLEUREN.find((k) => k.hex === state.color)?.naam || 'Eigen kleur';
     const theme = currentTheme();
     const usedCats = state.categories.filter((c) => state.menu.some((m) => m.cat === c.id));
@@ -1015,6 +1017,7 @@ function renderSummary() {
         { label: 'Open',          value: formatDaysSummary(), step: 'hours' },
         { label: 'Menu',          value: menuValue, step: 'menu' },
         { label: 'Betaling',      value: payLabels[state.payment] || 'Regelen we samen later', step: 'payment' },
+        { label: 'Spaarpunten',   value: state.spaarpunten ? 'Aan' : 'Uit', step: 'punten' },
         { label: 'Bestel-adres',  value: esc(orderUrl), step: 'domain' },
         { label: 'Template',      value: `${theme.emoji} ${esc(theme.name)}, <span class="inline-block w-4 h-4 rounded-full align-middle mx-1" style="background:${paletVoor(state.color).primair}"></span>${colorName}${state.logo ? ', met logo' : ''}`, step: 'style' },
     ];
@@ -1217,6 +1220,18 @@ function init() {
             $$('[data-pay]').forEach((c) => c.classList.remove('selected'));
             card.classList.add('selected');
             state.payment = card.dataset.pay;
+            save();
+            setTimeout(next, 380);
+        });
+    });
+
+    /* Spaarpunten: zelfde patroon als de betaalstap */
+    $$('[data-punten]').forEach((card) => {
+        if ((state.spaarpunten ? 'aan' : 'uit') === card.dataset.punten) card.classList.add('selected');
+        card.addEventListener('click', () => {
+            $$('[data-punten]').forEach((c) => c.classList.remove('selected'));
+            card.classList.add('selected');
+            state.spaarpunten = card.dataset.punten === 'aan';
             save();
             setTimeout(next, 380);
         });

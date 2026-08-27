@@ -28,6 +28,11 @@ class User extends Authenticatable
         return $this->hasMany(MenuItem::class);
     }
 
+    public function klanten(): HasMany
+    {
+        return $this->hasMany(Klant::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -41,6 +46,7 @@ class User extends Authenticatable
             'onboarding' => 'array',
             'intro_seen' => 'boolean',
             'is_online' => 'boolean',
+            'is_admin' => 'boolean',
             'lat' => 'float',
             'lng' => 'float',
             'bezorgkosten' => 'array',

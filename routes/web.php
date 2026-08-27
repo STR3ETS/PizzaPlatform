@@ -1,13 +1,38 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BestelController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OnboardingController;
 use Illuminate\Support\Facades\Route;
 
+// Subdomein per pizzeria: zaaknaam.mijnpizzeria.nl (lokaal: zaaknaam.localhost).
+// Staat boven de gewone routes zodat '/' op een subdomein de bestelpagina is, niet de marketingsite.
+// De templates krijgen basis '' mee, dus alle links en formulieren wijzen naar /afrekenen, /bestelling enzovoort op het subdomein zelf.
+$centraalDomein = config('app.centraal_domein');
+if ($centraalDomein) {
+    Route::pattern('subSlug', '(?!www$)[a-z0-9-]+');
+    Route::domain('{subSlug}.' . $centraalDomein)->group(function () {
+        $zaak = fn (string $slug) => \App\Models\User::where('slug', $slug)->firstOrFail();
+        Route::get('/', fn (string $subSlug) => app(BestelController::class)->t1Home($zaak($subSlug), ''));
+        Route::get('/afrekenen', fn (string $subSlug) => app(BestelController::class)->t1Afrekenen($zaak($subSlug), ''));
+        Route::post('/afrekenen', fn (\Illuminate\Http\Request $request, string $subSlug) => app(BestelController::class)->t1Plaats($zaak($subSlug), $request));
+        Route::get('/inloggen', fn (string $subSlug) => app(BestelController::class)->t1Inloggen($zaak($subSlug), ''));
+        Route::get('/account', fn (string $subSlug) => app(BestelController::class)->t1Account($zaak($subSlug), ''));
+        Route::post('/inloggen', fn (\Illuminate\Http\Request $request, string $subSlug) => app(BestelController::class)->t1KlantLogin($zaak($subSlug), '', $request));
+        Route::post('/registreren', fn (\Illuminate\Http\Request $request, string $subSlug) => app(BestelController::class)->t1KlantRegistreer($zaak($subSlug), '', $request));
+        Route::post('/klant-uitloggen', fn (string $subSlug) => app(BestelController::class)->t1KlantUitloggen($zaak($subSlug), ''));
+        Route::post('/klant/adressen', fn (\Illuminate\Http\Request $request, string $subSlug) => app(BestelController::class)->t1KlantAdressen($zaak($subSlug), $request));
+        Route::get('/bestelling/status', fn (\Illuminate\Http\Request $request, string $subSlug) => app(BestelController::class)->t1Status($zaak($subSlug), $request));
+        Route::get('/bestelling/data', fn (\Illuminate\Http\Request $request, string $subSlug) => app(BestelController::class)->t1OrderData($zaak($subSlug), $request));
+        Route::get('/bestelling/{token}', fn (string $subSlug, string $token) => app(BestelController::class)->t1Bestelling($zaak($subSlug), '', $token));
+        Route::get('/bestelling', fn (string $subSlug) => app(BestelController::class)->t1Bestelling($zaak($subSlug), '', null));
+    });
+}
+
 Route::get('/', function () {
-    return view('welcome');
+    return view('site.home');
 })->name('home');
 
 // De onboarding is tegelijk de registratie
@@ -25,6 +50,12 @@ foreach (['template1', 'template2', 'template3', 'template4'] as $speeltuin) {
     Route::get("/$speeltuin", fn () => app(BestelController::class)->t1Home($demoPizzeria(), "/$speeltuin", $speeltuin));
     Route::get("/$speeltuin/afrekenen", fn () => app(BestelController::class)->t1Afrekenen($demoPizzeria(), "/$speeltuin", $speeltuin));
     Route::post("/$speeltuin/afrekenen", fn (\Illuminate\Http\Request $request) => app(BestelController::class)->t1Plaats($demoPizzeria(), $request));
+    Route::get("/$speeltuin/inloggen", fn () => app(BestelController::class)->t1Inloggen($demoPizzeria(), "/$speeltuin", $speeltuin));
+    Route::get("/$speeltuin/account", fn () => app(BestelController::class)->t1Account($demoPizzeria(), "/$speeltuin", $speeltuin));
+    Route::post("/$speeltuin/inloggen", fn (\Illuminate\Http\Request $request) => app(BestelController::class)->t1KlantLogin($demoPizzeria(), "/$speeltuin", $request));
+    Route::post("/$speeltuin/registreren", fn (\Illuminate\Http\Request $request) => app(BestelController::class)->t1KlantRegistreer($demoPizzeria(), "/$speeltuin", $request));
+    Route::post("/$speeltuin/klant-uitloggen", fn () => app(BestelController::class)->t1KlantUitloggen($demoPizzeria(), "/$speeltuin"));
+    Route::post("/$speeltuin/klant/adressen", fn (\Illuminate\Http\Request $request) => app(BestelController::class)->t1KlantAdressen($demoPizzeria(), $request));
     Route::get("/$speeltuin/bestelling/status", fn (\Illuminate\Http\Request $request) => app(BestelController::class)->t1Status($demoPizzeria(), $request));
     Route::get("/$speeltuin/bestelling/data", fn (\Illuminate\Http\Request $request) => app(BestelController::class)->t1OrderData($demoPizzeria(), $request));
     Route::get("/$speeltuin/bestelling/{token}", fn (string $token) => app(BestelController::class)->t1Bestelling($demoPizzeria(), "/$speeltuin", $token, $speeltuin));
@@ -41,6 +72,12 @@ Route::prefix('/bestellen/{slug}')->group(function () {
     // Template1 (Presto): afrekenen en de statuspagina van de klant
     Route::get('/afrekenen', [BestelController::class, 'afrekenen1'])->name('bestel.afrekenen');
     Route::post('/afrekenen', [BestelController::class, 'plaats1'])->name('bestel.plaats1');
+    Route::get('/inloggen', [BestelController::class, 'inloggen1'])->name('bestel.inloggen');
+    Route::get('/account', [BestelController::class, 'account1'])->name('bestel.account');
+    Route::post('/inloggen', [BestelController::class, 'klantlogin1'])->name('bestel.klantlogin');
+    Route::post('/registreren', [BestelController::class, 'klantregistreer1'])->name('bestel.klantregistreer');
+    Route::post('/klant-uitloggen', [BestelController::class, 'klantuitloggen1'])->name('bestel.klantuitloggen');
+    Route::post('/klant/adressen', [BestelController::class, 'klantadressen1'])->name('bestel.klantadressen');
     Route::get('/bestelling/status', [BestelController::class, 'status1'])->name('bestel.bestelstatus');
     Route::get('/bestelling/data', [BestelController::class, 'orderdata1'])->name('bestel.besteldata');
     Route::get('/bestelling/{token}', [BestelController::class, 'bestelling1'])->name('bestel.bestelling.token');
@@ -58,8 +95,17 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    // Platformbeheer: alle pizzeria's inzien (alleen voor beheerders)
+    Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
+    Route::get('/admin/pizzeria/{user}', [AdminController::class, 'pizzeria'])->name('admin.pizzeria');
+
     Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
         $user = $request->user();
+
+        // Beheerders hebben geen eigen zaak: door naar het platformbeheer
+        if ($user->is_admin) {
+            return redirect()->route('admin.index');
+        }
 
         // Accounts van voor het slug-veld krijgen er alsnog een
         if ($user->slug === null) {
@@ -140,11 +186,13 @@ Route::middleware('auth')->group(function () {
             'dayTimes.*.open' => ['required', 'date_format:H:i'],
             'dayTimes.*.close' => ['required', 'date_format:H:i'],
             'payment' => ['sometimes', 'in:mollie,stripe,later'],
+            'spaarpunten' => ['sometimes', 'boolean'],
             'domainMode' => ['sometimes', 'in:sub,own'],
             'ownDomain' => ['sometimes', 'nullable', 'string', 'max:100'],
             'color' => ['sometimes', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'logo' => ['sometimes', 'nullable', 'string', 'max:300000', 'regex:/^data:image\/(png|jpeg|webp);base64,/'],
             'theme' => ['sometimes', 'in:template1,template2,template3,template4'],
+            'upsellPin' => ['sometimes', 'nullable', 'integer'],
         ]);
 
         $dagen = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'];

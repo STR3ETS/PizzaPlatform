@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Centraal domein voor pizzeria-subdomeinen
+    |--------------------------------------------------------------------------
+    |
+    | Elke pizzeria krijgt zaaknaam.{dit domein}. Lokaal is 'localhost' handig:
+    | Chrome stuurt *.localhost vanzelf naar 127.0.0.1, zonder hosts-bestand.
+    | In productie wordt dit mijnpizzeria.nl.
+    |
+    */
+
+    'centraal_domein' => env('CENTRAAL_DOMEIN', 'localhost'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

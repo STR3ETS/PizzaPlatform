@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Klant;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
@@ -434,6 +436,7 @@ class BestelController extends Controller
             'logo' => $ob['logo'] ?? null,
             'naam' => $ob['name'] ?? 'Pizzeria',
             'palet' => self::paletVoor($kleur ?? $ob['color'] ?? null),
+            'spaarpunten' => (bool) ($ob['spaarpunten'] ?? false),
         ];
     }
 
@@ -548,6 +551,7 @@ class BestelController extends Controller
             ])),
             'menuJs' => $items->mapWithKeys(fn ($item) => [$item->id => [
                 'naam' => $item->naam,
+                'categorie' => $item->categorie,
                 'beschrijving' => $item->beschrijving,
                 'prijsCenten' => $item->prijs,
                 'foto' => $item->foto ?: null,
@@ -558,6 +562,8 @@ class BestelController extends Controller
             'laagsteTier' => $tiers->first(),
             'openInfo' => $this->t1OpenInfo($user),
             'overInfo' => $this->t1OverInfo($user),
+            'klantInfo' => $this->t1KlantInfo($user),
+            'upsellPin' => ($user->onboarding ?? [])['upsellPin'] ?? null,
         ]);
     }
 
@@ -607,6 +613,17 @@ class BestelController extends Controller
 
     public function t1Afrekenen(User $user, string $basis, ?string $forceer = null)
     {
+        // Zonder account verder? Dat onthouden we voor deze sessie.
+        if (request('gast')) {
+            session(['gast_' . $user->id => true]);
+        }
+
+        // Tussenstap: eerst inloggen of bewust als gast verder (het voorbeeld in het dashboard slaat dit over)
+        $klant = $this->t1KlantVan($user);
+        if (! $klant && ! session('gast_' . $user->id) && ! request('voorbeeld')) {
+            return redirect($basis . '/inloggen');
+        }
+
         $thema = $this->t1Thema($user, $forceer);
         $tijden = $this->t1AfrekenSlots($user);
 
@@ -617,7 +634,172 @@ class BestelController extends Controller
             'bezorg' => ['lat' => $user->lat, 'lng' => $user->lng, 'tiers' => collect($user->bezorgkosten ?? [])->sortBy('km')->values()],
             'fotos' => $this->t1Fotos($user),
             'voorbeeldMand' => request('voorbeeld') ? $this->t1VoorbeeldMand($user) : null,
+            'klant' => $klant ? [...$klant->only(['naam', 'email', 'telefoon']), 'adressen' => $klant->adressen ?? [], 'punten' => (int) $klant->punten] : null,
         ]);
+    }
+
+    /* ── Klantaccounts: de tussenstap tussen de winkelmand en het afrekenen ── */
+
+    /** De ingelogde klant van deze zaak, of null */
+    private function t1KlantVan(User $user): ?Klant
+    {
+        $id = session('klant_' . $user->id);
+
+        return $id ? Klant::where('user_id', $user->id)->find($id) : null;
+    }
+
+    /* Spaarpunten: 1 punt per volle euro aan gerechten; per blok van 100 punten 5 euro korting */
+    public const PUNTEN_BLOK = 100;
+    public const BLOK_KORTING = 500;
+
+    /** Waar de klant na het inloggen heen wil: afrekenen (standaard) of de account-popup in de shop */
+    private function t1InlogDoel(string $basis): string
+    {
+        return request('verder') === 'account' ? $basis . '?account=1' : $basis . '/afrekenen';
+    }
+
+    /** Alles wat de account-popup en accountpagina tonen, of null zonder login */
+    private function t1KlantInfo(User $user, int $maxBestellingen = 5): ?array
+    {
+        $klant = $this->t1KlantVan($user);
+        if (! $klant) {
+            return null;
+        }
+
+        $statusLabels = [
+            'nieuw' => 'Geplaatst', 'geaccepteerd' => 'Bevestigd', 'bereiden' => 'Wordt bereid',
+            'oven' => 'Wordt bereid', 'onderweg' => 'Onderweg', 'bezorgd' => 'Bezorgd',
+        ];
+
+        return [
+            'naam' => $klant->naam,
+            'email' => $klant->email,
+            'telefoon' => $klant->telefoon,
+            'punten' => $klant->punten,
+            'adressen' => $klant->adressen ?? [],
+            'bestellingen' => Order::where('klant_id', $klant->id)->latest()->take($maxBestellingen)->get()
+                ->map(fn ($order) => [
+                    'nummer' => $order->nummer,
+                    'token' => $order->token,
+                    'datum' => $order->created_at->format('d-m-Y H:i'),
+                    'totaal' => $order->totaal,
+                    'status' => $statusLabels[$order->status] ?? $order->status,
+                    'afgerond' => $order->status === 'bezorgd',
+                    'items' => collect($order->items)
+                        ->filter(fn ($i) => ! in_array($i['naam'] ?? '', ['Bezorgkosten', 'Fooi bezorger'], true))
+                        ->map(fn ($i) => ($i['aantal'] ?? 1) . 'x ' . ($i['naam'] ?? ''))->implode(', '),
+                ])->all(),
+        ];
+    }
+
+    public function t1Inloggen(User $user, string $basis, ?string $forceer = null)
+    {
+        // Al ingelogd: meteen door naar waar je heen wilde
+        if ($this->t1KlantVan($user)) {
+            return redirect($this->t1InlogDoel($basis));
+        }
+        $thema = $this->t1Thema($user, $forceer);
+
+        return view("templates.$thema.$thema-inloggen", $this->t1Basis($user, $basis));
+    }
+
+    public function t1Account(User $user, string $basis, ?string $forceer = null)
+    {
+        $info = $this->t1KlantInfo($user, 20);
+        if (! $info) {
+            return redirect($basis . '/inloggen?verder=account');
+        }
+
+        $thema = $this->t1Thema($user, $forceer);
+
+        return view("templates.$thema.$thema-account", [
+            ...$this->t1Basis($user, $basis),
+            'klant' => $this->t1KlantVan($user),
+            'bestellingen' => collect($info['bestellingen']),
+        ]);
+    }
+
+    public function t1KlantLogin(User $user, string $basis, Request $request)
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+            'wachtwoord' => ['required', 'string'],
+        ], [
+            'email.required' => 'Vul je e-mailadres in.',
+            'email.email' => 'Dit e-mailadres ziet er nog niet goed uit.',
+            'wachtwoord.required' => 'Vul je wachtwoord in.',
+        ]);
+
+        $klant = Klant::where('user_id', $user->id)
+            ->whereRaw('LOWER(email) = ?', [strtolower($data['email'])])->first();
+        if (! $klant || ! Hash::check($data['wachtwoord'], $klant->wachtwoord)) {
+            return back()->withErrors(['email' => 'E-mailadres of wachtwoord klopt niet.'], 'login')->withInput();
+        }
+
+        session(['klant_' . $user->id => $klant->id]);
+
+        return redirect($this->t1InlogDoel($basis));
+    }
+
+    public function t1KlantRegistreer(User $user, string $basis, Request $request)
+    {
+        $data = $request->validate([
+            'naam' => ['required', 'string', 'min:2', 'max:80'],
+            'email' => ['required', 'email', 'max:255'],
+            'telefoon' => ['nullable', 'string', 'max:30'],
+            'wachtwoord' => ['required', 'string', 'min:8'],
+        ], [
+            'naam.required' => 'Vul je naam in.',
+            'naam.min' => 'Vul je naam in.',
+            'email.required' => 'Vul je e-mailadres in.',
+            'email.email' => 'Dit e-mailadres ziet er nog niet goed uit.',
+            'wachtwoord.required' => 'Kies een wachtwoord.',
+            'wachtwoord.min' => 'Je wachtwoord moet minimaal 8 tekens zijn.',
+        ]);
+
+        $bestaat = Klant::where('user_id', $user->id)
+            ->whereRaw('LOWER(email) = ?', [strtolower($data['email'])])->exists();
+        if ($bestaat) {
+            return back()->withErrors(['email' => 'Er is al een account met dit e-mailadres. Log hiernaast in.'], 'registratie')->withInput();
+        }
+
+        $klant = Klant::create([
+            'user_id' => $user->id,
+            'naam' => $data['naam'],
+            'email' => strtolower($data['email']),
+            'telefoon' => $data['telefoon'] ?? null,
+            'wachtwoord' => Hash::make($data['wachtwoord']),
+        ]);
+        session(['klant_' . $user->id => $klant->id]);
+
+        return redirect($this->t1InlogDoel($basis));
+    }
+
+    public function t1KlantUitloggen(User $user, string $basis)
+    {
+        session()->forget(['klant_' . $user->id, 'gast_' . $user->id]);
+
+        return redirect($basis);
+    }
+
+    /** Adresboek van de ingelogde klant bewaren (bij elke wijziging in de afreken-popup) */
+    public function t1KlantAdressen(User $user, Request $request)
+    {
+        $klant = $this->t1KlantVan($user);
+        if (! $klant) {
+            return response()->json(['ok' => false], 401);
+        }
+
+        $data = $request->validate([
+            'adressen' => ['required', 'array', 'max:10'],
+            'adressen.*.label' => ['required', 'string', 'max:160'],
+            'adressen.*.lat' => ['nullable', 'numeric'],
+            'adressen.*.lng' => ['nullable', 'numeric'],
+        ]);
+
+        $klant->update(['adressen' => array_values($data['adressen'])]);
+
+        return response()->json(['ok' => true]);
     }
 
     public function t1Bestelling(User $user, string $basis, ?string $token = null, ?string $forceer = null)
@@ -670,6 +852,7 @@ class BestelController extends Controller
 
         $kosten = 0;
         $fooi = 0;
+        $korting = 0;
         $items = [];
         foreach ($order->items as $item) {
             if ($item['naam'] === 'Bezorgkosten') {
@@ -678,6 +861,10 @@ class BestelController extends Controller
             }
             if ($item['naam'] === 'Fooi bezorger') {
                 $fooi = (int) $item['prijs'];
+                continue;
+            }
+            if ($item['naam'] === 'Spaarpunten korting') {
+                $korting = -(int) $item['prijs'];
                 continue;
             }
             $items[] = [
@@ -700,9 +887,11 @@ class BestelController extends Controller
             'klant' => ['naam' => $order->klant],
             'opmerking' => '',
             'items' => $items,
-            'subtotaal' => $order->totaal - $kosten - $fooi,
+            'subtotaal' => $order->totaal - $kosten - $fooi + $korting,
             'kosten' => $kosten,
             'fooi' => $fooi,
+            'korting' => $korting,
+            'punten' => (int) $order->punten,
             'totaal' => $order->totaal,
         ]);
     }
@@ -728,6 +917,8 @@ class BestelController extends Controller
         $data = $request->validate([
             'type' => ['required', 'in:bezorgen,afhalen'],
             'klant' => ['required', 'string', 'max:80'],
+            'telefoon' => ['nullable', 'string', 'max:30'],
+            'punten' => ['sometimes', 'boolean'],
             'adres' => ['nullable', 'string', 'max:160'],
             'tijd' => ['nullable', 'string', 'max:40'],
             'opmerking' => ['nullable', 'string', 'max:300'],
@@ -773,6 +964,24 @@ class BestelController extends Controller
                 $regelOpmerkingen[] = $item->naam . ': ' . $regel['opmerking'];
             }
         }
+        // Spaarpunten: inwisselen als korting en sparen over het (gekorte) gerechtenbedrag.
+        // 1 punt per volle euro; per 100 punten 5 euro korting.
+        $subtotaalGerechten = $totaal;
+        $klantAccount = $this->t1KlantVan($user);
+        $spaarpuntenAan = (bool) (($user->onboarding ?? [])['spaarpunten'] ?? false);
+        $puntenGebruikt = 0;
+        $korting = 0;
+        if ($klantAccount && $spaarpuntenAan && $request->boolean('punten')) {
+            $blokken = min(intdiv($klantAccount->punten, self::PUNTEN_BLOK), intdiv($subtotaalGerechten, self::BLOK_KORTING));
+            if ($blokken > 0) {
+                $puntenGebruikt = $blokken * self::PUNTEN_BLOK;
+                $korting = $blokken * self::BLOK_KORTING;
+                $orderItems[] = ['naam' => 'Spaarpunten korting', 'prijs' => -$korting, 'aantal' => 1, 'opties' => []];
+                $totaal -= $korting;
+            }
+        }
+        $puntenVerdiend = $klantAccount && $spaarpuntenAan ? intdiv(max(0, $subtotaalGerechten - $korting), 100) : 0;
+
         if ($data['type'] === 'bezorgen' && $data['bezorgkosten'] > 0) {
             $orderItems[] = ['naam' => 'Bezorgkosten', 'prijs' => (int) $data['bezorgkosten'], 'aantal' => 1, 'opties' => []];
             $totaal += (int) $data['bezorgkosten'];
@@ -788,13 +997,33 @@ class BestelController extends Controller
             ...$regelOpmerkingen,
         ])->filter()->implode(' | ');
 
+        // Ingelogde klant: gegevens onthouden en het puntensaldo bijwerken
+        if ($klantAccount) {
+            $bijwerken = [];
+            if ($data['type'] === 'bezorgen' && ! empty($data['adres'])) {
+                $bijwerken['adres'] = ['adres' => $data['adres']];
+            }
+            if (! empty($data['telefoon'])) {
+                $bijwerken['telefoon'] = $data['telefoon'];
+            }
+            if ($puntenVerdiend > 0 || $puntenGebruikt > 0) {
+                $bijwerken['punten'] = max(0, $klantAccount->punten - $puntenGebruikt + $puntenVerdiend);
+            }
+            if ($bijwerken !== []) {
+                $klantAccount->update($bijwerken);
+            }
+        }
+
         $order = Order::create([
             'user_id' => $user->id,
+            'klant_id' => $klantAccount?->id,
             'nummer' => ((int) $user->orders()->max('nummer') ?: 411) + 1,
             'token' => (string) Str::uuid(),
             'klant' => $data['klant'],
             'items' => $orderItems,
             'totaal' => $totaal,
+            'punten' => $puntenVerdiend,
+            'punten_gebruikt' => $puntenGebruikt,
             'status' => 'nieuw',
             'type' => $data['type'],
             'adres' => $data['type'] === 'bezorgen' ? ($data['adres'] ?? null) : null,
@@ -802,13 +1031,46 @@ class BestelController extends Controller
             'is_demo' => false,
         ]);
 
-        return response()->json(['ok' => true, 'nummer' => $order->nummer, 'token' => $order->token, 'totaal' => $totaal]);
+        return response()->json([
+            'ok' => true, 'nummer' => $order->nummer, 'token' => $order->token, 'totaal' => $totaal,
+            'punten' => $puntenVerdiend, 'korting' => $korting,
+        ]);
     }
 
     /* Slug-varianten voor de publieke routes */
     public function afrekenen1(string $slug)
     {
         return $this->t1Afrekenen($this->pizzeria($slug), '/bestellen/' . $slug);
+    }
+
+    public function inloggen1(string $slug)
+    {
+        return $this->t1Inloggen($this->pizzeria($slug), '/bestellen/' . $slug);
+    }
+
+    public function account1(string $slug)
+    {
+        return $this->t1Account($this->pizzeria($slug), '/bestellen/' . $slug);
+    }
+
+    public function klantlogin1(Request $request, string $slug)
+    {
+        return $this->t1KlantLogin($this->pizzeria($slug), '/bestellen/' . $slug, $request);
+    }
+
+    public function klantregistreer1(Request $request, string $slug)
+    {
+        return $this->t1KlantRegistreer($this->pizzeria($slug), '/bestellen/' . $slug, $request);
+    }
+
+    public function klantuitloggen1(string $slug)
+    {
+        return $this->t1KlantUitloggen($this->pizzeria($slug), '/bestellen/' . $slug);
+    }
+
+    public function klantadressen1(Request $request, string $slug)
+    {
+        return $this->t1KlantAdressen($this->pizzeria($slug), $request);
     }
 
     public function bestelling1(string $slug, ?string $token = null)

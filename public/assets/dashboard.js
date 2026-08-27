@@ -302,6 +302,13 @@ function orderKaart(o) {
     const etaChip = o.eta_minuten && o.status !== 'bezorgd'
         ? `<span class="text-[11px] font-body font-extrabold rounded-full px-2 py-0.5" style="background:var(--color-crema-dark)"><i class="fa-solid fa-clock" aria-hidden="true"></i> ± ${o.eta_minuten} min</span>`
         : '';
+    /* Spaarpunten: wat deze klant spaart of inwisselt, zichtbaar voor de pizzeria */
+    const puntenDelen = [];
+    if (o.punten > 0) puntenDelen.push(`+${o.punten} gespaard`);
+    if (o.punten_gebruikt > 0) puntenDelen.push(`${o.punten_gebruikt} ingewisseld`);
+    const puntenChip = puntenDelen.length
+        ? `<span class="text-[11px] font-body font-extrabold rounded-full px-2 py-0.5" style="background:var(--color-crema-dark)"><i class="fa-solid fa-star" style="color:var(--color-gold)" aria-hidden="true"></i> ${puntenDelen.join(', ')}</span>`
+        : '';
 
     /* Bij accepteren eerst een tijdsschatting kiezen */
     const kiezer = etaOpen === o.id && o.status === 'nieuw' ? `
@@ -352,6 +359,7 @@ function orderKaart(o) {
             <p class="font-display text-2xl">#${o.nummer}</p>
             <p class="font-extrabold text-lg flex-1 min-w-0 truncate">${esc(o.klant)}</p>
             ${etaChip}
+            ${puntenChip}
             ${typeChip(o)}
             <p class="font-display text-2xl">${euro(o.totaal)}</p>
         </div>
@@ -702,8 +710,7 @@ renderStatus();
     const slug = window.PP_SLUG || String(DATA.name || 'jouwpizzeria')
         .normalize('NFD').replace(/[̀-ͯ]/g, '')
         .toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 30) || 'jouwpizzeria';
-    /* Zolang de (sub)domeinen nog niet gekoppeld zijn, wijst de link naar de werkende bestelpagina */
-    const link = `${location.origin}/bestellen/${slug}`;
+    const link = window.PP_BESTEL_URL || `${location.origin}/bestellen/${slug}`;
     linkEl.innerHTML = `<a href="${link}" target="_blank" rel="noopener" class="hover:underline">${link}</a>`;
 
     if (window.QRCode) {
@@ -1684,12 +1691,23 @@ const INST_SECTIES = {
         kicker: 'Betalen 💶', titel: 'Hoe rekenen klanten af?', sub: 'Online betalen werkt het prettigst voor jou en je klant.',
         mascot: 'scanning-qr', bubble: 'Kassa! 🤌', kant: 'left',
         velden: () => {
-            const labels = { mollie: 'Online betalen via Mollie', stripe: 'Online betalen via Stripe', later: 'Kies ik later' };
+            const labels = { stripe: 'Online betalen via Stripe', later: 'Kies ik later' };
             const nu = DATA.payment || 'later';
             return `<div class="flex flex-col gap-2">${Object.keys(labels).map((p) =>
                 `<button type="button" class="keuze-chip justify-center !py-2.5 ${nu === p ? 'aan' : ''}" data-i-keuze="${p}">${labels[p]}</button>`).join('')}</div>`;
         },
         payload: () => ({ payment: $('#instVelden .keuze-chip.aan')?.dataset.iKeuze || 'later' }),
+    },
+    punten: {
+        kicker: 'Spaarpunten 🌟', titel: 'Klanten laten sparen?', sub: 'Klanten sparen automatisch punten met elke bestelling. Die punten leveren straks extra korting op bij het afrekenen.',
+        mascot: 'waving-hello', bubble: 'Zo komen ze terug! 🌟', kant: 'right',
+        velden: () => {
+            const nu = DATA.spaarpunten ? 'aan' : 'uit';
+            const labels = { aan: 'Aan, klanten sparen automatisch mee', uit: 'Uit, geen spaarprogramma' };
+            return `<div class="flex flex-col gap-2">${Object.keys(labels).map((p) =>
+                `<button type="button" class="keuze-chip justify-center !py-2.5 ${nu === p ? 'aan' : ''}" data-i-keuze="${p}">${labels[p]}</button>`).join('')}</div>`;
+        },
+        payload: () => ({ spaarpunten: $('#instVelden .keuze-chip.aan')?.dataset.iKeuze === 'aan' }),
     },
     domein: {
         kicker: 'Jouw domein 🌐', titel: 'Waar bestellen je klanten?', sub: 'Een gratis subdomein, of je eigen domeinnaam.',
@@ -1701,7 +1719,7 @@ const INST_SECTIES = {
             const eigen = DATA.domainMode === 'own';
             return `
                 <div class="flex flex-col gap-2">
-                    <button type="button" class="keuze-chip justify-center !py-2.5 ${eigen ? '' : 'aan'}" data-i-keuze="sub">Gratis subdomein: ${slug}.bestelpagina.nl</button>
+                    <button type="button" class="keuze-chip justify-center !py-2.5 ${eigen ? '' : 'aan'}" data-i-keuze="sub">Gratis subdomein: ${slug}.mijnpizzeria.nl</button>
                     <button type="button" class="keuze-chip justify-center !py-2.5 ${eigen ? 'aan' : ''}" data-i-keuze="own">Mijn eigen domein</button>
                 </div>
                 <div id="iEigenDomeinVak" class="${eigen ? '' : 'hidden'}">
@@ -1836,11 +1854,81 @@ $('#instVelden')?.addEventListener('change', async (e) => {
 
 /* ── Bestelpagina-paneel: link, kopieerknop, live voorbeeld en status ── */
 
+/* Dozen-webshop: samenstellen met staffelprijzen; bestellen volgt zodra betalingen live zijn */
+(function dozenShop() {
+    const paneel = document.querySelector('[data-panel="dozen"]');
+    if (!paneel || !paneel.querySelector('[data-doos]')) return;
+
+    const PRIJZEN = {
+        klein: { 100: 52, 250: 46, 500: 40, 1000: 34 },
+        middel: { 100: 58, 250: 51, 500: 45, 1000: 38 },
+        groot: { 100: 66, 250: 58, 500: 51, 1000: 43 },
+    };
+    const NAMEN = { klein: 'Klein 26 cm', middel: 'Middel 29 cm', groot: 'Groot 33 cm' };
+    const keuze = { klein: 0, middel: 0, groot: 0 };
+    const euroTekst = (centen) => '€ ' + (centen / 100).toFixed(2).replace('.', ',');
+
+    function renderDozen() {
+        let subtotaal = 0;
+        Object.keys(keuze).forEach((f) => {
+            paneel.querySelectorAll(`[data-doos="${f}"] [data-aantal]`).forEach((chip) =>
+                chip.classList.toggle('aan', Number(chip.dataset.aantal) === keuze[f]));
+            const info = paneel.querySelector(`[data-doos-prijs="${f}"]`);
+            info.textContent = keuze[f] ? `${keuze[f]} stuks x ${euroTekst(PRIJZEN[f][keuze[f]])} = ${euroTekst(keuze[f] * PRIJZEN[f][keuze[f]])}` : '';
+            subtotaal += keuze[f] ? keuze[f] * PRIJZEN[f][keuze[f]] : 0;
+        });
+        const gekozen = Object.keys(keuze).filter((f) => keuze[f]);
+        const verzending = subtotaal === 0 ? 0 : (subtotaal >= 15000 ? 0 : 1250);
+        $('#dozenRegels').innerHTML = gekozen.length
+            ? gekozen.map((f) => `<div class="flex justify-between gap-3 text-sm font-extrabold py-2"><span>${keuze[f]} x ${NAMEN[f]}</span><span>${euroTekst(keuze[f] * PRIJZEN[f][keuze[f]])}</span></div>`).join('')
+            : '<p class="text-sm font-extrabold text-cacao/40 py-2">Kies links een formaat en aantal.</p>';
+        $('#dozenVerzend').textContent = subtotaal === 0 ? '-' : (verzending === 0 ? 'Gratis' : euroTekst(verzending));
+        $('#dozenTotaal').textContent = euroTekst(subtotaal + verzending);
+        $('#dozenGratisHint').style.display = subtotaal > 0 && verzending > 0 ? '' : 'none';
+    }
+
+    paneel.addEventListener('click', (e) => {
+        const chip = e.target.closest('[data-aantal]');
+        if (chip) {
+            const formaat = chip.closest('[data-doos]').dataset.doos;
+            const aantal = Number(chip.dataset.aantal);
+            keuze[formaat] = keuze[formaat] === aantal ? 0 : aantal;   // nogmaals klikken zet uit
+            renderDozen();
+            return;
+        }
+        const qr = e.target.closest('[data-doos-qr]');
+        if (qr) {
+            paneel.querySelectorAll('[data-doos-qr]').forEach((k) => k.classList.toggle('aan', k === qr));
+            $('#doosQrVak').style.display = qr.dataset.doosQr === 'aan' ? '' : 'none';
+        }
+    });
+    renderDozen();
+})();
+
+/* Pizza Coach: slapende klanten bekijken en de combo-upsell aan of uit zetten */
+(function coach() {
+    $('#coachSlapendKnop')?.addEventListener('click', () => $('#coachSlapendModal').classList.remove('hidden'));
+    $('#coachSlapendSluit')?.addEventListener('click', () => $('#coachSlapendModal').classList.add('hidden'));
+    $('#coachSlapendModal')?.addEventListener('click', (e) => {
+        if (!e.target.closest('.animate-pop')) $('#coachSlapendModal').classList.add('hidden');
+    });
+
+    const zetPin = async (waarde) => {
+        const res = await postJson('/instellingen/gegevens', { upsellPin: waarde }).catch(() => null);
+        if (res) {
+            location.hash = 'overzicht';
+            location.reload();
+        }
+    };
+    document.querySelector('[data-coach-pin]')?.addEventListener('click', (e) => zetPin(Number(e.currentTarget.dataset.coachPin)));
+    document.querySelector('[data-coach-pin-uit]')?.addEventListener('click', () => zetPin(null));
+})();
+
 (function paginaPaneel() {
     const linkTekst = $('#paginaLink');
     if (!linkTekst) return;
     const slug = window.PP_SLUG || 'jouwpizzeria';
-    const link = `${location.origin}/bestellen/${slug}`;
+    const link = window.PP_BESTEL_URL || `${location.origin}/bestellen/${slug}`;
     linkTekst.textContent = link;
     $('#paginaOpen').href = link;
     $('#paginaKopieer').addEventListener('click', async () => {

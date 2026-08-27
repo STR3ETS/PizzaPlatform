@@ -64,6 +64,7 @@
                     {{ $openInfo['open'] ? 'Nu geopend' : 'Nu gesloten' }}
                 </p>
                 <button type="button" id="openInfoKnop" class="text-sm font-semibold text-secundair/60 underline underline-offset-4 decoration-secundair/30 hover:text-secundair transition-colors cursor-pointer">Over {{ $naam }}</button>
+                <a href="{{ $basis }}/account" class="text-sm font-semibold text-secundair/60 underline underline-offset-4 decoration-secundair/30 hover:text-secundair transition-colors">Mijn account</a>
             </div>
         </div>
 
@@ -188,7 +189,14 @@
             </div>
 
             <div id="mandLijst" class="hidden flex-1 min-h-0 mt-3">
-                <div class="h-full overflow-y-auto divide-y divide-white/10" id="mandRegels"></div>
+                <div class="h-full overflow-y-auto">
+                    <div class="divide-y divide-white/10" id="mandRegels"></div>
+                    {{-- Iets vergeten? Kleine kaartjes met gerechten die nog niet in de mand zitten --}}
+                    <div id="mandUpsell" style="display:none" class="pt-4 mt-2 border-t border-white/10">
+                        <p class="text-sm font-bold text-white">Iets vergeten?</p>
+                        <div id="mandUpsellRij" class="mt-3 flex gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none]"></div>
+                    </div>
+                </div>
             </div>
             <div id="mandOnder" class="hidden pt-4 mt-4 border-t border-white/15">
                 <div class="space-y-1.5 text-sm font-semibold text-wit-warm/70">
@@ -242,6 +250,83 @@
     </div>
 
     {{-- Productmodal: opties kiezen, aantal en toevoegen aan de winkelmand --}}
+    {{-- Mijn account: alles in een popup, zoals de Over-popup --}}
+    @if($klantInfo)
+    <div id="accountModal" class="hidden fixed inset-0 z-50">
+        <div id="accountBackdrop" class="absolute inset-0 bg-black/50"></div>
+        <div class="absolute inset-x-0 top-8 bottom-8 grid place-items-center px-4 pointer-events-none">
+            <div class="pointer-events-auto w-full max-w-lg max-h-full overflow-y-auto bg-white rounded-sm shadow-2xl">
+                <div class="p-6">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <h2 class="text-xl font-extrabold text-secundair truncate">{{ $klantInfo['naam'] }}</h2>
+                            <p class="mt-0.5 text-sm font-semibold text-secundair/55 break-all">{{ $klantInfo['email'] }}@if($klantInfo['telefoon']) &middot; {{ $klantInfo['telefoon'] }}@endif</p>
+                        </div>
+                        <button type="button" id="accountSluit" class="w-9 h-9 -mr-2 -mt-1 shrink-0 rounded-full grid place-items-center text-secundair hover:bg-black/5 transition-colors cursor-pointer" aria-label="Sluiten">
+                            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                        </button>
+                    </div>
+
+                    @if($spaarpunten)
+                    <div class="mt-4 flex items-center gap-3 rounded-sm bg-secundair px-4 py-3">
+                        <i class="fa-solid fa-star text-primair" aria-hidden="true"></i>
+                        <p class="text-sm font-bold text-white">{{ $klantInfo['punten'] }} spaarpunten</p>
+                        <p class="ml-auto text-xs font-semibold text-white/50">{{ intdiv($klantInfo['punten'], 100) > 0 ? 'goed voor € ' . (intdiv($klantInfo['punten'], 100) * 5) . ' korting' : 'nog ' . (100 - ($klantInfo['punten'] % 100)) . ' punten tot € 5 korting' }}</p>
+                    </div>
+                    @endif
+
+                    <h3 class="mt-6 text-sm font-extrabold text-secundair">Je bestellingen</h3>
+                    @if(empty($klantInfo['bestellingen']))
+                        <p class="mt-2 text-sm font-semibold text-secundair/50">Nog geen bestellingen. Alles wat je bestelt vind je hier terug.</p>
+                    @else
+                        <div class="mt-1 divide-y divide-black/5">
+                            @foreach($klantInfo['bestellingen'] as $accountBestelling)
+                                <div class="py-3 flex items-start gap-3">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                                            <p class="text-sm font-bold text-secundair">#{{ $accountBestelling['nummer'] }}</p>
+                                            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold {{ $accountBestelling['afgerond'] ? 'bg-secundair/5 text-secundair/55' : 'bg-primair/10 text-primair-donker' }}">{{ $accountBestelling['status'] }}</span>
+                                            <span class="text-xs font-semibold text-secundair/45">{{ $accountBestelling['datum'] }}</span>
+                                        </div>
+                                        <p class="mt-1 text-xs font-semibold text-secundair/60 truncate">{{ $accountBestelling['items'] }}</p>
+                                    </div>
+                                    <div class="shrink-0 text-right">
+                                        <p class="text-sm font-bold text-secundair">&euro; {{ number_format($accountBestelling['totaal'] / 100, 2, ',', '.') }}</p>
+                                        @if($accountBestelling['token'])
+                                            <a href="{{ $basis }}/bestelling/{{ $accountBestelling['token'] }}" class="text-xs font-bold text-secundair/50 underline underline-offset-2 hover:text-secundair transition-colors">Bekijk</a>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    <h3 class="mt-6 text-sm font-extrabold text-secundair">Je adressen</h3>
+                    @if(empty($klantInfo['adressen']))
+                        <p class="mt-2 text-sm font-semibold text-secundair/50">Nog geen adressen bewaard. Bij het afrekenen kun je ze toevoegen.</p>
+                    @else
+                        <ul class="mt-2 space-y-1.5">
+                            @foreach($klantInfo['adressen'] as $accountAdres)
+                                <li class="flex items-start gap-2.5 text-sm font-semibold text-secundair/70">
+                                    <i class="fa-solid fa-location-dot text-primair mt-0.5" aria-hidden="true"></i>
+                                    <span class="min-w-0">{{ $accountAdres['label'] ?? '' }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+
+                    <form method="POST" action="{{ $basis }}/klant-uitloggen" class="mt-6 pt-4 border-t border-black/10">
+                        @csrf
+                        <button type="submit" class="inline-flex items-center gap-2 text-sm font-bold text-secundair/55 hover:text-secundair transition-colors cursor-pointer">
+                            <i class="fa-solid fa-power-off" aria-hidden="true"></i> Uitloggen
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <div id="productModal" class="hidden fixed inset-0 z-50">
         <div id="productBackdrop" class="absolute inset-0 bg-black/50"></div>
         <div class="absolute inset-0 grid place-items-center p-4 sm:p-8 pointer-events-none">
@@ -373,6 +458,7 @@
 
     <script>
         const T1_MENU = @json($menuJs);
+        const UPSELL_PIN = @json($upsellPin ?? null);
         const T1_BEZORG = @json($bezorg);
         const T1_OPEN = @json($openInfo);
         const T1_BASIS = @json($basis);
@@ -701,6 +787,7 @@
             document.querySelector('#mandLeeg').classList.toggle('hidden', !leeg);
             document.querySelector('#mandLijst').classList.toggle('hidden', leeg);
             document.querySelector('#mandOnder').classList.toggle('hidden', leeg);
+            renderUpsell();
             const aantalTotaal = mand.reduce((som, regel) => som + regel.aantal, 0);
             document.querySelectorAll('.mand-badge').forEach((badge) => {
                 badge.textContent = aantalTotaal;
@@ -797,6 +884,80 @@
             }));
             location.href = `${T1_BASIS}/afrekenen`;
         });
+
+        /* "Iets vergeten?": andere categorieen eerst, goedkoopste bovenaan */
+        function renderUpsell() {
+            const wrap = document.querySelector('#mandUpsell');
+            if (!wrap) return;
+            const inMand = new Set(mand.map((regel) => String(regel.sleutel).split('|')[0]));
+            const catsInMand = new Set(mand.map((regel) => T1_MENU[String(regel.sleutel).split('|')[0]]?.categorie).filter(Boolean));
+            const tips = Object.entries(T1_MENU)
+                .filter(([id]) => !inMand.has(String(id)))
+                .sort(([idA, a], [idB, b]) => {
+                    /* De vastgezette upsell uit de coach staat altijd vooraan */
+                    const pinA = String(idA) === String(UPSELL_PIN) ? 0 : 1;
+                    const pinB = String(idB) === String(UPSELL_PIN) ? 0 : 1;
+                    const eigenA = catsInMand.has(a.categorie) ? 1 : 0;
+                    const eigenB = catsInMand.has(b.categorie) ? 1 : 0;
+                    return pinA - pinB || eigenA - eigenB || a.prijsCenten - b.prijsCenten;
+                })
+                .slice(0, 8);
+            wrap.style.display = mand.length && tips.length ? '' : 'none';
+            document.querySelector('#mandUpsellRij').innerHTML = tips.map(([id, item]) => `
+                <div class="shrink-0 w-32 rounded-sm bg-white/10 p-2">
+                    ${item.foto
+                        ? `<img src="${esc(item.foto)}" alt="" class="block w-full aspect-[4/3] rounded-sm object-cover">`
+                        : `<span class="w-full aspect-[4/3] rounded-sm bg-white/10 grid place-items-center"><i class="fa-solid fa-pizza-slice text-white/35" aria-hidden="true"></i></span>`}
+                    <p class="mt-2 text-xs font-bold text-white leading-tight line-clamp-2">${esc(item.naam)}</p>
+                    <div class="mt-1.5 flex items-center justify-between gap-2">
+                        <p class="text-xs font-bold text-white/70">${euro(item.prijsCenten)}</p>
+                        <button type="button" data-upsell="${id}" aria-label="Voeg ${esc(item.naam)} toe aan je winkelmand"
+                            class="w-7 h-7 shrink-0 rounded-full bg-primair text-white hover:bg-primair-donker grid place-items-center transition-colors cursor-pointer">
+                            <i class="fa-solid fa-plus text-xs" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>`).join('');
+        }
+        document.querySelector('#mandUpsellRij')?.addEventListener('click', (e) => {
+            const knop = e.target.closest('[data-upsell]');
+            if (!knop) return;
+            const item = T1_MENU[knop.dataset.upsell];
+            if (!item) return;
+            if ((item.opties || []).some((groep) => groep.type === 'een')) {
+                /* Verplichte keuze: even via de productkaart, met de mand uit beeld */
+                if (typeof sluitMandDrawer === 'function') {
+                    sluitMandDrawer();
+                } else {
+                    const paneel = document.querySelector('#mandPaneel');
+                    if (paneel && window.innerWidth < 1024) {
+                        paneel.classList.add('hidden');
+                        paneel.classList.remove('flex');
+                    }
+                }
+                openProduct(knop.dataset.upsell);
+                return;
+            }
+            const sleutel = knop.dataset.upsell + '|';
+            const bestaand = mand.find((regel) => regel.sleutel === sleutel);
+            if (bestaand) bestaand.aantal++;
+            else mand.push({ sleutel, naam: item.naam, prijsCenten: item.prijsCenten, opties: [], aantal: 1 });
+            bewaarMand();
+            renderMand();
+        });
+
+        /* Mijn account als popup: ingelogd opent de knop de popup, anders ga je naar de inlogstap */
+        const accountModal = document.querySelector('#accountModal');
+        function openAccount() {
+            accountModal?.classList.remove('hidden');
+        }
+        document.querySelectorAll('a[href$="/account"]').forEach((knop) => knop.addEventListener('click', (e) => {
+            if (!accountModal) return;
+            e.preventDefault();
+            openAccount();
+        }));
+        document.querySelector('#accountSluit')?.addEventListener('click', () => accountModal.classList.add('hidden'));
+        document.querySelector('#accountBackdrop')?.addEventListener('click', () => accountModal.classList.add('hidden'));
+        if (accountModal && new URLSearchParams(location.search).has('account')) openAccount();
 
         document.querySelector('#mandRegels').addEventListener('click', (e) => {
             const min = e.target.closest('[data-mand-min]');

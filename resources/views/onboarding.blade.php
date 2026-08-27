@@ -278,26 +278,50 @@
             <h2 class="step-title">Hoe wil je betaald worden?</h2>
             <p class="step-sub">Koppelen doen wij samen met jou. Jij hoeft niks technisch te doen.</p>
             <div class="space-y-3">
-                <button type="button" data-pay="mollie" class="choice-card">
-                    <span class="text-3xl">🇳🇱</span>
-                    <span class="flex-1 text-left">
-                        <span class="block font-display text-xl">iDEAL <span class="text-cacao/40 text-sm font-body font-extrabold">via Mollie</span></span>
-                        <span class="block text-sm font-bold text-cacao/50">Dé standaard in Nederland</span>
-                    </span>
-                    <span class="badge-gold">Aanbevolen</span>
-                </button>
                 <button type="button" data-pay="stripe" class="choice-card">
                     <span class="text-3xl">💳</span>
                     <span class="flex-1 text-left">
-                        <span class="block font-display text-xl">Creditcard &amp; meer <span class="text-cacao/40 text-sm font-body font-extrabold">via Stripe</span></span>
-                        <span class="block text-sm font-bold text-cacao/50">Ook Apple Pay &amp; Google Pay</span>
+                        <span class="block font-display text-xl">Online betalen <span class="text-cacao/40 text-sm font-body font-extrabold">via Stripe</span></span>
+                        <span class="block text-sm font-bold text-cacao/50">iDEAL, creditcard, Apple Pay &amp; Google Pay</span>
                     </span>
+                    <span class="badge-gold">Aanbevolen</span>
                 </button>
                 <button type="button" data-pay="later" class="choice-card">
                     <span class="text-3xl">🤷</span>
                     <span class="flex-1 text-left">
                         <span class="block font-display text-xl">Regel ik later</span>
                         <span class="block text-sm font-bold text-cacao/50">Prima! We helpen je er straks mee.</span>
+                    </span>
+                </button>
+            </div>
+            <div class="mt-8">
+                <button data-back type="button" class="btn-primary btn-grey">Terug</button>
+            </div>
+        </section>
+
+        <!-- STAP: spaarpunten -->
+        <section data-step="punten" class="step hidden w-full max-w-xl text-center">
+            <div class="mascot mascot-right" aria-hidden="true">
+                <div class="bubble">Zo komen ze terug voor meer 🌟</div>
+                <img src="{{ asset('stickers') }}/waving-hello.png" alt="" loading="lazy">
+            </div>
+            <p class="step-kicker">Vaste klanten 🌟</p>
+            <h2 class="step-title">Klanten laten sparen?</h2>
+            <p class="step-sub">Klanten sparen automatisch punten met elke bestelling. Die punten leveren straks extra korting op bij het afrekenen.</p>
+            <div class="space-y-3">
+                <button type="button" data-punten="aan" class="choice-card">
+                    <span class="text-3xl">🌟</span>
+                    <span class="flex-1 text-left">
+                        <span class="block font-display text-xl">Ja, spaarpunten aan</span>
+                        <span class="block text-sm font-bold text-cacao/50">Punten bij elke bestelling, korting bij het afrekenen</span>
+                    </span>
+                    <span class="badge-gold">Aanbevolen</span>
+                </button>
+                <button type="button" data-punten="uit" class="choice-card">
+                    <span class="text-3xl">🚫</span>
+                    <span class="flex-1 text-left">
+                        <span class="block font-display text-xl">Nee, liever niet</span>
+                        <span class="block text-sm font-bold text-cacao/50">Je kunt dit later altijd nog aanzetten</span>
                     </span>
                 </button>
             </div>
@@ -319,7 +343,7 @@
                 <button type="button" data-domain="sub" class="choice-card">
                     <span class="text-3xl">⚡</span>
                     <span class="flex-1">
-                        <span class="block font-display text-xl break-all"><span data-slug>jouwpizzeria</span>.bestelpagina.nl</span>
+                        <span class="block font-display text-xl break-all"><span data-slug>jouwpizzeria</span>.mijnpizzeria.nl</span>
                         <span class="block text-sm font-bold text-cacao/50">Direct live, je hebt niks nodig</span>
                     </span>
                 </button>
@@ -385,22 +409,27 @@
                     </div>
                 </div>
 
-                <p class="lbl !ml-0 mt-8 mb-3">Jouw kleurstijl</p>
-                <div id="colorGrid" class="mb-8"></div>
-
-                <p class="lbl !ml-0 mb-3">Jouw logo</p>
-                <div class="relative">
-                    <label for="logoInp" class="logo-drop">
-                        <div id="logoDropThumb" class="hidden w-12 h-12 rounded-full border-2 border-crema-dark overflow-hidden bg-white mx-auto mb-2">
-                            <img class="w-full h-full object-cover" alt="Jouw logo">
+                <div class="mt-14 grid lg:grid-cols-[auto_1fr] gap-10 items-stretch">
+                    <div>
+                        <p class="lbl !ml-0 mb-3">Jouw kleurstijl</p>
+                        <div id="colorGrid"></div>
+                    </div>
+                    <div class="flex flex-col">
+                        <p class="lbl !ml-0 mb-3">Jouw logo</p>
+                        <div class="relative flex-1">
+                            <label for="logoInp" class="logo-drop !flex flex-col items-center justify-center h-full">
+                                <div id="logoDropThumb" class="hidden w-12 h-12 rounded-full border-2 border-crema-dark overflow-hidden bg-white mx-auto mb-2">
+                                    <img class="w-full h-full object-cover" alt="Jouw logo">
+                                </div>
+                                <span id="logoDropText">Logo uploaden</span>
+                                <span id="logoDropHint" class="block text-xs font-extrabold text-cacao/35 mt-1">Nog geen logo bij de hand? Mag ook later.</span>
+                            </label>
+                            <button id="logoRemove" type="button" title="Logo verwijderen" aria-label="Logo verwijderen" style="display:none"
+                                class="absolute -top-2.5 -right-2.5 z-10 w-7 h-7 rounded-full bg-white border-2 border-crema-dark place-items-center text-sm font-extrabold text-cacao/45 shadow-sm hover:text-tomato hover:border-tomato/50 transition-colors cursor-pointer">✕</button>
                         </div>
-                        <span id="logoDropText">Logo uploaden</span>
-                        <span id="logoDropHint" class="block text-xs font-extrabold text-cacao/35 mt-1">Nog geen logo bij de hand? Mag ook later.</span>
-                    </label>
-                    <button id="logoRemove" type="button" title="Logo verwijderen" aria-label="Logo verwijderen" style="display:none"
-                        class="absolute -top-2.5 -right-2.5 z-10 w-7 h-7 rounded-full bg-white border-2 border-crema-dark place-items-center text-sm font-extrabold text-cacao/45 shadow-sm hover:text-tomato hover:border-tomato/50 transition-colors cursor-pointer">✕</button>
+                        <input id="logoInp" type="file" accept="image/*" class="hidden">
+                    </div>
                 </div>
-                <input id="logoInp" type="file" accept="image/*" class="hidden">
             </div>
 
             <div class="mt-9 flex flex-wrap items-center justify-center gap-3">

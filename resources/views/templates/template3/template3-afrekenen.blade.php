@@ -49,6 +49,13 @@
             {{-- Bestelgegevens --}}
             <section class="bg-white border border-black/10 p-6">
                 <h2 class="text-lg font-extrabold text-secundair">Bestelgegevens</h2>
+                <div id="klantRegel" style="display:none" class="mt-3 flex items-center justify-between gap-3 rounded-none bg-wit-warm px-4 py-2.5">
+                    <p id="klantRegelNaam" class="text-sm font-bold text-secundair truncate"></p>
+                    <form method="POST" action="{{ $basis }}/klant-uitloggen">
+                        @csrf
+                        <button type="submit" class="text-xs font-bold text-secundair/50 underline underline-offset-2 hover:text-secundair transition-colors cursor-pointer">Uitloggen</button>
+                    </form>
+                </div>
                 <div class="mt-2 divide-y divide-black/5">
                     <div class="flex items-start gap-4 py-4">
                         <i class="fa-regular fa-user text-primair mt-2.5" aria-hidden="true"></i>
@@ -169,10 +176,17 @@
                 </div>
             </div>
             <div id="prodLijst" class="mt-4 space-y-3"></div>
+            {{-- Spaarpunten inwisselen --}}
+            <button type="button" id="afPunten" style="display:none" class="mt-4 w-full flex items-center gap-2.5 rounded-none border border-black/10 px-3.5 py-2.5 text-left text-sm font-bold text-secundair hover:border-primair/50 transition-colors cursor-pointer">
+                <i class="fa-solid fa-star text-primair" aria-hidden="true"></i>
+                <span id="afPuntenTekst" class="flex-1 min-w-0"></span>
+                <span id="afPuntenVink" class="w-5 h-5 shrink-0 rounded-full border border-black/20 grid place-items-center text-[10px]"><i class="fa-solid fa-check" style="display:none" aria-hidden="true"></i></span>
+            </button>
             <div class="mt-5 pt-4 border-t border-black/10 space-y-1.5 text-sm font-semibold text-secundair/70">
                 <div class="flex items-center justify-between gap-3"><span>Subtotaal</span><span id="afSubtotaal"></span></div>
                 <div id="afBezorgRij" class="flex items-center justify-between gap-3"><span>Bezorgkosten</span><span id="afBezorg"></span></div>
                 <div id="afFooiRij" class="flex items-center justify-between gap-3" style="display:none"><span>Fooi</span><span id="afFooi"></span></div>
+                <div id="afKortingRij" class="flex items-center justify-between gap-3" style="display:none"><span>Spaarpunten korting</span><span id="afKorting"></span></div>
             </div>
             <div class="mt-3 flex items-center justify-between font-extrabold text-secundair">
                 <span>Totaal</span>
@@ -225,6 +239,7 @@
         const T1_BASIS = @json($basis);
         const OPSLAG = @json('t1_' . $slug);
         const FOTOS = @json($fotos ?? []);
+        const SPAARPUNTEN = @json($spaarpunten ?? false);
         const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const euro = (centen) => '€ ' + (centen / 100).toFixed(2).replace('.', ',');
 
@@ -238,6 +253,23 @@
         if (VOORBEELD && VOORBEELD.length) {
             mand = VOORBEELD;
             staat = { type: 'bezorgen', adres: 'Voorbeeldstraat 12', kosten: 250, tier: null, tijd: '' };
+        }
+
+        /* Ingelogde klant: gegevens staan alvast klaar */
+        const KLANT = @json($klant ?? null);
+        if (KLANT) {
+            const zet = (kiezer, waarde) => {
+                const veld = document.querySelector(kiezer);
+                if (veld && !veld.value.trim() && waarde) veld.value = waarde;
+            };
+            zet('#afNaam', KLANT.naam);
+            zet('#afMail', KLANT.email);
+            zet('#afTel', KLANT.telefoon);
+            const regel = document.querySelector('#klantRegel');
+            if (regel) {
+                regel.style.display = '';
+                document.querySelector('#klantRegelNaam').textContent = `Ingelogd als ${KLANT.naam}`;
+            }
         }
 
         let gekozenTijd = '';
@@ -337,15 +369,38 @@
         document.querySelector('#fooiAnders').addEventListener('input', () => { fooi = fooiAndersBedrag(); werkBij(); });
 
         /* Totalen en de plaatsknop */
+        /* Spaarpunten: per 100 punten 5 euro korting, nooit meer dan het gerechtenbedrag */
+        var puntenAan = false;   /* var: werkBij draait bij het laden al, voor deze regel */
+        function puntenBlokken(subtotaal) {
+            if (!KLANT || !SPAARPUNTEN) return 0;
+            return Math.min(Math.floor((KLANT.punten || 0) / 100), Math.floor(subtotaal / 500));
+        }
+        document.querySelector('#afPunten')?.addEventListener('click', () => {
+            puntenAan = !puntenAan;
+            werkBij();
+        });
+
         function werkBij() {
             const subtotaal = mand.reduce((som, regel) => som + regelPrijs(regel), 0);
             const bezorg = bezorgen ? Number(staat.kosten ?? staat.tier?.kosten ?? 0) : 0;
+            const blokken = puntenBlokken(subtotaal);
+            const korting = puntenAan && blokken > 0 ? blokken * 500 : 0;
+            const puntenKnop = document.querySelector('#afPunten');
+            if (puntenKnop) {
+                puntenKnop.style.display = blokken > 0 ? '' : 'none';
+                document.querySelector('#afPuntenTekst').textContent = `Wissel ${blokken * 100} punten in voor ${euro(blokken * 500)} korting`;
+                const vink = document.querySelector('#afPuntenVink');
+                vink.className = 'w-5 h-5 shrink-0 rounded-full grid place-items-center text-[10px] ' + (puntenAan && korting > 0 ? 'bg-primair text-white' : 'border border-black/20 text-transparent');
+                vink.querySelector('i').style.display = puntenAan && korting > 0 ? '' : 'none';
+            }
+            document.querySelector('#afKortingRij').style.display = korting > 0 ? '' : 'none';
+            document.querySelector('#afKorting').textContent = '- ' + euro(korting);
             document.querySelector('#afSubtotaal').textContent = euro(subtotaal);
             document.querySelector('#afBezorgRij').style.display = bezorgen ? '' : 'none';
             document.querySelector('#afBezorg').textContent = euro(bezorg);
             document.querySelector('#afFooiRij').style.display = fooi > 0 ? '' : 'none';
             document.querySelector('#afFooi').textContent = euro(fooi);
-            document.querySelector('#afTotaal').textContent = euro(subtotaal + bezorg + fooi);
+            document.querySelector('#afTotaal').textContent = euro(subtotaal + bezorg + fooi - korting);
 
             document.querySelector('#afAdresWaarschuwing').classList.toggle('hidden', !(bezorgen && staat.buitenGebied));
             const mail = document.querySelector('#afMail').value.trim();
@@ -386,6 +441,8 @@
                     body: JSON.stringify({
                         type: staat.type || 'bezorgen',
                         klant: document.querySelector('#afNaam').value.trim(),
+                        telefoon: document.querySelector('#afTel').value.trim(),
+                        punten: puntenAan && puntenBlokken(subtotaal) > 0,
                         adres: bezorgen ? staat.adres : null,
                         tijd: gekozenTijd,
                         opmerking: document.querySelector('#afOpm').value.trim() || null,
@@ -420,7 +477,9 @@
                     subtotaal,
                     kosten: bezorg,
                     fooi,
-                    totaal: subtotaal + bezorg + fooi,
+                    korting: data.korting || 0,
+                    punten: data.punten || 0,
+                    totaal: subtotaal + bezorg + fooi - (data.korting || 0),
                 }));
                 localStorage.removeItem(`${OPSLAG}_mand`);
                 location.href = data.token ? `${T1_BASIS}/bestelling/${data.token}` : `${T1_BASIS}/bestelling`;
@@ -437,12 +496,30 @@
 
         let adressen = [];
         try { adressen = JSON.parse(localStorage.getItem(`${OPSLAG}_adressen`)) || []; } catch { adressen = []; }
+        /* Ingelogd: het adresboek van je account is leidend, ook op een ander apparaat */
+        if (KLANT && Array.isArray(KLANT.adressen) && KLANT.adressen.length) {
+            adressen = KLANT.adressen;
+        }
         if (!adressen.length && staat.adres) {
             adressen = [{ label: staat.adres, lat: null, lng: null }];
         }
         let gekozenAdres = Math.max(0, adressen.findIndex((a) => a.label === staat.adres));
         let adresBewerk = null;   // index die via "Bewerk adres" wordt vervangen
-        const bewaarAdressen = () => localStorage.setItem(`${OPSLAG}_adressen`, JSON.stringify(adressen));
+        const bewaarAdressen = () => {
+            localStorage.setItem(`${OPSLAG}_adressen`, JSON.stringify(adressen));
+            /* Ingelogd: het adresboek hoort bij je account, dus ook op de server bewaren */
+            if (KLANT) {
+                fetch(`${T1_BASIS}/klant/adressen`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({ adressen }),
+                }).catch(() => { /* lokaal is het al bewaard; volgende wijziging probeert opnieuw */ });
+            }
+        };
 
         const afstandKm = (aLat, aLng, bLat, bLng) => {
             const r = Math.PI / 180;

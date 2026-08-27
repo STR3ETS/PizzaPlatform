@@ -133,11 +133,16 @@
                 <div class="flex items-center justify-between gap-3"><span>Subtotaal</span><span id="stSubtotaal"></span></div>
                 <div id="stBezorgRij" class="flex items-center justify-between gap-3"><span>Bezorgkosten</span><span id="stBezorg"></span></div>
                 <div id="stFooiRij" class="flex items-center justify-between gap-3" style="display:none"><span>Fooi</span><span id="stFooi"></span></div>
+                <div id="stKortingRij" class="flex items-center justify-between gap-3" style="display:none"><span>Spaarpunten korting</span><span id="stKorting"></span></div>
             </div>
             <div class="mt-3 flex items-center justify-between font-extrabold text-secundair">
                 <span>Totaal</span>
                 <span id="stTotaal"></span>
             </div>
+            <p id="stPunten" style="display:none" class="mt-3 flex items-center gap-2 text-sm font-bold text-secundair">
+                <i class="fa-solid fa-star text-primair" aria-hidden="true"></i>
+                <span id="stPuntenTekst"></span>
+            </p>
             <div id="stOpmWrap" class="hidden mt-4 rounded-xl bg-wit-warm px-4 py-3">
                 <p class="text-xs font-bold text-secundair/45 uppercase tracking-wide">Opmerking</p>
                 <p id="stOpm" class="mt-0.5 text-sm font-semibold text-secundair/70 italic"></p>
@@ -313,6 +318,12 @@
             document.querySelector('#stBezorg').textContent = euro(bestelling.kosten || 0);
             document.querySelector('#stFooiRij').style.display = bestelling.fooi > 0 ? '' : 'none';
             document.querySelector('#stFooi').textContent = euro(bestelling.fooi || 0);
+            document.querySelector('#stKortingRij').style.display = bestelling.korting > 0 ? '' : 'none';
+            document.querySelector('#stKorting').textContent = '- ' + euro(bestelling.korting || 0);
+            if (bestelling.punten > 0) {
+                document.querySelector('#stPunten').style.display = '';
+                document.querySelector('#stPuntenTekst').textContent = `Je hebt ${bestelling.punten} ${bestelling.punten === 1 ? 'punt' : 'punten'} gespaard met deze bestelling`;
+            }
             document.querySelector('#stTotaal').textContent = euro(bestelling.totaal || 0);
             if (bestelling.opmerking) {
                 document.querySelector('#stOpmWrap').classList.remove('hidden');
