@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'onboarding', 'slug'])]
+#[Fillable(['name', 'email', 'password', 'onboarding', 'slug', 'proef_tot'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -33,6 +33,18 @@ class User extends Authenticatable
         return $this->hasMany(Klant::class);
     }
 
+    /** Nog in de gratis proefmaand (en zonder betaald abonnement)? */
+    public function inProefperiode(): bool
+    {
+        return ! $this->abonnement_actief && $this->proef_tot !== null && $this->proef_tot->isFuture();
+    }
+
+    /** Mag het dashboard gebruiken: betaald abonnement of lopende proefperiode */
+    public function heeftToegang(): bool
+    {
+        return $this->abonnement_actief || $this->inProefperiode();
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -47,6 +59,9 @@ class User extends Authenticatable
             'intro_seen' => 'boolean',
             'is_online' => 'boolean',
             'is_admin' => 'boolean',
+            'abonnement_actief' => 'boolean',
+            'abonnement_sinds' => 'datetime',
+            'proef_tot' => 'datetime',
             'lat' => 'float',
             'lng' => 'float',
             'bezorgkosten' => 'array',

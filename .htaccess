@@ -1,0 +1,8 @@
+# In Plesk staat de document root op httpdocs, de map van de hele app.
+# Laravel's front controller staat in public/, dus alles gaat daarheen.
+# Geldt ook voor de wildcard-subdomeinen (*.mijnpizzeria.nl): de host blijft
+# gelijk, alleen het pad wordt herschreven, dus de subdomein-routing blijft werken.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

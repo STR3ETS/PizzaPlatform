@@ -33,20 +33,45 @@ class OnboardingController extends Controller
             'state.name' => ['required', 'string', 'min:2', 'max:100'],
             'state.person' => ['required', 'string', 'min:2', 'max:100'],
             'state.email' => ['required', 'email', 'max:255'],
-            'password' => [Auth::guest() ? 'required' : 'nullable', 'string', 'min:8'],
+            // Bedrijfsgegevens zijn verplicht voor de administratie en facturatie;
+            // alleen het KvK-nummer mag later, naam en adres zijn immers al bekend
+            'state.kvk' => ['nullable', 'regex:/^\d{8}$/'],
+            'state.street' => ['required', 'string', 'min:3', 'max:80'],
+            'state.zip' => ['required', 'regex:/^\d{4}\s?[a-zA-Z]{2}$/'],
+            'state.city' => ['required', 'string', 'min:2', 'max:60'],
+            'password' => [Auth::guest() ? 'required' : 'nullable', 'string', 'min:8', 'regex:/[A-Z]/', 'regex:/[a-z]/', 'regex:/[0-9]/'],
         ], [
             'state.name.required' => 'De naam van je pizzeria ontbreekt nog.',
             'state.person.required' => 'Je eigen naam ontbreekt nog.',
             'state.email.required' => 'Je e-mailadres ontbreekt nog.',
             'state.email.email' => 'Dit e-mailadres ziet er nog niet helemaal goed uit.',
+            'state.kvk.regex' => 'Een KvK-nummer bestaat uit 8 cijfers.',
+            'state.street.required' => 'Je straat en huisnummer ontbreken nog.',
+            'state.street.min' => 'Vul je volledige straat en huisnummer in.',
+            'state.zip.required' => 'Je postcode ontbreekt nog.',
+            'state.zip.regex' => 'Die postcode ziet er nog niet goed uit, bijvoorbeeld 1234 AB.',
+            'state.city.required' => 'Je plaats ontbreekt nog.',
             'password.required' => 'Kies nog even een wachtwoord.',
             'password.min' => 'Je wachtwoord moet minimaal 8 tekens zijn.',
+            'password.regex' => 'Je wachtwoord heeft minimaal 1 hoofdletter, 1 kleine letter en 1 cijfer nodig.',
         ]);
 
         $state = $request->input('state');
         unset($state['returnTo'], $state['submitted'], $state['step']);
 
+        // De vlag "zaak compleet" verdien je pas door de vervolg-stappen in het
+        // dashboard af te ronden, niet al bij de (korte) registratie. De
+        // standaard-openingstijden uit de wizard slaan we dan ook niet op:
+        // anders lijkt een verse zaak "geopend" terwijl niemand dat koos.
+        if (Auth::guest()) {
+            unset($state['setup_compleet'], $state['days'], $state['open'], $state['close'], $state['hoursMode'], $state['dayTimes']);
+        }
+
         if (Auth::check()) {
+            // Eigen domein is voor abonnees; in de proefperiode blijft het subdomein actief
+            if (! Auth::user()->abonnement_actief && ($state['domainMode'] ?? 'sub') === 'own') {
+                $state['domainMode'] = 'sub';
+            }
             Auth::user()->forceFill(['onboarding' => $state])->save();
             $this->syncMenukaart(Auth::user(), $state);
 
@@ -66,6 +91,8 @@ class OnboardingController extends Controller
             'onboarding' => $state,
             // Eenmalig vastgelegd: deze slug komt straks op gedrukte QR-dozen en mag niet meer verschuiven
             'slug' => BestelController::uniekeSlug($state['name']),
+            // Play before you pay: 30 dagen gratis proberen, daarna is het abonnement verplicht
+            'proef_tot' => now()->addDays(30),
         ]);
 
         Auth::login($user);

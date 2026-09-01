@@ -127,6 +127,68 @@
 .inp::placeholder { color: color-mix(in srgb, var(--color-cacao) 28%, transparent); font-weight: 700; }
 .inp:focus { border-color: var(--color-gold); transform: scale(1.01); }
 
+/* Wachtwoord: oogje om te tonen en de eisen-checklist (Edge's eigen oogje gaat uit) */
+.inp::-ms-reveal, .inp::-ms-clear { display: none; }
+.pw-oog {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: .55;
+    transition: opacity .15s ease;
+}
+.pw-oog:hover { opacity: 1; }
+.pw-eis {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    font-size: .875rem;
+    font-weight: 800;
+    color: color-mix(in srgb, var(--color-cacao) 45%, transparent);
+    transition: color .2s ease;
+}
+.pw-eis .pw-dot {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--color-cacao) 10%, transparent);
+    display: grid;
+    place-items: center;
+    font-size: .6rem;
+    line-height: 1;
+    transition: background .2s ease, color .2s ease, transform .2s ease;
+}
+.pw-eis.aan { color: var(--color-basil); }
+.pw-eis.aan .pw-dot { background: var(--color-basil); color: #fff; transform: scale(1.1); }
+
+/* Toasts: van onderaf opveren en weer zacht wegzakken */
+#toast, #dashToast {
+    opacity: 0;
+    transform: translate(-50%, 1.25rem) scale(.95);
+    pointer-events: none;
+    transition: opacity .22s ease, transform .3s cubic-bezier(.34, 1.56, .64, 1);
+}
+#toast.aan, #dashToast.aan {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+}
+
+/* Mobiel: de toast komt van boven, onderin zit de tabbalk al */
+@media (max-width: 47.99rem) {
+    #toast, #dashToast {
+        bottom: auto;
+        top: 1.25rem;
+        transform: translate(-50%, -1.25rem) scale(.95);
+    }
+    #toast.aan, #dashToast.aan {
+        transform: translate(-50%, 0) scale(1);
+    }
+}
+
 .inp-time {
     background: #fff;
     border: 4px solid var(--color-crema-dark);
@@ -247,6 +309,31 @@
     border-color: var(--color-basil-dark);
     color: #fff;
     box-shadow: 0 4px 0 0 var(--color-basil-dark);
+}
+/* Mobiel: de knoppen zweven altijd onderaan het scherm, primaire knop bovenaan */
+@media (max-width: 47.99rem) {
+    .step div:has(> [data-back]), .step div:has(> [data-next]) {
+        position: fixed;
+        left: 1rem; right: 1rem; bottom: .9rem;
+        z-index: 45;
+        display: flex;
+        flex-direction: column-reverse;
+        gap: .6rem;
+        margin: 0;
+    }
+    .step div:has(> [data-back]) > .btn-primary,
+    .step div:has(> [data-next]) > .btn-primary { width: 100%; }
+    .step { padding-bottom: 10rem; }
+    .enter-hint { display: none; }
+    #resetLink { bottom: 10.5rem; }
+}
+
+/* Mobiel: ma t/m vr op de bovenste rij, za en zo samen eronder */
+@media (max-width: 47.99rem) {
+    #dayChips { display: grid; grid-template-columns: repeat(10, 1fr); }
+    #dayChips .day-chip { padding-left: .25rem; padding-right: .25rem; }
+    #dayChips .day-chip:nth-child(-n+5) { grid-column: span 2; }
+    #dayChips .day-chip:nth-child(n+6) { grid-column: span 5; }
 }
 
 /* Tijden-modus switch */
@@ -547,6 +634,10 @@
     position: relative;
 }
 .swatch:hover { transform: scale(1.12) rotate(-4deg); }
+/* Mobiel: de kleuren vullen de volle breedte, vijf per rij */
+@media (max-width: 47.99rem) {
+    .swatch { width: 100%; height: auto; aspect-ratio: 1 / 1; }
+}
 .swatch.selected { transform: scale(1.12); }
 .swatch.selected::after {
     content: "✓";
@@ -688,6 +779,15 @@
 
 .step-enter { animation: step-in .4s cubic-bezier(.22,1,.36,1) both; }
 .step-exit  { animation: step-out .18s ease both; }
+/* Mobiel: alleen faden, geen transform. Een transform koppelt de zwevende
+   knoppen tijdelijk aan de bewegende stap in plaats van aan het scherm.
+   Deze override moet NA de regels hierboven staan, anders wint de shorthand. */
+@media (max-width: 47.99rem) {
+    .step-enter { animation-name: step-in-vlak; }
+    .step-exit  { animation-name: step-out-vlak; }
+}
+@keyframes step-in-vlak  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes step-out-vlak { from { opacity: 1; } to { opacity: 0; } }
 
 @keyframes step-in  { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
 @keyframes step-out { from { opacity: 1; } to { opacity: 0; transform: translateY(-18px); } }
@@ -787,33 +887,72 @@
 /* Mobiele tabbalk onderin, zoals een app */
 .dash-tabbar {
     position: fixed;
-    left: .75rem; right: .75rem; bottom: .75rem;
+    left: 50%;
+    bottom: .75rem;
+    transform: translateX(-50%);
     display: flex;
-    justify-content: space-around;
-    background: rgb(255 255 255 / .95);
-    backdrop-filter: blur(8px);
-    border: 4px solid var(--color-crema-dark);
-    border-radius: 1.5rem;
-    box-shadow: 0 6px 0 0 var(--color-crema-dark);
+    align-items: center;
+    gap: .3rem;
+    width: max-content;
+    max-width: calc(100vw - 1.5rem);
+    background: var(--color-cacao);
+    border: 4px solid color-mix(in srgb, #000 25%, var(--color-cacao));
+    border-radius: 9999px;
+    box-shadow: 0 10px 24px rgb(0 0 0 / .3);
     padding: .35rem;
     z-index: 40;
 }
 @media (min-width: 48rem) { .dash-tabbar { display: none; } }
 .tab-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: .05rem;
-    font-size: .55rem;
-    font-weight: 900;
-    color: color-mix(in srgb, var(--color-cacao) 50%, transparent);
-    border-radius: 1rem;
-    padding: .35rem .7rem;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 3.1rem;
+    height: 3.1rem;
+    border-radius: 9999px;
+    color: color-mix(in srgb, var(--color-crema) 60%, transparent);
     cursor: pointer;
     transition: background .15s ease, color .15s ease;
 }
-.tab-item .t-ico { font-size: 1.15rem; }
+.tab-item .t-ico { font-size: 1.2rem; line-height: 1; }
 .tab-item.actief { background: var(--color-tomato); color: #fff; }
+
+/* Status rechts in de tabbalk: pulserend bolletje plus Online/Offline */
+.tab-status {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    height: 3.1rem;
+    padding: 0 .85rem 0 .7rem;
+    margin-left: .15rem;
+    border-left: 2px solid color-mix(in srgb, var(--color-crema) 18%, transparent);
+    border-radius: 0 9999px 9999px 0;
+    color: var(--color-crema);
+    font-size: .7rem;
+    font-weight: 900;
+    cursor: pointer;
+}
+.tab-status .ts-dot {
+    width: .6rem;
+    height: .6rem;
+    border-radius: 9999px;
+    background: var(--color-tomato);
+    animation: ts-pulse-rood 1.8s ease-out infinite;
+}
+.tab-status.online .ts-dot {
+    background: var(--color-basil);
+    animation: ts-pulse-groen 1.8s ease-out infinite;
+}
+@keyframes ts-pulse-rood {
+    0% { box-shadow: 0 0 0 0 rgb(230 57 70 / .55); }
+    70% { box-shadow: 0 0 0 .45rem rgb(230 57 70 / 0); }
+    100% { box-shadow: 0 0 0 0 rgb(230 57 70 / 0); }
+}
+@keyframes ts-pulse-groen {
+    0% { box-shadow: 0 0 0 0 rgb(47 143 70 / .55); }
+    70% { box-shadow: 0 0 0 .45rem rgb(47 143 70 / 0); }
+    100% { box-shadow: 0 0 0 0 rgb(47 143 70 / 0); }
+}
 
 /* Panelen wisselen client-side */
 .panel { display: none; }

@@ -46,14 +46,6 @@
         <span class="text-2xl">🍕</span>
     </div>
 
-    @auth
-    <!-- Ingelogd: wijzigingen direct kunnen opslaan zonder alle stappen af te lopen -->
-    <div class="fixed top-4 right-4 z-40 text-right">
-        <button id="quickSave" type="button" class="btn-primary !text-base !px-6 !py-2.5">Opslaan ✓</button>
-        <p class="mt-1.5 text-[11px] font-extrabold text-cacao/40">en terug naar je dashboard</p>
-    </div>
-    @endauth
-
     <!-- Voortgang -->
     <div id="progressWrap" class="fixed top-0 left-0 right-0 z-30 hidden">
         <div class="h-2 bg-crema-dark">
@@ -141,12 +133,24 @@
             <div class="space-y-4 text-left">
                 <div>
                     <label for="inpPassword" class="lbl">Wachtwoord</label>
-                    <input id="inpPassword" type="password" placeholder="Minimaal 8 tekens" autocomplete="new-password" class="inp">
-                    <p class="err" data-err="password"></p>
+                    <div class="relative">
+                        <input id="inpPassword" type="password" placeholder="Kies iets sterks" autocomplete="new-password" class="inp !pr-14">
+                        <button type="button" data-oog="inpPassword" class="pw-oog" aria-label="Wachtwoord tonen of verbergen">👁️</button>
+                    </div>
                 </div>
                 <div>
                     <label for="inpPassword2" class="lbl">Nog een keer</label>
-                    <input id="inpPassword2" type="password" placeholder="Zelfde als hierboven" autocomplete="new-password" class="inp">
+                    <div class="relative">
+                        <input id="inpPassword2" type="password" placeholder="Zelfde als hierboven" autocomplete="new-password" class="inp !pr-14">
+                        <button type="button" data-oog="inpPassword2" class="pw-oog" aria-label="Wachtwoord tonen of verbergen">👁️</button>
+                    </div>
+                    <ul class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5" aria-live="polite">
+                        <li class="pw-eis" data-pweis="lengte"><span class="pw-dot">✕</span> Minimaal 8 tekens</li>
+                        <li class="pw-eis" data-pweis="hoofdletter"><span class="pw-dot">✕</span> Minimaal 1 hoofdletter</li>
+                        <li class="pw-eis" data-pweis="kleineletter"><span class="pw-dot">✕</span> Minimaal 1 kleine letter</li>
+                        <li class="pw-eis" data-pweis="cijfer"><span class="pw-dot">✕</span> Minimaal 1 cijfer</li>
+                    </ul>
+                    <p class="err" data-err="password"></p>
                 </div>
             </div>
             <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -165,10 +169,10 @@
             </div>
             <p class="step-kicker">Het saaie-maar-nodige stukje 📋</p>
             <h2 class="step-title">Bedrijfsgegevens</h2>
-            <p class="step-sub">Niet bij de hand? Geen stress: sla over, dan regelen we het later samen.</p>
+            <p class="step-sub">Deze gegevens hebben we nodig voor je administratie en de facturatie van je verkopen.</p>
             <div class="space-y-4 text-left">
                 <div>
-                    <label for="inpKvk" class="lbl">KvK-nummer</label>
+                    <label for="inpKvk" class="lbl">KvK-nummer <span class="normal-case tracking-normal text-cacao/35">(mag ook later)</span></label>
                     <input id="inpKvk" type="text" inputmode="numeric" placeholder="12345678" class="inp" maxlength="8">
                 </div>
                 <div>
@@ -185,14 +189,12 @@
                         <input id="inpCity" type="text" placeholder="Amsterdam" autocomplete="address-level2" class="inp">
                     </div>
                 </div>
+                <p class="err" data-err="company"></p>
             </div>
             <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
                 <button data-back type="button" class="btn-primary btn-grey">Terug</button>
                 <button data-next type="button" class="btn-primary">Volgende</button>
             </div>
-            <button data-skip type="button" class="skip-link">Doe ik later
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-            </button>
         </section>
 
         <!-- STAP: openingstijden -->
@@ -225,9 +227,6 @@
                 <button data-back type="button" class="btn-primary btn-grey">Terug</button>
                 <button data-next type="button" class="btn-primary">Volgende</button>
             </div>
-            <button data-skip type="button" class="skip-link">Doe ik later
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-            </button>
         </section>
 
         <!-- STAP: menu -->
@@ -252,7 +251,7 @@
                 <input id="customName" type="text" placeholder="Zelf toevoegen? Bijv. Pizza Mario" class="inp !text-base flex-1">
                 <div class="relative">
                     <span class="absolute left-3 top-1/2 -translate-y-1/2 font-extrabold text-cacao/40">€</span>
-                    <input id="customPrice" type="text" inputmode="decimal" placeholder="12,50" class="inp !text-base !pl-8 w-28">
+                    <input id="customPrice" type="text" inputmode="decimal" placeholder="12,50" class="inp !text-base !pl-8 !w-24 sm:!w-28">
                 </div>
                 <button id="customAdd" type="button"
                     class="shrink-0 self-stretch w-[3.8rem] rounded-2xl bg-basil text-white font-display text-2xl shadow-[0_4px_0_0_var(--color-basil-dark)] hover:translate-y-0.5 hover:shadow-[0_2px_0_0_var(--color-basil-dark)] active:translate-y-1 active:shadow-none transition-all cursor-pointer">+</button>
@@ -262,40 +261,6 @@
             <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
                 <button data-back type="button" class="btn-primary btn-grey">Terug</button>
                 <button data-next type="button" class="btn-primary">Volgende</button>
-            </div>
-            <button data-skip type="button" class="skip-link">Doe ik later
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-            </button>
-        </section>
-
-        <!-- STAP: betalingen -->
-        <section data-step="payment" class="step hidden w-full max-w-xl text-center">
-            <div class="mascot mascot-left" aria-hidden="true">
-                <div class="bubble">Zo staat je geld zo op je rekening 💶</div>
-                <img src="{{ asset('stickers') }}/scanning-qr.png" alt="" loading="lazy">
-            </div>
-            <p class="step-kicker">Cha-ching 💶</p>
-            <h2 class="step-title">Hoe wil je betaald worden?</h2>
-            <p class="step-sub">Koppelen doen wij samen met jou. Jij hoeft niks technisch te doen.</p>
-            <div class="space-y-3">
-                <button type="button" data-pay="stripe" class="choice-card">
-                    <span class="text-3xl">💳</span>
-                    <span class="flex-1 text-left">
-                        <span class="block font-display text-xl">Online betalen <span class="text-cacao/40 text-sm font-body font-extrabold">via Stripe</span></span>
-                        <span class="block text-sm font-bold text-cacao/50">iDEAL, creditcard, Apple Pay &amp; Google Pay</span>
-                    </span>
-                    <span class="badge-gold">Aanbevolen</span>
-                </button>
-                <button type="button" data-pay="later" class="choice-card">
-                    <span class="text-3xl">🤷</span>
-                    <span class="flex-1 text-left">
-                        <span class="block font-display text-xl">Regel ik later</span>
-                        <span class="block text-sm font-bold text-cacao/50">Prima! We helpen je er straks mee.</span>
-                    </span>
-                </button>
-            </div>
-            <div class="mt-8">
-                <button data-back type="button" class="btn-primary btn-grey">Terug</button>
             </div>
         </section>
 
@@ -325,8 +290,9 @@
                     </span>
                 </button>
             </div>
-            <div class="mt-8">
+            <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
                 <button data-back type="button" class="btn-primary btn-grey">Terug</button>
+                <button data-next type="button" class="btn-primary">Volgende</button>
             </div>
         </section>
 
@@ -353,6 +319,11 @@
                         <span class="block font-display text-xl">Op mijn eigen website</span>
                         <span class="block text-sm font-bold text-cacao/50">Bijv. bestellen.jouwdomein.nl, wij koppelen 'm gratis</span>
                     </span>
+                    @auth
+                        @if(! auth()->user()->abonnement_actief)
+                            <span class="badge-gold">Met abonnement</span>
+                        @endif
+                    @endauth
                 </button>
             </div>
             <div id="ownDomainWrap" class="hidden mt-4 text-left">
@@ -376,40 +347,44 @@
             <h2 class="step-title">Maak 'm helemaal van jou</h2>
             <p class="step-sub">Kies een template dat bij jouw zaak past, maak 'm af met jouw kleur en logo. Je ziet meteen hoe je bestelpagina eruit gaat zien.</p>
 
-            <div class="text-left">
-                <div class="grid lg:grid-cols-[1fr_1.2fr] gap-8 items-stretch">
-                    <!-- Links: de templates -->
-                    <div>
-                        <div class="h-8 mb-2 flex items-center">
-                            <p class="lbl !ml-0 !mb-0">Jouw template</p>
-                        </div>
-                        <div id="themeGrid" class="grid grid-cols-2 gap-3"></div>
+            <div class="text-left flex flex-col lg:grid lg:grid-cols-[1fr_1.2fr] lg:gap-x-8 lg:gap-y-14">
+                <!-- Links: de templates -->
+                <div class="order-1 lg:col-start-1 lg:row-start-1">
+                    <div class="h-8 mb-2 flex items-center">
+                        <p class="lbl !ml-0 !mb-0">Jouw template</p>
                     </div>
+                    <div id="themeGrid" class="grid grid-cols-2 gap-3"></div>
+                </div>
 
-                    <!-- Rechts: het live voorbeeld met paginaknoppen -->
-                    <div class="flex flex-col">
-                        <div class="h-8 mb-2 flex items-center justify-between gap-3">
-                            <p class="lbl !ml-0 !mb-0">Live voorbeeld</p>
-                            <div class="flex gap-1.5">
-                                <button type="button" data-ob-pagina="menu" class="keuze-chip !py-1 !px-3 !text-xs aan">Menu</button>
-                                <button type="button" data-ob-pagina="afrekenen" class="keuze-chip !py-1 !px-3 !text-xs">Afrekenen</button>
-                                <button type="button" data-ob-pagina="status" class="keuze-chip !py-1 !px-3 !text-xs">Status</button>
-                            </div>
-                        </div>
-                        <div class="relative flex-1 min-h-0 w-full overflow-hidden rounded-2xl border-2 border-crema-dark bg-white aspect-video lg:aspect-auto">
-                            <iframe id="obStijlPreview" title="Voorbeeld van je bestelpagina" style="width:200%;height:200%;transform:scale(.5);transform-origin:top left;border:0"></iframe>
-                            <div id="obStijlLaad" class="absolute inset-0 grid place-items-center bg-white/75" style="display:none">
-                                <div class="text-center">
-                                    <span class="inline-block text-3xl animate-spin">🍕</span>
-                                    <p class="mt-2 text-sm font-extrabold text-cacao/60">Voorbeeld laden…</p>
+                <!-- Het live voorbeeld: desktop rechts naast de templates, op mobiel
+                     onder de kleuren en standaard ingeklapt achter een knop -->
+                <div class="order-3 mt-8 lg:mt-0 lg:col-start-2 lg:row-start-1 flex flex-col">
+                    <button id="pvToggle" type="button" class="btn-primary w-full !py-3 lg:hidden">Bekijk live voorbeeld 👀</button>
+                    <div id="pvInhoud" class="hidden lg:block flex-1 min-h-0 mt-4 lg:mt-0">
+                        <div class="flex flex-col h-full">
+                            <div class="h-8 mb-2 flex items-center justify-between gap-3">
+                                <p class="lbl !ml-0 !mb-0">Live voorbeeld</p>
+                                <div class="flex gap-1.5">
+                                    <button type="button" data-ob-pagina="menu" class="keuze-chip !py-1 !px-3 !text-xs aan">Menu</button>
+                                    <button type="button" data-ob-pagina="afrekenen" class="keuze-chip !py-1 !px-3 !text-xs">Afrekenen</button>
+                                    <button type="button" data-ob-pagina="status" class="keuze-chip !py-1 !px-3 !text-xs">Status</button>
                                 </div>
                             </div>
+                            <div class="relative flex-1 min-h-0 w-full overflow-hidden rounded-2xl border-2 border-crema-dark bg-white aspect-[9/16] lg:aspect-auto">
+                                <iframe id="obStijlPreview" title="Voorbeeld van je bestelpagina" style="width:200%;height:200%;transform:scale(.5);transform-origin:top left;border:0"></iframe>
+                                <div id="obStijlLaad" class="absolute inset-0 grid place-items-center bg-white/75" style="display:none">
+                                    <div class="text-center">
+                                        <span class="inline-block text-3xl animate-spin">🍕</span>
+                                        <p class="mt-2 text-sm font-extrabold text-cacao/60">Voorbeeld laden…</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-xs font-extrabold text-cacao/45 mt-2">Scrollen kan, klikken staat uit in het voorbeeld.</p>
                         </div>
-                        <p class="text-xs font-extrabold text-cacao/45 mt-2">Scrollen kan, klikken staat uit in het voorbeeld.</p>
                     </div>
                 </div>
 
-                <div class="mt-14 grid lg:grid-cols-[auto_1fr] gap-10 items-stretch">
+                <div class="order-2 mt-14 lg:mt-0 lg:col-span-2 lg:row-start-2 grid lg:grid-cols-[auto_1fr] gap-10 items-stretch">
                     <div>
                         <p class="lbl !ml-0 mb-3">Jouw kleurstijl</p>
                         <div id="colorGrid"></div>
@@ -469,11 +444,12 @@
     </button>
 
     <!-- Toast -->
-    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden bg-cacao text-crema font-extrabold text-sm px-5 py-3 rounded-full shadow-lg"></div>
+    <div id="toast" class="fixed bottom-6 left-1/2 z-50 bg-cacao text-crema font-extrabold text-sm px-5 py-3 rounded-full shadow-lg"></div>
 
     <!-- Confetti -->
     <canvas id="confetti" class="pointer-events-none fixed inset-0 z-50 hidden"></canvas>
 
+    <script>window.PP_PROEF = @json(auth()->check() && ! auth()->user()->abonnement_actief);</script>
     <script>window.PP_AUTH = @json(auth()->check());</script>
     <script>window.PP_KLEUREN = @json(\App\Http\Controllers\BestelController::KLEUREN);</script>
     <script>window.PP_SAVED = @json(auth()->check() ? auth()->user()->onboarding : null);</script>

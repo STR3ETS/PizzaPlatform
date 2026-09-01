@@ -1,8 +1,12 @@
 /* ═══════════════ PizzaPlatform onboarding wizard ═══════════════ */
 
-/* De onboarding is ook de registratie: ingelogde gebruikers slaan de wachtwoord-stap over */
+/* De onboarding is ook de registratie: gasten krijgen alleen wat echt nodig is
+   voor een account. Ingelogd zijn alle stappen beschikbaar, voor het aanvullen
+   vanuit het dashboard (de setup-banner) en losse bewerkingen. */
 const IS_AUTH = window.PP_AUTH === true;
-const STEPS = ['name', 'person', 'contact', ...(IS_AUTH ? [] : ['wachtwoord']), 'company', 'hours', 'menu', 'payment', 'punten', 'domain', 'style', 'overview'];
+const STEPS = IS_AUTH
+    ? ['name', 'person', 'contact', 'company', 'hours', 'menu', 'punten', 'domain', 'style', 'overview']
+    : ['name', 'person', 'contact', 'wachtwoord', 'company', 'overview'];
 const QUESTION_STEPS = STEPS.filter((s) => s !== 'overview');
 const STORAGE_KEY = 'pp_onboarding_v2';
 
@@ -152,7 +156,6 @@ let state = {
     categories: [{ id: 'klassiekers', emoji: '🍕', name: 'Klassiekers' }],
     activeCat: 'klassiekers',
     menu: [],                    // { cat, icon: {t:'e'|'p', v:emoji|dataURL}, name, price }
-    payment: null,
     spaarpunten: true,           // klanten sparen automatisch punten voor korting
     domainMode: 'sub', ownDomain: '',
     color: '#E63946',
@@ -166,6 +169,25 @@ let addingCat = false;           // "eigen categorie"-invoer open?
 let pickerIdx = null;            // menu-index waarvoor de icoon-kiezer open staat
 let pw = '';                     // wachtwoord bewust NIET in localStorage
 let pw2 = '';
+
+/* Wachtwoord-eisen: gedeeld door de checklist in de stap en de validatie */
+const PW_EISEN = {
+    lengte: (w) => w.length >= 8,
+    hoofdletter: (w) => /[A-Z]/.test(w),
+    kleineletter: (w) => /[a-z]/.test(w),
+    cijfer: (w) => /[0-9]/.test(w),
+};
+const pwVoldoet = () => Object.values(PW_EISEN).every((eis) => eis(pw));
+
+function renderPwChecklist() {
+    Object.entries(PW_EISEN).forEach(([naam, eis]) => {
+        const rij = document.querySelector(`[data-pweis="${naam}"]`);
+        if (!rij) return;
+        const ok = eis(pw);
+        rij.classList.toggle('aan', ok);
+        rij.querySelector('.pw-dot').textContent = ok ? '✓' : '✕';
+    });
+}
 
 const $  = (sel) => document.querySelector(sel);
 const $$ = (sel) => [...document.querySelectorAll(sel)];
@@ -258,8 +280,12 @@ function show(id, { animate = true } = {}) {
         state.step = id;
         onEnterStep(id);
         to.classList.remove('hidden');
-        to.classList.add('step-enter');
-        setTimeout(() => to.classList.remove('step-enter'), 450);
+        /* Alleen animeren bij een echte stap-wissel: bij het eerste laden zou de
+           transform de zwevende mobiele knoppen tijdelijk aan de stap koppelen */
+        if (animate) {
+            to.classList.add('step-enter');
+            setTimeout(() => to.classList.remove('step-enter'), 450);
+        }
         updateChrome();
         save();
         window.scrollTo({ top: 0 });
@@ -381,12 +407,21 @@ function validate(step) {
             }
             setError('email'); return true;
         case 'wachtwoord':
-            if (pw.length < 8) { setError('password', 'Minimaal 8 tekens, dan zit je goed 💪'); nudge($('#inpPassword')); return false; }
+            if (!pwVoldoet()) { setError('password', 'Nog niet helemaal: check de eisen hierboven 💪'); nudge($('#inpPassword')); return false; }
             if (pw !== pw2) { setError('password', 'De wachtwoorden zijn niet hetzelfde 🧐'); nudge($('#inpPassword2')); return false; }
             setError('password'); return true;
+        case 'company':
+            if ((state.kvk || '').trim() !== '' && !/^\d{8}$/.test(state.kvk.trim())) { setError('company', 'Een KvK-nummer bestaat uit 8 cijfers 📋'); nudge($('#inpKvk')); return false; }
+            if ((state.street || '').trim().length < 3) { setError('company', 'Vul je straat en huisnummer in 🏠'); nudge($('#inpStreet')); return false; }
+            if (!/^\d{4}\s?[a-zA-Z]{2}$/.test((state.zip || '').trim())) { setError('company', 'Die postcode klopt nog niet, bijv. 1234 AB 🧐'); nudge($('#inpZip')); return false; }
+            if ((state.city || '').trim().length < 2) { setError('company', 'Vul je plaats nog even in 🏙️'); nudge($('#inpCity')); return false; }
+            setError('company'); return true;
         case 'hours':
-            if (!Object.values(state.days).some(Boolean)) { setError('hours', 'Kies minstens één dag, of sla deze stap over 👇'); return false; }
+            if (!Object.values(state.days).some(Boolean)) { setError('hours', 'Kies minstens één dag dat je open bent 👇'); return false; }
             setError('hours'); return true;
+        case 'menu':
+            if (!state.menu.some((m) => (m.name || '').trim() !== '')) { toast('Voeg minstens één gerecht toe aan je menukaart 🍕'); return false; }
+            return true;
         case 'domain':
             if (state.domainMode === 'own' && !/.+\..{2,}/.test(state.ownDomain.trim())) {
                 setError('domain', 'Vul je website in, bijv. pizzeriamario.nl'); nudge($('#inpOwnDomain')); return false;
@@ -433,9 +468,9 @@ function iconHtml(item, cls) {
 function toast(msg, ms = 2600) {
     const el = $('#toast');
     el.textContent = msg;
-    el.classList.remove('hidden');
+    el.classList.add('aan');
     clearTimeout(el._t);
-    el._t = setTimeout(() => el.classList.add('hidden'), ms);
+    el._t = setTimeout(() => el.classList.remove('aan'), ms);
 }
 
 /* ── Openingstijden ───────────────────────────────────────────── */
@@ -715,7 +750,7 @@ function renderColors() {
         <div class="flex flex-wrap gap-2 mb-4">${KLEUR_TABS.map(([id, label]) =>
             `<button type="button" data-kleurtab="${id}" class="keuze-chip !py-1.5 !px-3.5 !text-xs ${kleurTab === id ? 'aan' : ''}">${label}</button>`).join('')}
         </div>
-        <div class="grid grid-cols-5 sm:grid-cols-10 gap-3 w-fit">${lijst.map((k) =>
+        <div class="grid grid-cols-5 sm:grid-cols-10 gap-3 w-full sm:w-fit">${lijst.map((k) =>
             `<button type="button" class="swatch ${state.color === k.hex ? 'selected' : ''}" data-color="${k.hex}"
                 style="background:${k.palet.primair}" title="${esc(k.naam)}" aria-label="${esc(k.naam)}"></button>`).join('')}
         </div>
@@ -996,7 +1031,6 @@ function updateObPreview() {
 /* ── Overzicht ────────────────────────────────────────────────── */
 
 function renderSummary() {
-    const payLabels = { mollie: 'iDEAL via Mollie', stripe: 'Creditcard via Stripe', later: 'Regelen we samen later' };
     const address = [state.street, [state.zip, state.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
     const orderUrl = state.domainMode === 'own' && state.ownDomain
         ? `bestellen.${cleanDomain(state.ownDomain)}`
@@ -1016,13 +1050,12 @@ function renderSummary() {
         { label: 'KvK & adres',   value: esc([state.kvk, address].filter(Boolean).join(', ')) || 'Doen we later samen 👍', step: 'company' },
         { label: 'Open',          value: formatDaysSummary(), step: 'hours' },
         { label: 'Menu',          value: menuValue, step: 'menu' },
-        { label: 'Betaling',      value: payLabels[state.payment] || 'Regelen we samen later', step: 'payment' },
         { label: 'Spaarpunten',   value: state.spaarpunten ? 'Aan' : 'Uit', step: 'punten' },
         { label: 'Bestel-adres',  value: esc(orderUrl), step: 'domain' },
         { label: 'Template',      value: `${theme.emoji} ${esc(theme.name)}, <span class="inline-block w-4 h-4 rounded-full align-middle mx-1" style="background:${paletVoor(state.color).primair}"></span>${colorName}${state.logo ? ', met logo' : ''}`, step: 'style' },
     ];
 
-    $('#summary').innerHTML = rows.map((r) =>
+    $('#summary').innerHTML = rows.filter((r) => STEPS.includes(r.step)).map((r) =>
         `<button type="button" class="sum-row" data-jump="${r.step}">
             <span class="sum-label">${r.label}</span>
             <span class="sum-value">${r.value}</span>
@@ -1213,19 +1246,7 @@ function init() {
         }
     });
 
-    /* Betaling: automatisch door naar de volgende stap */
-    $$('[data-pay]').forEach((card) => {
-        if (state.payment === card.dataset.pay) card.classList.add('selected');
-        card.addEventListener('click', () => {
-            $$('[data-pay]').forEach((c) => c.classList.remove('selected'));
-            card.classList.add('selected');
-            state.payment = card.dataset.pay;
-            save();
-            setTimeout(next, 380);
-        });
-    });
-
-    /* Spaarpunten: zelfde patroon als de betaalstap */
+    /* Spaarpunten: keuzekaart selecteren, verder gaat via Volgende */
     $$('[data-punten]').forEach((card) => {
         if ((state.spaarpunten ? 'aan' : 'uit') === card.dataset.punten) card.classList.add('selected');
         card.addEventListener('click', () => {
@@ -1233,7 +1254,6 @@ function init() {
             card.classList.add('selected');
             state.spaarpunten = card.dataset.punten === 'aan';
             save();
-            setTimeout(next, 380);
         });
     });
 
@@ -1245,6 +1265,11 @@ function init() {
     };
     $$('[data-domain]').forEach((card) => {
         card.addEventListener('click', () => {
+            /* Eigen domein is voor abonnees: in de proefperiode blijft het subdomein actief */
+            if (card.dataset.domain === 'own' && window.PP_PROEF === true) {
+                toast('Een eigen domein kan zodra je abonnement actief is 🔐 Start \'m vanuit je dashboard.', 4200);
+                return;
+            }
             state.domainMode = card.dataset.domain;
             setError('domain');
             save();
@@ -1346,40 +1371,33 @@ function init() {
     });
 
     /* Wachtwoordvelden (alleen voor gasten aanwezig) */
-    $('#inpPassword')?.addEventListener('input', (e) => { pw = e.target.value; setError('password'); });
+    $('#inpPassword')?.addEventListener('input', (e) => { pw = e.target.value; setError('password'); renderPwChecklist(); });
     $('#inpPassword2')?.addEventListener('input', (e) => { pw2 = e.target.value; });
+    renderPwChecklist();
 
-    /* Snel opslaan (alleen ingelogd): wijziging bewaren zonder alle stappen af te lopen */
-    $('#quickSave')?.addEventListener('click', async () => {
-        const btn = $('#quickSave');
-        btn.disabled = true;
-        btn.textContent = 'Opslaan…';
-        try {
-            const res = await verstuurOnboarding();
-            if (res.ok) {
-                btn.textContent = 'Opgeslagen ✓';
-                setTimeout(() => { window.location.href = '/dashboard'; }, 500);
-                return;
-            }
-            const data = await res.json().catch(() => ({}));
-            toast(data.errors ? Object.values(data.errors)[0][0] : 'Opslaan lukte niet, probeer het nog eens 🙏', 4000);
-        } catch {
-            toast('Geen verbinding. Check je internet en probeer opnieuw 📶');
-        }
-        btn.disabled = false;
-        btn.textContent = 'Opslaan ✓';
-    });
+    /* Oogjes: wachtwoord tonen of weer verbergen */
+    $$('[data-oog]').forEach((oog) => oog.addEventListener('click', () => {
+        const veld = $('#' + oog.dataset.oog);
+        const toon = veld.type === 'password';
+        veld.type = toon ? 'text' : 'password';
+        oog.textContent = toon ? '🙈' : '👁️';
+        veld.focus();
+        veld.setSelectionRange(veld.value.length, veld.value.length);
+    }));
 
     /* Versturen: maakt het account aan (of werkt het bij) en logt direct in */
     $('#submitBtn').addEventListener('click', async () => {
         const btn = $('#submitBtn');
-        if (!IS_AUTH && pw.length < 8) {
+        if (!IS_AUTH && !pwVoldoet()) {
             toast('Kies eerst nog even een wachtwoord 🔐');
             jumpTo('wachtwoord');
             return;
         }
         btn.disabled = true;
         btn.textContent = 'Momentje… 🛵💨';
+
+        /* Ingelogd afronden = de vervolg-stappen zijn doorlopen: de zaak is compleet */
+        if (IS_AUTH) { state.setup_compleet = true; save(); }
 
         try {
             const res = await verstuurOnboarding();
@@ -1396,6 +1414,7 @@ function init() {
             toast(firstError, 4200);
             if (data.errors?.['state.email']) jumpTo('contact');
             else if (data.errors?.password) jumpTo('wachtwoord');
+            else if (['state.kvk', 'state.street', 'state.zip', 'state.city'].some((k) => data.errors?.[k])) jumpTo('company');
         } catch {
             toast('Geen verbinding. Check je internet en probeer opnieuw 📶');
         }
@@ -1404,14 +1423,13 @@ function init() {
     });
 
     /* Navigatie-knoppen */
+    /* Live voorbeeld op mobiel: standaard ingeklapt, uitklappen via de knop */
+    $('#pvToggle')?.addEventListener('click', () => {
+        const open = ! $('#pvInhoud').classList.toggle('hidden');
+        $('#pvToggle').textContent = open ? 'Verberg live voorbeeld 🙈' : 'Bekijk live voorbeeld 👀';
+    });
+
     $$('[data-next]').forEach((btn) => btn.addEventListener('click', next));
-    $$('[data-skip]').forEach((btn) => btn.addEventListener('click', () => {
-        if (state.returnTo) { const t = state.returnTo; state.returnTo = null; show(t); }
-        else {
-            const i = STEPS.indexOf(state.step);
-            show(STEPS[i + 1]);
-        }
-    }));
     $$('[data-back]').forEach((btn) => btn.addEventListener('click', back));
     $('#resetLink').addEventListener('click', resetAll);
 

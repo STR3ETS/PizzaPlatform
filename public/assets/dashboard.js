@@ -24,8 +24,51 @@ $$('[data-nav]').forEach((btn) => btn.addEventListener('click', () => {
         p.classList.remove('actief');
         if (actief) requestAnimationFrame(() => p.classList.add('actief'));
     });
+    /* Paneel in de url bewaren (/dashboard/bestellingen), zodat een refresh op hetzelfde scherm uitkomt */
+    history.replaceState(null, '', doel === 'overzicht' ? '/dashboard' : '/dashboard/' + doel);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }));
+
+/* Toast midden onderin het scherm, in de stijl van de onboarding */
+function dashToast(msg, ms = 3200) {
+    const el = $('#dashToast');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.add('aan');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('aan'), ms);
+}
+
+/* Zaak nog niet af: panelen zichtbaar op slot, en elke klik op een knop of link
+   geeft een toast. Alleen de weg naar het afmaken zelf blijft open. */
+if (window.PP_SETUP === false) {
+    $$('[data-nav]').forEach((b) => { if (b.dataset.nav !== 'overzicht') b.classList.add('opacity-40'); });
+    $$('.qa-btn').forEach((b) => b.classList.add('opacity-40'));
+    const online = $('#onlineToggle');
+    if (online) {
+        online.classList.add('opacity-40', 'cursor-not-allowed');
+        online.title = 'Maak eerst je zaak af, daarna kun je online';
+    }
+
+    document.addEventListener('click', (e) => {
+        const doel = e.target.closest('a, button');
+        if (!doel) return;
+        /* Wat wel mag: de setup-banner, onboarding-links en checklist-stappen,
+           de uitlegvideo, de abonnement-overlay, abonneren en uitloggen */
+        if (doel.closest('#setupBanner') || doel.closest('#introModal') || doel.closest('#abonnementOverlay')) return;
+        /* De snelknoppen onder "Snel regelen" zijn allemaal op slot, ook de
+           twee die naar de wizard linken: afmaken gaat via de banner */
+        if (!doel.classList.contains('qa-btn')) {
+            if (doel.dataset.nav === 'overzicht' || doel.dataset.stap) return;
+            if ((doel.getAttribute('href') || '').includes('/onboarding')) return;
+            const formActie = doel.closest('form')?.action || '';
+            if (formActie.includes('logout') || formActie.includes('abonnement')) return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        dashToast('Maak eerst je zaak af via "Verder met instellen" 🚧');
+    }, true);
+}
 
 /* ── Tellers en weekgrafiek ───────────────────────────────────── */
 
@@ -114,7 +157,6 @@ $$('[data-teller]').forEach((el) => {
 const CHECKS = [
     { label: 'Menukaart gevuld (3+ gerechten)', emoji: '📋', af: (window.PP_MENU || []).length >= 3, paneel: 'menukaart' },
     { label: 'Logo geüpload', emoji: '🖼️', af: !!DATA.logo, stap: 'style' },
-    { label: 'Betaalmethode gekozen', emoji: '💶', af: !!DATA.payment && DATA.payment !== 'later', inst: 'betalen' },
     { label: 'Bedrijfsgegevens compleet', emoji: '📇', af: !!DATA.kvk && !!DATA.street, inst: 'bedrijf' },
     { label: 'Telefoonnummer toegevoegd', emoji: '📞', af: !!DATA.phone, inst: 'zaak' },
 ];
@@ -605,7 +647,9 @@ function renderStatus() {
 
     /* Altijd zichtbaar in de navigatie (rail + mobiele tabbalk) */
     $('#railDot')?.classList.toggle('aan', STATUS.online);
-    $('#tabDot')?.classList.toggle('aan', STATUS.online);
+    $('#tabStatus')?.classList.toggle('online', STATUS.online);
+    const tabStatusTekst = $('#tabStatusTekst');
+    if (tabStatusTekst) tabStatusTekst.textContent = STATUS.online ? 'Online' : 'Offline';
     const railTitel = $('#railStatusTitel');
     const railSub = $('#railStatusSub');
     if (railTitel) railTitel.textContent = STATUS.online ? 'Online' : 'Offline';
@@ -1687,17 +1731,6 @@ const INST_SECTIES = {
                 : { days, hoursMode: 'perday', dayTimes, open: tijden[0]?.open || '16:00', close: tijden[0]?.close || '21:30' };
         },
     },
-    betalen: {
-        kicker: 'Betalen 💶', titel: 'Hoe rekenen klanten af?', sub: 'Online betalen werkt het prettigst voor jou en je klant.',
-        mascot: 'scanning-qr', bubble: 'Kassa! 🤌', kant: 'left',
-        velden: () => {
-            const labels = { stripe: 'Online betalen via Stripe', later: 'Kies ik later' };
-            const nu = DATA.payment || 'later';
-            return `<div class="flex flex-col gap-2">${Object.keys(labels).map((p) =>
-                `<button type="button" class="keuze-chip justify-center !py-2.5 ${nu === p ? 'aan' : ''}" data-i-keuze="${p}">${labels[p]}</button>`).join('')}</div>`;
-        },
-        payload: () => ({ payment: $('#instVelden .keuze-chip.aan')?.dataset.iKeuze || 'later' }),
-    },
     punten: {
         kicker: 'Spaarpunten 🌟', titel: 'Klanten laten sparen?', sub: 'Klanten sparen automatisch punten met elke bestelling. Die punten leveren straks extra korting op bij het afrekenen.',
         mascot: 'waving-hello', bubble: 'Zo komen ze terug! 🌟', kant: 'right',
@@ -1717,11 +1750,14 @@ const INST_SECTIES = {
                 .normalize('NFD').replace(/[̀-ͯ]/g, '')
                 .toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 30) || 'jouwpizzeria';
             const eigen = DATA.domainMode === 'own';
+            /* Eigen domein is voor abonnees: in de proefperiode staat de keuze op slot */
+            const proef = window.PP_ABO === false;
             return `
                 <div class="flex flex-col gap-2">
                     <button type="button" class="keuze-chip justify-center !py-2.5 ${eigen ? '' : 'aan'}" data-i-keuze="sub">Gratis subdomein: ${slug}.mijnpizzeria.nl</button>
-                    <button type="button" class="keuze-chip justify-center !py-2.5 ${eigen ? 'aan' : ''}" data-i-keuze="own">Mijn eigen domein</button>
+                    <button type="button" class="keuze-chip justify-center !py-2.5 ${eigen ? 'aan' : ''} ${proef ? 'opacity-40 cursor-not-allowed' : ''}" ${proef ? 'disabled title="Kan zodra je abonnement actief is"' : ''} data-i-keuze="own">Mijn eigen domein${proef ? ' 🔐' : ''}</button>
                 </div>
+                ${proef ? '<p class="m-hint mt-1">Een eigen domein kan zodra je abonnement actief is.</p>' : ''}
                 <div id="iEigenDomeinVak" class="${eigen ? '' : 'hidden'}">
                     <label class="m-label" for="iEigenDomein">Jouw domeinnaam</label>
                     <input id="iEigenDomein" class="m-inp" maxlength="100" placeholder="pizzeriamario.nl" value="${esc(DATA.ownDomain || '')}">
@@ -1825,7 +1861,7 @@ $('#instOpslaan')?.addEventListener('click', async () => {
     const res = await postJson('/instellingen/gegevens', payload).catch(() => null);
     if (!res || !res.ok) return;
     /* Verse herlaad zodat drukte, checklist en waarschuwingen overal meebewegen */
-    location.hash = instSectie === 'stijl' ? 'bestelpagina' : 'instellingen';
+    history.replaceState(null, '', '/dashboard/' + (instSectie === 'stijl' ? 'bestelpagina' : 'instellingen'));
     location.reload();
 });
 
@@ -1854,57 +1890,6 @@ $('#instVelden')?.addEventListener('change', async (e) => {
 
 /* ── Bestelpagina-paneel: link, kopieerknop, live voorbeeld en status ── */
 
-/* Dozen-webshop: samenstellen met staffelprijzen; bestellen volgt zodra betalingen live zijn */
-(function dozenShop() {
-    const paneel = document.querySelector('[data-panel="dozen"]');
-    if (!paneel || !paneel.querySelector('[data-doos]')) return;
-
-    const PRIJZEN = {
-        klein: { 100: 52, 250: 46, 500: 40, 1000: 34 },
-        middel: { 100: 58, 250: 51, 500: 45, 1000: 38 },
-        groot: { 100: 66, 250: 58, 500: 51, 1000: 43 },
-    };
-    const NAMEN = { klein: 'Klein 26 cm', middel: 'Middel 29 cm', groot: 'Groot 33 cm' };
-    const keuze = { klein: 0, middel: 0, groot: 0 };
-    const euroTekst = (centen) => '€ ' + (centen / 100).toFixed(2).replace('.', ',');
-
-    function renderDozen() {
-        let subtotaal = 0;
-        Object.keys(keuze).forEach((f) => {
-            paneel.querySelectorAll(`[data-doos="${f}"] [data-aantal]`).forEach((chip) =>
-                chip.classList.toggle('aan', Number(chip.dataset.aantal) === keuze[f]));
-            const info = paneel.querySelector(`[data-doos-prijs="${f}"]`);
-            info.textContent = keuze[f] ? `${keuze[f]} stuks x ${euroTekst(PRIJZEN[f][keuze[f]])} = ${euroTekst(keuze[f] * PRIJZEN[f][keuze[f]])}` : '';
-            subtotaal += keuze[f] ? keuze[f] * PRIJZEN[f][keuze[f]] : 0;
-        });
-        const gekozen = Object.keys(keuze).filter((f) => keuze[f]);
-        const verzending = subtotaal === 0 ? 0 : (subtotaal >= 15000 ? 0 : 1250);
-        $('#dozenRegels').innerHTML = gekozen.length
-            ? gekozen.map((f) => `<div class="flex justify-between gap-3 text-sm font-extrabold py-2"><span>${keuze[f]} x ${NAMEN[f]}</span><span>${euroTekst(keuze[f] * PRIJZEN[f][keuze[f]])}</span></div>`).join('')
-            : '<p class="text-sm font-extrabold text-cacao/40 py-2">Kies links een formaat en aantal.</p>';
-        $('#dozenVerzend').textContent = subtotaal === 0 ? '-' : (verzending === 0 ? 'Gratis' : euroTekst(verzending));
-        $('#dozenTotaal').textContent = euroTekst(subtotaal + verzending);
-        $('#dozenGratisHint').style.display = subtotaal > 0 && verzending > 0 ? '' : 'none';
-    }
-
-    paneel.addEventListener('click', (e) => {
-        const chip = e.target.closest('[data-aantal]');
-        if (chip) {
-            const formaat = chip.closest('[data-doos]').dataset.doos;
-            const aantal = Number(chip.dataset.aantal);
-            keuze[formaat] = keuze[formaat] === aantal ? 0 : aantal;   // nogmaals klikken zet uit
-            renderDozen();
-            return;
-        }
-        const qr = e.target.closest('[data-doos-qr]');
-        if (qr) {
-            paneel.querySelectorAll('[data-doos-qr]').forEach((k) => k.classList.toggle('aan', k === qr));
-            $('#doosQrVak').style.display = qr.dataset.doosQr === 'aan' ? '' : 'none';
-        }
-    });
-    renderDozen();
-})();
-
 /* Pizza Coach: slapende klanten bekijken en de combo-upsell aan of uit zetten */
 (function coach() {
     $('#coachSlapendKnop')?.addEventListener('click', () => $('#coachSlapendModal').classList.remove('hidden'));
@@ -1916,7 +1901,7 @@ $('#instVelden')?.addEventListener('change', async (e) => {
     const zetPin = async (waarde) => {
         const res = await postJson('/instellingen/gegevens', { upsellPin: waarde }).catch(() => null);
         if (res) {
-            location.hash = 'overzicht';
+            history.replaceState(null, '', '/dashboard');
             location.reload();
         }
     };
@@ -1942,12 +1927,69 @@ $('#instVelden')?.addEventListener('change', async (e) => {
         const frame = $('#paginaPreview');
         if (frame && !frame.src) frame.src = link;
     }));
-    if (location.hash === '#bestelpagina') {
+    if (location.hash === '#bestelpagina' || location.pathname.endsWith('/bestelpagina')) {
         const frame = $('#paginaPreview');
         if (frame && !frame.src) frame.src = link;
     }
 })();
 
-/* Deep-link naar een paneel via de #hash, bijvoorbeeld na het opslaan van instellingen */
-if (location.hash.length > 1) document.querySelector(`.rail-item[data-nav="${location.hash.slice(1)}"]`)?.click();
+/* Startpaneel uit het pad (/dashboard/webshop); de oude #hash blijft werken als fallback */
+const startPaneel = location.pathname.split('/')[2] || (location.hash.length > 1 ? location.hash.slice(1) : '');
+if (startPaneel) document.querySelector(`.rail-item[data-nav="${startPaneel}"]`)?.click();
+
+/* Feestje bij een net geactiveerd abonnement: dezelfde confetti als in de
+   onboarding, plus een toast midden onderin het scherm */
+(function abonnementFeest() {
+    if (window.PP_ABO_FEEST !== true) return;
+
+    dashToast('Je abonnement is geactiveerd! 🎉', 5200);
+
+    const canvas = $('#confetti');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+    canvas.classList.remove('hidden');
+
+    const colors = ['#E63946', '#2F8F46', '#F5B301', '#7C3AED', '#2563EB', '#FFF6E8'];
+    const pieces = Array.from({ length: 160 }, () => ({
+        x: Math.random() * canvas.width,
+        y: -20 - Math.random() * canvas.height * 0.5,
+        w: 6 + Math.random() * 8,
+        h: 8 + Math.random() * 10,
+        vy: 2.5 + Math.random() * 3.5,
+        vx: -1.5 + Math.random() * 3,
+        rot: Math.random() * Math.PI,
+        vr: -0.12 + Math.random() * 0.24,
+        color: colors[Math.floor(Math.random() * colors.length)],
+    }));
+
+    const start = performance.now();
+    (function tick(now) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (const p of pieces) {
+            p.y += p.vy; p.x += p.vx; p.rot += p.vr;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            ctx.restore();
+        }
+        if (now - start < 4000) requestAnimationFrame(tick);
+        else canvas.classList.add('hidden');
+    })(start);
+})();
+
+/* Abonnement-overlay: komt terug zodra iemand hem via devtools weghaalt of verbergt.
+   De server weigert acties zonder abonnement sowieso, dit is alleen de voorkant. */
+(function abonnementWacht() {
+    if (!document.querySelector('#abonnementOverlay')) return;
+    new MutationObserver(() => {
+        const overlay = document.querySelector('#abonnementOverlay');
+        if (!overlay || overlay.style.display === 'none' || overlay.style.visibility === 'hidden' || overlay.hidden) {
+            location.reload();
+        }
+    }).observe(document.documentElement, { childList: true, subtree: true, attributes: true });
+})();
 

@@ -99,7 +99,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
     Route::get('/admin/pizzeria/{user}', [AdminController::class, 'pizzeria'])->name('admin.pizzeria');
 
-    Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
+    // Het paneel staat in de url (/dashboard/bestellingen); de wissel zelf blijft client-side
+    Route::get('/dashboard/{paneel?}', function (\Illuminate\Http\Request $request) {
         $user = $request->user();
 
         // Beheerders hebben geen eigen zaak: door naar het platformbeheer
@@ -111,6 +112,10 @@ Route::middleware('auth')->group(function () {
         if ($user->slug === null) {
             $user->forceFill(['slug' => BestelController::uniekeSlug($user->onboarding['name'] ?? null)])->save();
         }
+
+        // Zonder actief abonnement rendert het dashboard met de abonnement-overlay
+        // (zie dashboard/abonnement-overlay.blade.php); de actie-routes hieronder
+        // weigeren dan ook server-side via de 'abonnement'-middleware.
 
         // Eenmalig: de menukaart uit de onboarding overnemen naar de echte menukaart
         $onboarding = $user->onboarding ?? [];
@@ -167,7 +172,23 @@ Route::middleware('auth')->group(function () {
         }
 
         return view('dashboard.index');
-    })->name('dashboard');
+    })->whereIn('paneel', ['overzicht', 'bestellingen', 'menukaart', 'bestelpagina', 'webshop', 'instellingen'])->name('dashboard');
+
+    // TODO Stripe: zodra de Stripe-gegevens er zijn wordt dit een Checkout-sessie
+    // (abonnement 24,95 per maand via Stripe Billing) met een webhook die activeert.
+    // Tot die tijd activeren we direct, zodat de hele flow te testen is zonder betaling.
+    Route::post('/abonnement/starten', function (\Illuminate\Http\Request $request) {
+        $request->user()->forceFill([
+            'abonnement_actief' => true,
+            'abonnement_sinds' => now(),
+        ])->save();
+
+        // Eenmalig reclamebord op het overzicht als felicitatie
+        return redirect()->route('dashboard')->with('abonnementGestart', true);
+    })->name('abonnement.starten');
+
+    // Alles hieronder is pas bruikbaar met een actief abonnement (beheerders uitgezonderd)
+    Route::middleware('abonnement')->group(function () {
 
     Route::post('/instellingen/gegevens', function (\Illuminate\Http\Request $request) {
         $data = $request->validate([
@@ -185,7 +206,6 @@ Route::middleware('auth')->group(function () {
             'dayTimes' => ['sometimes', 'array'],
             'dayTimes.*.open' => ['required', 'date_format:H:i'],
             'dayTimes.*.close' => ['required', 'date_format:H:i'],
-            'payment' => ['sometimes', 'in:mollie,stripe,later'],
             'spaarpunten' => ['sometimes', 'boolean'],
             'domainMode' => ['sometimes', 'in:sub,own'],
             'ownDomain' => ['sometimes', 'nullable', 'string', 'max:100'],
@@ -194,6 +214,11 @@ Route::middleware('auth')->group(function () {
             'theme' => ['sometimes', 'in:template1,template2,template3,template4'],
             'upsellPin' => ['sometimes', 'nullable', 'integer'],
         ]);
+
+        // Eigen domein hosten kan alleen met een betaald abonnement, niet in de proefperiode
+        if (($data['domainMode'] ?? null) === 'own' && ! $request->user()->abonnement_actief) {
+            return response()->json(['errors' => ['domainMode' => ['Een eigen domein kan zodra je abonnement actief is.']]], 422);
+        }
 
         $dagen = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'];
         if (isset($data['days'])) {
@@ -345,6 +370,8 @@ Route::middleware('auth')->group(function () {
 
         return response()->json(['ok' => true]);
     })->name('orders.status');
+
+    }); // einde abonnement-middleware
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });

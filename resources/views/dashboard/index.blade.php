@@ -30,7 +30,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
     <link rel="stylesheet" href="{{ asset('assets/onboarding/style.css') }}?v={{ filemtime(public_path('assets/onboarding/style.css')) }}">
 </head>
-<body class="bg-crema font-body text-cacao min-h-screen antialiased overflow-x-hidden">
+@php $abonnementNodig = ! auth()->user()->heeftToegang(); @endphp
+<body class="bg-crema font-body text-cacao min-h-screen antialiased overflow-x-hidden {{ $abonnementNodig ? 'overflow-hidden' : '' }}">
 
     <!-- Zwevende deco-emoji's -->
     <div class="pointer-events-none fixed inset-0 overflow-hidden select-none" aria-hidden="true">
@@ -41,7 +42,7 @@
     </div>
 
     <!-- Zwevende navigatie-rail (desktop) -->
-    <aside class="dash-rail">
+    <aside class="dash-rail min-w-[300px]">
         <div class="flex items-center gap-2.5 px-5 py-5">
             <span class="text-3xl">🍕</span>
             <span class="font-display text-lg tracking-wide">Dashboard</span>
@@ -61,7 +62,7 @@
             <button type="button" data-nav="bestellingen" class="rail-item"><span class="r-ico">🧾</span> Bestellingen <span id="railOrdersBadge" class="n-soon" style="background:var(--color-tomato); color:#fff; display:none">0</span></button>
             <button type="button" data-nav="menukaart" class="rail-item"><span class="r-ico">📋</span> Menukaart</button>
             <button type="button" data-nav="bestelpagina" class="rail-item"><span class="r-ico">🎨</span> Bestelpagina</button>
-            <button type="button" data-nav="dozen" class="rail-item"><span class="r-ico">📦</span> Dozen</button>
+            <button type="button" data-nav="webshop" class="rail-item"><span class="r-ico">🛒</span> Webshop</button>
             <button type="button" data-nav="instellingen" class="rail-item"><span class="r-ico">⚙️</span> Instellingen</button>
         </nav>
         <div class="p-4 border-t-4 border-crema-dark">
@@ -80,11 +81,15 @@
 
     <!-- Tabbalk (mobiel) -->
     <nav class="dash-tabbar">
-        <button type="button" data-nav="overzicht" class="tab-item actief"><span class="t-ico" style="position:relative">🏠<span id="tabDot" class="status-dot" style="position:absolute; top:-2px; right:-8px; width:.55rem; height:.55rem;"></span></span>Home</button>
-        <button type="button" data-nav="bestellingen" class="tab-item"><span class="t-ico">🧾</span>Orders</button>
-        <button type="button" data-nav="menukaart" class="tab-item"><span class="t-ico">📋</span>Menu</button>
-        <button type="button" data-nav="bestelpagina" class="tab-item"><span class="t-ico">🎨</span>Pagina</button>
-        <button type="button" data-nav="instellingen" class="tab-item"><span class="t-ico">⚙️</span>Meer</button>
+        <button type="button" data-nav="overzicht" class="tab-item actief" aria-label="Overzicht"><span class="t-ico"><i class="fa-solid fa-house" aria-hidden="true"></i></span></button>
+        <button type="button" data-nav="bestellingen" class="tab-item" aria-label="Bestellingen"><span class="t-ico"><i class="fa-solid fa-receipt" aria-hidden="true"></i></span></button>
+        <button type="button" data-nav="menukaart" class="tab-item" aria-label="Menukaart"><span class="t-ico"><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i></span></button>
+        <button type="button" data-nav="bestelpagina" class="tab-item" aria-label="Bestelpagina"><span class="t-ico"><i class="fa-solid fa-palette" aria-hidden="true"></i></span></button>
+        <button type="button" data-nav="instellingen" class="tab-item" aria-label="Instellingen"><span class="t-ico"><i class="fa-solid fa-gear" aria-hidden="true"></i></span></button>
+        <button type="button" data-nav="overzicht" id="tabStatus" class="tab-status" aria-label="Online-status">
+            <span class="ts-dot" aria-hidden="true"></span>
+            <span id="tabStatusTekst">Offline</span>
+        </button>
     </nav>
 
     <main class="relative z-10 md:ml-[16rem] px-5 md:px-8 pt-7 pb-28 md:pb-10">
@@ -98,8 +103,25 @@
 
         <!-- PANEEL: Overzicht -->
         <section data-panel="overzicht" class="panel actief">
+            @php $setupKlaar = (bool) (auth()->user()->onboarding['setup_compleet'] ?? false); @endphp
+
+            <!-- Bovenblok: meldingen en status links, profielkaart rechts -->
+            <div class="grid grid-cols-1 lg:grid-cols-[1fr_19rem] gap-4 mb-4 items-stretch">
+            <div class="space-y-4 min-w-0 flex flex-col">
+            @unless($setupKlaar)
+            <!-- Eerst je zaak afmaken: de rest van het dashboard blijft dicht tot dit klaar is -->
+            <div id="setupBanner" class="dash-card rise flex flex-col md:flex-row md:items-center gap-4" style="--d:.02s; background:color-mix(in srgb, var(--color-gold) 16%, #fff); border-color:color-mix(in srgb, var(--color-gold) 55%, transparent)">
+                <img src="{{ asset('stickers') }}/behind-laptop.png" alt="" loading="lazy" class="w-16 shrink-0 hidden sm:block">
+                <div class="flex-1">
+                    <p class="font-display text-xl leading-tight">Nog even je zaak afmaken 🚧</p>
+                    <p class="text-sm font-extrabold text-cacao/55 mt-1">Je account staat! Vul nu stap voor stap je openingstijden, menukaart, spaarpunten, bestel-adres en huisstijl in. Daarna kun je echt aan de slag.</p>
+                </div>
+                <a href="{{ route('onboarding') }}?stap=hours" class="btn-primary shrink-0 !px-6 !py-3">Verder met instellen 🚀</a>
+            </div>
+            @endunless
+
             <!-- Online-status -->
-            <div class="dash-card rise mb-5 flex flex-col md:flex-row md:items-center gap-4" style="--d:.03s">
+            <div class="dash-card rise flex flex-col md:flex-row md:items-center gap-4" style="--d:.03s">
                 <div class="flex items-center gap-3.5 flex-1">
                     <span id="statusDot" class="status-dot"></span>
                     <div>
@@ -201,21 +223,137 @@
             @endphp
 
             <!-- Waarschuwing als status en openingstijden niet kloppen -->
-            <div id="statusWaarschuwing" class="hidden mb-5 flex-col sm:flex-row sm:items-center gap-3 rounded-2xl border-4 px-4 py-3"
+            <div id="statusWaarschuwing" class="hidden flex-col sm:flex-row sm:items-center gap-3 rounded-2xl border-4 px-4 py-3"
                 style="display:none; background:color-mix(in srgb, var(--color-gold) 16%, #fff); border-color:color-mix(in srgb, var(--color-gold) 55%, transparent)">
                 <p id="waarschuwingTekst" class="flex-1 text-sm font-extrabold"></p>
                 <button id="waarschuwingActie" type="button" class="btn-primary !text-sm !px-5 !py-2 shrink-0"></button>
             </div>
 
+            <!-- Openingstijden in één oogopslag, met vandaag uitgelicht -->
+            @php
+                $tijdOb = auth()->user()->onboarding ?? [];
+                $tijdDagen = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'];
+                $tijdVandaag = $tijdDagen[now()->dayOfWeekIso - 1];
+                $tijdVoor = function (string $dag) use ($tijdOb) {
+                    if (empty($tijdOb['days'][$dag])) {
+                        return null;
+                    }
+                    if (($tijdOb['hoursMode'] ?? 'same') === 'perday') {
+                        $t = $tijdOb['dayTimes'][$dag] ?? null;
+
+                        return $t ? [$t['open'], $t['close']] : null;
+                    }
+
+                    return [$tijdOb['open'] ?? '16:00', $tijdOb['close'] ?? '21:30'];
+                };
+            @endphp
+            <div class="dash-card rise flex-1 flex flex-col" style="--d:.05s">
+                <div class="flex items-center gap-3 mb-3">
+                    <p class="font-display text-xl flex-1">🕐 Jouw openingstijden</p>
+                    <a href="{{ route('onboarding') }}?stap=hours" class="skip-link !mt-0">wijzig</a>
+                </div>
+                <div class="flex-1 grid grid-cols-7 gap-1.5 text-center">
+                    @foreach($tijdDagen as $tijdDag)
+                        @php $tijd = $tijdVoor($tijdDag); @endphp
+                        <div class="rounded-xl px-1 py-2 flex flex-col items-center justify-center {{ $tijdDag === $tijdVandaag ? 'border-2' : '' }}" style="background:{{ $tijd ? 'color-mix(in srgb, var(--color-basil) 10%, #fff)' : 'var(--color-crema)' }};{{ $tijdDag === $tijdVandaag ? ' border-color:var(--color-gold)' : '' }}">
+                            <p class="text-[11px] font-extrabold uppercase {{ $tijd ? '' : 'text-cacao/35' }}">{{ $tijdDag }}</p>
+                            @if($tijd)
+                                <p class="text-[10px] font-extrabold text-cacao/60 leading-tight mt-0.5">{{ $tijd[0] }}</p>
+                                <p class="text-[10px] font-extrabold text-cacao/60 leading-tight">{{ $tijd[1] }}</p>
+                            @else
+                                <p class="text-[10px] font-extrabold text-cacao/30 leading-tight mt-0.5">dicht</p>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+                <p class="text-xs font-extrabold text-cacao/45 mt-3">
+                    @if(empty($tijdOb['days']))
+                        Je hebt je openingstijden nog niet ingesteld.
+                    @elseif($tijdVoor($tijdVandaag))
+                        Vandaag geopend van {{ $tijdVoor($tijdVandaag)[0] }} tot {{ $tijdVoor($tijdVandaag)[1] }}.
+                    @else
+                        Vandaag ben je gesloten.
+                    @endif
+                </p>
+            </div>
+
+            </div>
+
+            <!-- Profielkaart: wie je bent en waar klanten je vinden -->
+            <aside class="dash-card rise flex flex-col" style="--d:.06s">
+                @php
+                    $profielOb = auth()->user()->onboarding ?? [];
+                    $profielDomein = ($profielOb['domainMode'] ?? 'sub') === 'own' && ! empty($profielOb['ownDomain'])
+                        ? 'bestellen.' . strtolower(preg_replace('#^(https?://)?(www\.)?#', '', $profielOb['ownDomain']))
+                        : auth()->user()->slug . '.mijnpizzeria.nl';
+                @endphp
+                <div class="flex items-center gap-3">
+                    <div class="w-14 h-14 shrink-0 rounded-2xl overflow-hidden grid place-items-center bg-crema border-2 border-crema-dark">
+                        @if($profielOb['logo'] ?? null)
+                            <img src="{{ $profielOb['logo'] }}" alt="" class="w-full h-full object-cover">
+                        @else
+                            <span class="text-2xl">🍕</span>
+                        @endif
+                    </div>
+                    <div class="min-w-0">
+                        <p class="font-display text-xl leading-tight truncate">{{ $profielOb['name'] ?? 'Jouw zaak' }}</p>
+                        <p class="text-xs font-extrabold text-cacao/45 truncate">{{ auth()->user()->name }}</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-1.5 mt-3">
+                    <span class="text-[11px] font-extrabold rounded-full px-2.5 py-1 {{ $setupKlaar ? '' : 'text-tomato' }}" style="background:var(--color-crema-dark)">{{ $setupKlaar ? 'Zaak compleet ✓' : 'Zaak nog niet af' }}</span>
+                </div>
+                <div class="mt-4 space-y-2.5 text-sm font-extrabold border-t-2 border-crema-dark pt-3.5">
+                    <p class="flex items-center gap-2 min-w-0"><span class="shrink-0">🌐</span><span class="truncate">{{ $profielDomein }}</span></p>
+                    <p class="flex items-center gap-2 min-w-0"><span class="shrink-0">✉️</span><span class="truncate">{{ auth()->user()->email }}</span></p>
+                    @if(($profielOb['phone'] ?? '') !== '')
+                        <p class="flex items-center gap-2 min-w-0"><span class="shrink-0">📞</span><span class="truncate">{{ $profielOb['phone'] }}</span></p>
+                    @endif
+                    @if(($profielOb['city'] ?? '') !== '')
+                        <p class="flex items-center gap-2 min-w-0"><span class="shrink-0">📍</span><span class="truncate">{{ $profielOb['city'] }}</span></p>
+                    @endif
+                </div>
+                <div class="flex-1 flex flex-col mt-4">
+                    @if(auth()->user()->abonnement_actief)
+                    @php
+                        $aboSinds = auth()->user()->abonnement_sinds ?? now();
+                        $aboVolgende = $aboSinds->copy();
+                        while ($aboVolgende->isPast()) {
+                            $aboVolgende = $aboVolgende->addMonthNoOverflow();
+                        }
+                    @endphp
+                    <!-- Abonnement actief, met de volgende facturatiedatum -->
+                    <div class="mt-auto flex flex-col justify-center rounded-xl border-2 px-3.5 py-3" style="background:color-mix(in srgb, var(--color-basil) 12%, #fff); border-color:color-mix(in srgb, var(--color-basil) 40%, transparent)">
+                        <p class="text-sm font-extrabold">Abonnement actief</p>
+                        <p class="text-xs font-extrabold text-cacao/45 mt-0.5">&euro; 24,95 per maand. Volgende facturatie op {{ $aboVolgende->locale('nl')->isoFormat('D MMMM YYYY') }}.</p>
+                    </div>
+                    @elseif(auth()->user()->inProefperiode())
+                    @php $proefDagen = max(1, (int) ceil(now()->diffInDays(auth()->user()->proef_tot, false))); @endphp
+                    <!-- Proefperiode: gratis proberen, met een korte route naar het abonnement -->
+                    <div class="flex-1 flex flex-col justify-center rounded-xl border-2 px-3.5 py-3" style="background:color-mix(in srgb, var(--color-basil) 12%, #fff); border-color:color-mix(in srgb, var(--color-basil) 40%, transparent)">
+                        <p class="text-sm font-extrabold">🕒 Proefperiode: nog <b>{{ $proefDagen }} {{ $proefDagen === 1 ? 'dag' : 'dagen' }}</b></p>
+                        <p class="text-xs font-extrabold text-cacao/45 mt-0.5">Daarna &euro; 24,95 per maand, opzegbaar per maand.</p>
+                        <form method="POST" action="{{ route('abonnement.starten') }}" class="mt-2.5">
+                            @csrf
+                            <button type="submit" class="btn-primary w-full !text-sm !py-2">Nu abonneren 🍕</button>
+                        </form>
+                    </div>
+                    @endif
+                    <button type="button" data-nav="instellingen" class="skip-link !mt-3">Profiel aanpassen</button>
+                </div>
+            </aside>
+            </div>
+
             <!-- Openstaande bestellingen -->
-            <div class="dash-card rise mb-5" style="--d:.04s">
+            <div class="dash-card rise" style="--d:.04s">
                 <p class="font-display text-xl mb-3">Openstaande bestellingen</p>
                 <div id="openOrders" class="space-y-2.5"></div>
                 <div id="openLeeg" class="empty-box hidden">🎉 Geen openstaande bestellingen, alles is de deur uit!</div>
             </div>
 
-            <!-- Omzet-first: de cijfers die er echt toe doen -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+            <!-- SECTIE: cijfers en inzichten -->
+            <p class="text-[.8rem] font-extrabold uppercase tracking-wider text-cacao/35 mt-10 mb-3">📊 Cijfers en inzichten</p>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <div class="dash-card rise" style="--d:.05s">
                     <p class="lbl !ml-0">Omzet vandaag</p>
                     <p id="statOmzet" class="font-display text-4xl mt-1" data-cents="{{ $vandaagBestellingen->sum('totaal') }}">€ {{ number_format($vandaagBestellingen->sum('totaal') / 100, 2, ',', '.') }}</p>
@@ -228,7 +366,7 @@
                 </div>
                 <div class="dash-card rise" style="--d:.11s">
                     <p class="lbl !ml-0">Gemiddelde bestelling</p>
-                    <p class="font-display text-4xl mt-1">{{ $gemBestelwaarde ? '€ ' . number_format($gemBestelwaarde / 100, 2, ',', '.') : '-' }}</p>
+                    <p class="font-display text-4xl mt-1">&euro; {{ number_format(($gemBestelwaarde ?? 0) / 100, 2, ',', '.') }}</p>
                     <p class="text-xs font-extrabold text-cacao/40 mt-1">Over de laatste 30 dagen</p>
                 </div>
                 <div class="dash-card rise" style="--d:.14s">
@@ -239,7 +377,7 @@
             </div>
 
             <!-- De coach: inzichten die geld opleveren, naast de drukteverwachting -->
-            <div class="grid grid-cols-1 lg:grid-cols-[1fr_20rem] gap-4 mb-5">
+            <div class="grid grid-cols-1 lg:grid-cols-[1fr_20rem] gap-4 mb-4">
                 <div class="dash-card rise" style="--d:.17s">
                     <div class="flex items-center gap-3 mb-1">
                         <p class="font-display text-xl flex-1">🍕 Pizza Coach</p>
@@ -315,9 +453,32 @@
             </div>
             @endif
 
+            <!-- Omzet breed, met toppers en doorlooptijd ernaast -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="dash-card rise lg:col-span-2 flex flex-col" style="--d:.23s">
+                    <p class="font-display text-xl">Omzet afgelopen 7 dagen</p>
+                    <div id="omzetWeek" class="flex items-end gap-2 h-24 mt-auto pt-3"></div>
+                </div>
+                <div class="flex flex-col gap-4">
+                    <!-- Toppers deze week -->
+                    <div class="dash-card rise flex-1" style="--d:.26s">
+                        <p class="font-display text-xl mb-3">Toppers deze week</p>
+                        <div id="topGerechten" class="space-y-3"></div>
+                    </div>
+                    <!-- Gemiddelde doorlooptijd -->
+                    <div class="dash-card rise" style="--d:.29s">
+                        <p class="lbl !ml-0">Gemiddelde doorlooptijd</p>
+                        <p id="doorloopTijd" class="font-display text-4xl mt-1">&ndash;</p>
+                        <p id="doorloopSub" class="mt-2.5 text-xs font-extrabold text-cacao/50"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTIE: jouw zaak regelen -->
+            <p class="text-[.8rem] font-extrabold uppercase tracking-wider text-cacao/35 mt-10 mb-3">🍕 Jouw zaak regelen</p>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <!-- Checklist met voortgangsring -->
-                <div class="dash-card rise" style="--d:.2s">
+                <div class="dash-card rise" style="--d:.32s">
                     <div class="flex items-center gap-4 mb-3">
                         <svg viewBox="0 0 64 64" class="w-16 h-16 shrink-0">
                             <circle cx="32" cy="32" r="26" stroke-width="8" fill="none" class="ring-track"/>
@@ -334,50 +495,32 @@
                     <div id="checklist" class="space-y-1"></div>
                 </div>
 
-                <!-- Snel regelen -->
-                <div class="dash-card rise" style="--d:.25s">
-                    <p class="font-display text-xl mb-3">Snel regelen</p>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button type="button" data-nav="menukaart" class="qa-btn"><span class="q-ico">📋</span> Menu aanpassen</button>
-                        <a href="{{ route('onboarding') }}?stap=hours" class="qa-btn"><span class="q-ico">🕐</span> Tijden wijzigen</a>
-                        <button type="button" data-inst="stijl" class="qa-btn"><span class="q-ico">🎨</span> Pagina stylen</button>
-                        <span class="qa-btn uit"><span class="q-ico">📦</span> Dozen bestellen <span class="n-soon !absolute !-top-2 !-right-2">Binnenkort</span></span>
+                <div class="flex flex-col gap-4">
+                    <!-- Snel regelen -->
+                    <div class="dash-card rise" style="--d:.35s">
+                        <p class="font-display text-xl mb-3">Snel regelen</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button type="button" data-nav="menukaart" class="qa-btn"><span class="q-ico">📋</span> Menu aanpassen</button>
+                            <a href="{{ route('onboarding') }}?stap=hours" class="qa-btn"><span class="q-ico">🕐</span> Tijden wijzigen</a>
+                            <button type="button" data-inst="stijl" class="qa-btn"><span class="q-ico">🎨</span> Pagina stylen</button>
+                            <button type="button" data-nav="webshop" class="qa-btn"><span class="q-ico">🛒</span> Webshop</button>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
-                <!-- Deel je bestelpagina -->
-                <div class="dash-card rise" style="--d:.3s">
-                    <p class="font-display text-xl mb-3">Deel je bestelpagina</p>
-                    <div class="flex items-center gap-4">
-                        <div id="qrBox" class="w-[104px] h-[104px] shrink-0 bg-white rounded-xl border-2 border-crema-dark grid place-items-center overflow-hidden p-1.5"></div>
-                        <div class="min-w-0 flex-1">
-                            <p id="shareLink" class="text-xs font-extrabold text-cacao/60 break-all mb-2">…</p>
-                            <button id="copyLink" type="button" class="btn-primary !text-sm !px-4 !py-2">Kopieer link</button>
-                            <p class="text-[11px] font-extrabold text-cacao/40 mt-2">Print de QR voor op je toonbank of flyers</p>
+                    <!-- Deel je bestelpagina -->
+                    <div class="dash-card rise flex-1" style="--d:.38s">
+                        <p class="font-display text-xl mb-3">Deel je bestelpagina</p>
+                        <div class="flex items-center gap-4">
+                            {{-- Zaak nog niet af: de QR en link wazig, delen heeft nog geen zin --}}
+                            <div id="qrBox" class="w-[104px] h-[104px] shrink-0 bg-white rounded-xl border-2 border-crema-dark grid place-items-center overflow-hidden p-1.5" @unless($setupKlaar) style="filter:blur(5px); pointer-events:none" @endunless></div>
+                            <div class="min-w-0 flex-1">
+                                <p id="shareLink" class="text-xs font-extrabold text-cacao/60 break-all mb-2 select-none" @unless($setupKlaar) style="filter:blur(4px)" @endunless>…</p>
+                                <button id="copyLink" type="button" class="btn-primary !text-sm !px-4 !py-2">Kopieer link</button>
+                                <p class="text-[11px] font-extrabold text-cacao/40 mt-2">Print de QR voor op je toonbank of flyers</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Toppers deze week -->
-                <div class="dash-card rise" style="--d:.35s">
-                    <p class="font-display text-xl mb-3">Toppers deze week</p>
-                    <div id="topGerechten" class="space-y-3"></div>
-                </div>
-
-                <!-- Gemiddelde doorlooptijd -->
-                <div class="dash-card rise" style="--d:.4s">
-                    <p class="lbl !ml-0">Gemiddelde doorlooptijd</p>
-                    <p id="doorloopTijd" class="font-display text-4xl mt-1">&ndash;</p>
-                    <p id="doorloopSub" class="mt-2.5 text-xs font-extrabold text-cacao/50"></p>
-                </div>
-            </div>
-
-            <!-- Omzet afgelopen 7 dagen -->
-            <div class="dash-card rise mt-4" style="--d:.45s">
-                <p class="font-display text-xl">Omzet afgelopen 7 dagen</p>
-                <div id="omzetWeek" class="flex items-end gap-2 h-24 mt-3"></div>
             </div>
         </section>
 
@@ -450,97 +593,94 @@
             </div>
         </section>
 
-        <!-- PANEEL: Dozen -->
-        <section data-panel="dozen" class="panel">
+        <!-- PANEEL: Webshop -->
+        <section data-panel="webshop" class="panel">
             @php
                 $doosOb = auth()->user()->onboarding ?? [];
                 $doosQrPatroon = ['111010111', '101001101', '111010111', '000101100', '101110011', '010011010', '111011010', '101001110', '111010011'];
+                // Bestelknoppen per categorie: de url invullen zodra de groothandel de links aanlevert
+                $webshopCats = [
+                    ['emoji' => '🥤', 'naam' => 'Frisdrank', 'knop' => 'Bestel uw frisdrank', 'url' => null,
+                        'tekst' => 'Blikjes en flessen voor bij de bestelling, tegen groothandelsprijzen.',
+                        'items' => ['Cola', 'Sinas', 'Ice tea', 'Bronwater', 'Sappen']],
+                    ['emoji' => '🧀', 'naam' => 'Food', 'knop' => 'Bestel uw food', 'url' => null,
+                        'tekst' => 'De basis van je keuken, vers en voordelig ingekocht.',
+                        'items' => ['Bloem', 'Tomatensaus', 'Mozzarella', 'Salami', 'Olijfolie']],
+                    ['emoji' => '🥡', 'naam' => 'Verpakking', 'knop' => 'Bestel uw verpakking', 'url' => null,
+                        'tekst' => 'Alles om netjes mee te geven, van sauscupjes tot pastabakken.',
+                        'items' => ['Pastabakken', 'Sauscupjes', 'Aluminium bakken', 'Bestek', 'Servetten']],
+                ];
+                $webshopMarketingUrl = null; // link van de groothandel voor dozen en tasjes met opdruk
             @endphp
-            <p class="font-display text-2xl mb-4">Dozen met jouw opdruk</p>
-            <div class="grid grid-cols-1 lg:grid-cols-[1fr_21rem] gap-4 items-start">
-                <div class="space-y-4">
-                    {{-- Preview: zo komt de doos eruit te zien --}}
-                    <div class="dash-card rise" style="--d:.03s">
-                        <div class="flex flex-col sm:flex-row items-center gap-7">
-                            <div class="relative w-48 h-48 shrink-0 rounded-2xl grid place-items-center" style="background:#DDBE92; background-image:repeating-linear-gradient(45deg, rgba(0,0,0,.025) 0 7px, transparent 7px 14px); box-shadow:inset 0 0 0 3px #C9A369, 0 10px 22px rgb(0 0 0 / .12)">
-                                <div class="absolute inset-3 rounded-xl pointer-events-none" style="border:2px dashed rgba(93,58,33,.22)"></div>
-                                <div class="text-center px-4">
-                                    <div class="w-16 h-16 mx-auto rounded-2xl overflow-hidden grid place-items-center" style="background:rgba(255,255,255,.55)">
-                                        @if($doosOb['logo'] ?? null)
-                                            <img src="{{ $doosOb['logo'] }}" alt="" class="w-full h-full object-cover">
-                                        @else
-                                            <span class="text-2xl">🍕</span>
-                                        @endif
-                                    </div>
-                                    <p class="mt-2 font-display text-sm leading-tight" style="color:#5D3A21">{{ $doosOb['name'] ?? 'Jouw zaak' }}</p>
-                                </div>
-                                <div id="doosQrVak" class="absolute right-3.5 bottom-3.5 bg-white rounded-md p-1.5 shadow-sm">
-                                    <div class="grid grid-cols-9 gap-[1px]">
-                                        @foreach($doosQrPatroon as $qrRij)
-                                            @foreach(str_split($qrRij) as $qrCel)
-                                                <span class="w-[3px] h-[3px] {{ $qrCel === '1' ? '' : 'opacity-0' }}" style="background:#38221A"></span>
-                                            @endforeach
-                                        @endforeach
-                                    </div>
-                                    <p class="text-[5px] font-extrabold text-center mt-0.5 tracking-wide" style="color:#38221A">SCAN &amp; SPAAR</p>
-                                </div>
+            <p class="font-display text-2xl mb-1">Webshop</p>
+            <p class="text-sm font-extrabold text-cacao/50 mb-4">Alles voor je zaak op één plek. Je bestelt rechtstreeks bij onze vaste groothandel, geleverd tot aan de deur.</p>
+
+            {{-- Blikvanger: marketing met jouw opdruk, inclusief de spaar-QR doos --}}
+            <div class="dash-card rise mb-4" style="--d:.03s">
+                <div class="flex flex-col sm:flex-row items-center gap-7">
+                    <div class="relative w-48 h-48 shrink-0 rounded-2xl grid place-items-center" style="background:#DDBE92; background-image:repeating-linear-gradient(45deg, rgba(0,0,0,.025) 0 7px, transparent 7px 14px); box-shadow:inset 0 0 0 3px #C9A369, 0 10px 22px rgb(0 0 0 / .12)">
+                        <div class="absolute inset-3 rounded-xl pointer-events-none" style="border:2px dashed rgba(93,58,33,.22)"></div>
+                        <div class="text-center px-4">
+                            <div class="w-16 h-16 mx-auto rounded-2xl overflow-hidden grid place-items-center" style="background:rgba(255,255,255,.55)">
+                                @if($doosOb['logo'] ?? null)
+                                    <img src="{{ $doosOb['logo'] }}" alt="" class="w-full h-full object-cover">
+                                @else
+                                    <span class="text-2xl">🍕</span>
+                                @endif
                             </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="font-display text-xl">Jouw doos, jouw merk</p>
-                                <p class="text-sm font-extrabold text-cacao/50 mt-1.5">Stevige kraftdozen met jouw logo in full-color. De spaar-QR op de doos geeft klanten korting bij hun volgende bestelling en brengt ze rechtstreeks terug naar jouw bestelpagina.</p>
-                                <div class="flex flex-wrap gap-2 mt-4">
-                                    <button type="button" data-doos-qr="aan" class="keuze-chip aan !py-2">Met spaar-QR, aanbevolen</button>
-                                    <button type="button" data-doos-qr="uit" class="keuze-chip !py-2">Alleen logo</button>
-                                </div>
-                                <p class="text-xs font-extrabold text-cacao/40 mt-3">🚚 Levertijd 7 werkdagen. Gratis verzending vanaf &euro; 150.</p>
+                            <p class="mt-2 font-display text-sm leading-tight" style="color:#5D3A21">{{ $doosOb['name'] ?? 'Jouw zaak' }}</p>
+                        </div>
+                        <div class="absolute right-3.5 bottom-3.5 bg-white rounded-md p-1.5 shadow-sm">
+                            <div class="grid grid-cols-9 gap-[1px]">
+                                @foreach($doosQrPatroon as $qrRij)
+                                    @foreach(str_split($qrRij) as $qrCel)
+                                        <span class="w-[3px] h-[3px] {{ $qrCel === '1' ? '' : 'opacity-0' }}" style="background:#38221A"></span>
+                                    @endforeach
+                                @endforeach
                             </div>
+                            <p class="text-[5px] font-extrabold text-center mt-0.5 tracking-wide" style="color:#38221A">SCAN &amp; SPAAR</p>
                         </div>
                     </div>
-
-                    {{-- Formaten met staffelprijzen --}}
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        @foreach([
-                            ['sleutel' => 'klein', 'naam' => 'Klein', 'maat' => '26 cm', 'vanaf' => '0,34'],
-                            ['sleutel' => 'middel', 'naam' => 'Middel', 'maat' => '29 cm', 'vanaf' => '0,38'],
-                            ['sleutel' => 'groot', 'naam' => 'Groot', 'maat' => '33 cm', 'vanaf' => '0,43'],
-                        ] as $i => $formaat)
-                            <div class="dash-card rise" style="--d:.{{ 6 + $i * 3 }}s">
-                                <div class="flex items-baseline justify-between">
-                                    <p class="font-display text-xl">{{ $formaat['naam'] }}</p>
-                                    <span class="text-xs font-extrabold text-cacao/40">{{ $formaat['maat'] }}</span>
-                                </div>
-                                <p class="text-xs font-extrabold text-cacao/45 mt-0.5 mb-3">Vanaf &euro; {{ $formaat['vanaf'] }} per doos</p>
-                                <div class="grid grid-cols-2 gap-2" data-doos="{{ $formaat['sleutel'] }}">
-                                    @foreach([100, 250, 500, 1000] as $aantal)
-                                        <button type="button" data-aantal="{{ $aantal }}" class="keuze-chip justify-center !py-2">{{ $aantal }}</button>
-                                    @endforeach
-                                </div>
-                                <p class="text-xs font-extrabold text-cacao/40 mt-2.5 min-h-4" data-doos-prijs="{{ $formaat['sleutel'] }}"></p>
-                            </div>
-                        @endforeach
+                    <div class="flex-1 min-w-0">
+                        <p class="font-display text-xl">🎁 Marketing met jouw opdruk</p>
+                        <p class="text-sm font-extrabold text-cacao/50 mt-1.5">Pizzadozen en draagtasjes met jouw logo in full-color. De spaar-QR op de doos geeft klanten korting bij hun volgende bestelling en brengt ze rechtstreeks terug naar jouw bestelpagina.</p>
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            @foreach(['Pizzadozen', 'Draagtasjes', 'Stickers', 'Servetten met logo'] as $marketingItem)
+                                <span class="text-xs font-extrabold text-cacao/55 bg-crema rounded-full border-2 border-crema-dark px-3 py-1">{{ $marketingItem }}</span>
+                            @endforeach
+                        </div>
+                        <div class="mt-4">
+                            <a href="{{ $webshopMarketingUrl ?? '#' }}" @if($webshopMarketingUrl) target="_blank" rel="noopener" @endif class="btn-primary inline-block !text-base !px-6 !py-2.5">Bestel uw marketing 🎁</a>
+                        </div>
                     </div>
                 </div>
-
-                {{-- Samenvatting --}}
-                <aside class="dash-card rise lg:sticky lg:top-6" style="--d:.15s">
-                    <p class="font-display text-xl mb-2">Jouw bestelling</p>
-                    <div id="dozenRegels" class="divide-y-2 divide-crema-dark"></div>
-                    <div class="mt-3 pt-3 border-t-2 border-crema-dark space-y-1.5 text-sm font-extrabold text-cacao/60">
-                        <div class="flex justify-between gap-3"><span>Verzending</span><span id="dozenVerzend">-</span></div>
-                        <div class="flex justify-between gap-3 text-cacao text-base"><span>Totaal <span class="text-xs text-cacao/40">excl. btw</span></span><span id="dozenTotaal">&euro; 0,00</span></div>
-                    </div>
-                    <p id="dozenGratisHint" class="text-xs font-extrabold text-cacao/40 mt-2" style="display:none">Nog even en je verzending is gratis (vanaf &euro; 150).</p>
-                    <button type="button" disabled title="Bestellen kan zodra betalingen live zijn" class="btn-primary w-full !py-3 mt-4 opacity-40 cursor-not-allowed">Bestellen, binnenkort</button>
-                    <p class="text-xs font-extrabold text-cacao/40 mt-2 text-center">Stel je bestelling alvast samen. Bestellen kan zodra betalingen live zijn.</p>
-                </aside>
             </div>
+
+            {{-- De overige categorieën: knoppen gaan straks direct door naar de groothandel --}}
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                @foreach($webshopCats as $i => $webshopCat)
+                    <div class="dash-card rise flex flex-col" style="--d:.{{ 6 + $i * 3 }}s">
+                        <p class="font-display text-xl">{{ $webshopCat['emoji'] }} {{ $webshopCat['naam'] }}</p>
+                        <p class="text-sm font-extrabold text-cacao/50 mt-1.5">{{ $webshopCat['tekst'] }}</p>
+                        <div class="flex flex-wrap gap-2 mt-3 mb-4">
+                            @foreach($webshopCat['items'] as $webshopItem)
+                                <span class="text-xs font-extrabold text-cacao/55 bg-crema rounded-full border-2 border-crema-dark px-3 py-1">{{ $webshopItem }}</span>
+                            @endforeach
+                        </div>
+                        <div class="mt-auto">
+                            <a href="{{ $webshopCat['url'] ?? '#' }}" @if($webshopCat['url']) target="_blank" rel="noopener" @endif class="btn-primary inline-block w-full text-center !text-base !px-4 !py-2.5">{{ $webshopCat['knop'] }}</a>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <p class="text-xs font-extrabold text-cacao/40 mt-4">Bestellen en afrekenen doe je rechtstreeks bij onze samenwerkende groothandel. Zodra de koppeling live is, brengen de knoppen je daar meteen naartoe.</p>
         </section>
 
         <!-- PANEEL: Instellingen -->
         @php
             $ob = auth()->user()->onboarding ?? [];
             $obSlug = substr(preg_replace('/[^a-z0-9]+/', '', strtolower(\Illuminate\Support\Str::ascii($ob['name'] ?? ''))), 0, 30) ?: 'jouwpizzeria';
-            $betaalLabels = ['mollie' => 'Online betalen via Mollie', 'stripe' => 'Online betalen via Stripe', 'later' => 'Nog geen keuze gemaakt'];
             $eigenDomein = ($ob['domainMode'] ?? 'sub') === 'own' && ! empty($ob['ownDomain']);
         @endphp
         <section data-panel="instellingen" class="panel">
@@ -609,11 +749,9 @@
 
                 <div class="space-y-4">
                     <div class="dash-card">
-                        <div class="flex items-center gap-3 mb-3">
-                            <p class="font-display text-xl flex-1">💶 Betalen</p>
-                            <button type="button" data-inst="betalen" class="skip-link !mt-0">wijzig</button>
-                        </div>
-                        <p id="betaalWaarde" class="text-sm font-extrabold">{{ $betaalLabels[$ob['payment'] ?? 'later'] ?? 'Nog geen keuze gemaakt' }}</p>
+                        <p class="font-display text-xl mb-3">💶 Betalen</p>
+                        <p class="text-sm font-extrabold">Online betalen via Stripe</p>
+                        <p class="text-xs font-extrabold text-cacao/45 mt-1">iDEAL, creditcard, Apple Pay en Google Pay. Uitbetalen gaat rechtstreeks naar jouw rekening; de koppeling zetten we binnenkort samen live.</p>
                     </div>
 
                     <div class="dash-card">
@@ -836,8 +974,20 @@
     @endphp
     <script>window.PP_STATS = @json($ppStats);</script>
     <script>window.PP_MENU = @json(auth()->user()->menuItems()->orderBy('volgorde')->orderBy('id')->get());</script>
-    <script>window.PP_INTRO = @json(! auth()->user()->intro_seen);</script>
+    {{-- De uitlegvideo wacht tot het abonnement gestart is, anders staan er twee vensters tegelijk open --}}
+    <script>window.PP_INTRO = @json(! auth()->user()->intro_seen && ! $abonnementNodig);</script>
     <script>window.PP_STATUS = @json(['online' => (bool) auth()->user()->is_online, 'mode' => auth()->user()->order_mode ?? 'bezorgen_afhalen']);</script>
+    <script>window.PP_SETUP = @json($setupKlaar);</script>
+    <script>window.PP_ABO = @json((bool) auth()->user()->abonnement_actief);</script>
+    <script>window.PP_ABO_FEEST = @json((bool) session('abonnementGestart'));</script>
+
+    <!-- Feestje bij een net geactiveerd abonnement: confetti plus een toast onderin -->
+    <canvas id="confetti" class="pointer-events-none fixed inset-0 z-[140] hidden"></canvas>
+    <div id="dashToast" class="fixed bottom-6 left-1/2 z-[140] bg-cacao text-crema font-extrabold text-sm px-5 py-3 rounded-full shadow-lg"></div>
+    @if($abonnementNodig)
+        @include('dashboard.abonnement-overlay')
+    @endif
+
     <script src="{{ asset('assets/stijl-tiles.js') }}?v={{ filemtime(public_path('assets/stijl-tiles.js')) }}"></script>
     <script src="{{ asset('assets/dashboard.js') }}?v={{ filemtime(public_path('assets/dashboard.js')) }}"></script>
 </body>
