@@ -11,7 +11,7 @@
                     <img src="{{ asset('logo.png') }}" alt="{{ $siteMerk }}" class="h-28 sm:h-32 w-auto drop-shadow-lg">
                 </a>
                 <p class="mt-5 text-sm font-bold text-white/55 max-w-sm">Jouw eigen bestelpagina, spaarprogramma en dozen met jouw opdruk. Zonder commissie per bestelling, maandelijks opzegbaar.</p>
-                <ul class="mt-5 space-y-2 text-sm font-extrabold text-white/50">
+                <ul class="mt-5 space-y-2 text-sm font-semibold text-white/50">
                     <li class="flex items-center gap-2.5"><span class="w-5 h-5 rounded-full bg-basil/25 grid place-items-center text-basil text-[10px]"><i class="fa-solid fa-check" aria-hidden="true"></i></span> Geen technische kennis nodig</li>
                     <li class="flex items-center gap-2.5"><span class="w-5 h-5 rounded-full bg-basil/25 grid place-items-center text-basil text-[10px]"><i class="fa-solid fa-check" aria-hidden="true"></i></span> Je menukaart zet je zelf in elkaar</li>
                     <li class="flex items-center gap-2.5"><span class="w-5 h-5 rounded-full bg-basil/25 grid place-items-center text-basil text-[10px]"><i class="fa-solid fa-check" aria-hidden="true"></i></span> Het geld gaat rechtstreeks naar jou</li>
@@ -22,7 +22,7 @@
                             <i class="fa-brands {{ $icoon }}" aria-hidden="true"></i>
                         </a>
                     @endforeach
-                    <span class="ml-1 text-xs font-extrabold text-white/30">Volgt binnenkort</span>
+                    <span class="ml-1 text-xs font-semibold text-white/30">Volgt binnenkort</span>
                 </div>
             </div>
 
@@ -35,6 +35,7 @@
                         <li><a href="/#templates" class="hover:text-white transition-colors">Templates</a></li>
                         <li><a href="/#spaarprogramma" class="hover:text-white transition-colors">Spaarprogramma</a></li>
                         <li><a href="/#prijzen" class="hover:text-white transition-colors">Prijzen</a></li>
+                        <li><a href="/blog" class="hover:text-white transition-colors">Blog</a></li>
                         <li><a href="/#functies" class="hover:text-white transition-colors">Pizza Coach</a></li>
                         <li><a href="/#functies" class="hover:text-white transition-colors">Dozen met opdruk</a></li>
                         <li><a href="/#functies" class="hover:text-white transition-colors">Live bezorgstatus</a></li>
@@ -43,10 +44,10 @@
                 <div>
                     <p class="font-display text-lg mb-3.5">Proef de stijlen</p>
                     <ul class="space-y-2.5 text-sm font-bold text-white/55">
-                        <li><a href="/bestellen/pizzeriasole?thema=template1&kleur=%23E63946" target="_blank" rel="noopener" class="hover:text-white transition-colors">🛵 Presto, licht en snel</a></li>
-                        <li><a href="/bestellen/pizzeriasole?thema=template2&kleur=%237D1D3F" target="_blank" rel="noopener" class="hover:text-white transition-colors">🍷 Notte, klassiek</a></li>
-                        <li><a href="/bestellen/pizzeriasole?thema=template3&kleur=%231F2937" target="_blank" rel="noopener" class="hover:text-white transition-colors">⚡ Forza, bold</a></li>
-                        <li><a href="/bestellen/pizzeriasole?thema=template4&kleur=%23F5B301" target="_blank" rel="noopener" class="hover:text-white transition-colors">📸 Giro, met foto's</a></li>
+                        <li><a href="/bestellen/pizzeriasole?thema=template1&kleur=%23E63946" target="_blank" rel="noopener" class="hover:text-white transition-colors"><i class="fa-solid fa-moped w-4 mr-1" aria-hidden="true"></i> Presto, licht en snel</a></li>
+                        <li><a href="/bestellen/pizzeriasole?thema=template2&kleur=%237D1D3F" target="_blank" rel="noopener" class="hover:text-white transition-colors"><i class="fa-solid fa-wine-glass w-4 mr-1" aria-hidden="true"></i> Notte, klassiek</a></li>
+                        <li><a href="/bestellen/pizzeriasole?thema=template3&kleur=%231F2937" target="_blank" rel="noopener" class="hover:text-white transition-colors"><i class="fa-solid fa-bolt w-4 mr-1" aria-hidden="true"></i> Forza, bold</a></li>
+                        <li><a href="/bestellen/pizzeriasole?thema=template4&kleur=%23F5B301" target="_blank" rel="noopener" class="hover:text-white transition-colors"><i class="fa-solid fa-camera w-4 mr-1" aria-hidden="true"></i> Giro, met foto's</a></li>
                         <li class="pt-1"><span class="text-white/35">Allemaal live, klik gerust</span></li>
                     </ul>
                 </div>
@@ -74,8 +75,7 @@
 
         {{-- Betaalstrook: wat klanten van de pizzeria kunnen gebruiken --}}
         <div class="relative mt-14 rounded-2xl bg-white/5 border border-white/10 px-6 py-5 flex flex-wrap items-center gap-x-8 gap-y-4">
-            <img src="{{ asset('stickers/waving-hello.png') }}" alt="" class="hidden sm:block absolute -top-14 right-8 h-20 rotate-3 select-none pointer-events-none drop-shadow-lg" loading="lazy">
-            <p class="text-sm font-extrabold text-white/70">Klanten betalen veilig via Stripe</p>
+            <p class="text-sm font-semibold text-white/70">Klanten betalen veilig via Stripe</p>
             <div class="flex flex-wrap items-center gap-4 text-3xl text-white/50">
                 <i class="fa-brands fa-ideal" title="iDEAL" aria-hidden="true"></i>
                 <i class="fa-brands fa-cc-apple-pay" title="Apple Pay" aria-hidden="true"></i>
@@ -83,16 +83,16 @@
                 <i class="fa-brands fa-cc-visa" title="Visa" aria-hidden="true"></i>
                 <i class="fa-brands fa-cc-mastercard" title="Mastercard" aria-hidden="true"></i>
             </div>
-            <p class="ml-auto text-sm font-extrabold text-white/45">Gemaakt in Nederland 🇳🇱</p>
+            <p class="ml-auto text-sm font-semibold text-white/45">Gemaakt in Nederland</p>
         </div>
     </div>
 
     {{-- Onderbalk --}}
     <div class="border-t border-white/10">
-        <div class="max-w-6xl mx-auto px-5 py-5 flex flex-col sm:flex-row items-center gap-2.5 justify-between text-xs font-extrabold text-white/35">
+        <div class="max-w-6xl mx-auto px-5 py-5 flex flex-col sm:flex-row items-center gap-2.5 justify-between text-xs font-semibold text-white/35">
             <p>&copy; {{ date('Y') }} {{ $siteMerk }}. Alle rechten voorbehouden.</p>
             <p><span class="text-white/50">mijnpizzeria.nl</span> en <span class="text-white/50">mijnpizzeria.com</span></p>
-            <p>Veilig betalen via Stripe 💳</p>
+            <p>Veilig betalen via Stripe</p>
         </div>
     </div>
 </footer>

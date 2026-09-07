@@ -8,10 +8,8 @@ const esc = (str) => String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<'
 /* ── Begroeting op basis van het moment van de dag ────────────── */
 
 (function dagregel() {
-    const uur = new Date().getHours();
-    const deel = uur < 6 ? 'Nachtbraker' : uur < 12 ? 'Goedemorgen' : uur < 18 ? 'Goedemiddag' : 'Goedenavond';
     const datum = new Date().toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' });
-    $('#dagregel').textContent = `${deel}! Het is vandaag ${datum}.`;
+    $('#dagregel').textContent = `Het is vandaag ${datum}.`;
 })();
 
 /* ── Panelen wisselen (client-side, als een app) ──────────────── */
@@ -66,7 +64,7 @@ if (window.PP_SETUP === false) {
         }
         e.preventDefault();
         e.stopPropagation();
-        dashToast('Maak eerst je zaak af via "Verder met instellen" 🚧');
+        dashToast('Maak eerst je zaak af via "Verder met instellen".');
     }, true);
 }
 
@@ -155,10 +153,10 @@ $$('[data-teller]').forEach((el) => {
 /* ── Checklist "maak je zaak compleet" op basis van echte data ── */
 
 const CHECKS = [
-    { label: 'Menukaart gevuld (3+ gerechten)', emoji: '📋', af: (window.PP_MENU || []).length >= 3, paneel: 'menukaart' },
-    { label: 'Logo geüpload', emoji: '🖼️', af: !!DATA.logo, stap: 'style' },
-    { label: 'Bedrijfsgegevens compleet', emoji: '📇', af: !!DATA.kvk && !!DATA.street, inst: 'bedrijf' },
-    { label: 'Telefoonnummer toegevoegd', emoji: '📞', af: !!DATA.phone, inst: 'zaak' },
+    { label: 'Menukaart gevuld (3+ gerechten)', emoji: '<i class="fa-solid fa-clipboard-list" aria-hidden="true"></i>', af: (window.PP_MENU || []).length >= 3, paneel: 'menukaart' },
+    { label: 'Logo geüpload', emoji: '<i class="fa-solid fa-image" aria-hidden="true"></i>', af: !!DATA.logo, stap: 'style' },
+    { label: 'Bedrijfsgegevens compleet', emoji: '<i class="fa-solid fa-address-card" aria-hidden="true"></i>', af: !!DATA.kvk && !!DATA.street, inst: 'bedrijf' },
+    { label: 'Telefoonnummer toegevoegd', emoji: '<i class="fa-solid fa-phone" aria-hidden="true"></i>', af: !!DATA.phone, inst: 'zaak' },
 ];
 
 (function renderChecklist() {
@@ -166,7 +164,7 @@ const CHECKS = [
     if (!lijst) return;
     lijst.innerHTML = CHECKS.map((c) =>
         `<button type="button" class="check-item ${c.af ? 'af' : ''}" data-stap="${c.stap || ''}" data-paneel="${c.paneel || ''}" data-inst="${c.inst || ''}">
-            <span class="c-dot">✓</span>
+            <span class="c-dot"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
             <span>${c.emoji}</span>
             <span class="c-lbl">${c.label}</span>
         </button>`
@@ -224,7 +222,7 @@ const CHECKS = [
     const THEMA_NAMEN = { template1: 'Presto', template2: 'Notte', template3: 'Forza', template4: 'Giro', fresco: 'Fresco', nero: 'Nero', napoli: 'Napoli', puro: 'Puro', blocco: 'Blocco', retro: 'Retro' };
     /* Bij een vast palet tonen we de echte hoofdkleur (bruin wordt bijvoorbeeld karamelbruin) */
     if (DATA.theme) {
-        const kleur = (window.PP_KLEUREN || []).find((k) => k.hex === DATA.color)?.palet?.primair || DATA.color || '#E63946';
+        const kleur = (window.PP_KLEUREN || []).find((k) => k.hex === DATA.color)?.palet?.primair || DATA.color || '#B04A3F';
         $('#paginaSamenvatting').innerHTML = `Template: <b>${THEMA_NAMEN[DATA.theme] || 'Presto'}</b>${DATA.logo ? ', met logo' : ''}. Jouw kleur: <span class="inline-block w-3.5 h-3.5 rounded-full align-middle" style="background:${esc(kleur)}"></span>`;
     }
 })();
@@ -297,7 +295,9 @@ function tijdGeleden(iso) {
 }
 
 function typeChip(o) {
-    const label = o.type === 'afhalen' ? '🥡 Afhalen' : '🛵 Bezorgen';
+    const label = o.type === 'afhalen'
+        ? '<i class="fa-solid fa-box-open" aria-hidden="true"></i> Afhalen'
+        : '<i class="fa-solid fa-moped" aria-hidden="true"></i> Bezorgen';
     return `<span class="text-[11px] font-body font-extrabold rounded-full px-2 py-0.5" style="background:var(--color-crema-dark)">${label}</span>`;
 }
 
@@ -451,13 +451,15 @@ function werkTellersBij() {
         badge.textContent = open.length;
         badge.style.display = open.length ? '' : 'none';
     }
+    const topbalkOrders = $('#topbalkOrders');
+    if (topbalkOrders) topbalkOrders.textContent = open.length + ' openstaand';
     orderTabs();
     const zichtbaar = document.querySelectorAll('#orderLijst .order-kaart').length;
     $('#ordersLeeg')?.classList.toggle('hidden', zichtbaar > 0);
     const leegTekst = $('#ordersLeegTekst');
     if (leegTekst) {
         leegTekst.textContent = ORDERS.length === 0
-            ? 'Zodra je live staat, komen je bestellingen hier realtime binnen. Probeer het alvast met een voorbeeld!'
+            ? 'Zodra je live staat, komen je bestellingen hier realtime binnen. Probeer het alvast met een voorbeeld.'
             : 'Geen bestellingen met deze status.';
     }
 }
@@ -613,23 +615,6 @@ setInterval(renderOrders, 30000);   // "x min geleden" actueel houden
 
 /* ── Tip-mascotte ─────────────────────────────────────────────── */
 
-const TIPS = [
-    'Zet je populairste pizza bovenaan je menukaart 📈',
-    'Een eigen foto bij een gerecht verkoopt beter dan een icoontje 📸',
-    'Houd je openingstijden actueel, een misgelopen bestelling is zonde 🕐',
-    'Deel je bestelpagina op social media zodra je live staat 📱',
-    'Straks sparen je klanten punten via de QR op de doos 🎁',
-    'Een logo maakt je pagina in één klap professioneler 🖼️',
-];
-
-$('#tipMascotte')?.addEventListener('click', () => {
-    const mascotte = $('#tipMascotte');
-    $('#tipBubble').textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
-    mascotte.classList.remove('wieg');
-    void mascotte.offsetWidth;
-    mascotte.classList.add('wieg');
-});
-
 /* ── Online gaan + openingstijden van vandaag ─────────────────── */
 
 const STATUS = window.PP_STATUS || { online: false, mode: 'bezorgen_afhalen' };
@@ -640,12 +625,16 @@ function renderStatus() {
         ? (STATUS.mode === 'alleen_afhalen' ? 'Je staat online, klanten kunnen afhalen' : 'Je staat online, klanten kunnen bestellen')
         : 'Je bent offline';
     const knop = $('#onlineToggle');
-    knop.textContent = STATUS.online ? 'Ga offline' : 'Online gaan 🟢';
+    knop.textContent = STATUS.online ? 'Ga offline' : 'Online gaan';
     knop.classList.toggle('btn-grey', STATUS.online);
     $('#modeSwitch').classList.toggle('hidden', !STATUS.online);
     $$('#modeSwitch [data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === STATUS.mode));
 
-    /* Altijd zichtbaar in de navigatie (rail + mobiele tabbalk) */
+    /* Altijd zichtbaar in de topbalk en de navigatie (rail + mobiele tabbalk) */
+    $('#topbalkDot')?.classList.toggle('bg-basil', STATUS.online);
+    $('#topbalkDot')?.classList.toggle('bg-tomato', !STATUS.online);
+    const topbalkStatus = $('#topbalkStatus');
+    if (topbalkStatus) topbalkStatus.textContent = STATUS.online ? 'Online' : 'Offline';
     $('#railDot')?.classList.toggle('aan', STATUS.online);
     $('#tabStatus')?.classList.toggle('online', STATUS.online);
     const tabStatusTekst = $('#tabStatusTekst');
@@ -685,10 +674,10 @@ function updateWaarschuwing() {
     let tekst = '';
     let actie = '';
     if (binnen && !STATUS.online) {
-        tekst = '⚠️ Volgens je openingstijden ben je nu open, maar je neemt geen bestellingen aan.';
-        actie = 'Online gaan 🟢';
+        tekst = 'Volgens je openingstijden ben je nu open, maar je neemt geen bestellingen aan.';
+        actie = 'Online gaan';
     } else if (!binnen && STATUS.online) {
-        tekst = '🌙 Je staat online buiten je openingstijden. Expres? Prima! Anders:';
+        tekst = 'Je staat online buiten je openingstijden. Is dat niet de bedoeling, ga dan offline.';
         actie = 'Ga offline';
     }
     banner.style.display = tekst ? 'flex' : 'none';
@@ -717,10 +706,32 @@ function bewaarStatus() {
     }).catch(() => {});
 }
 
+/* Online of offline gaan: eerst even zeker weten */
+const statusModal = $('#statusModal');
 $('#onlineToggle')?.addEventListener('click', () => {
+    const naarOnline = !STATUS.online;
+    $('#statusModalIcoon').innerHTML = naarOnline
+        ? '<i class="fa-solid fa-circle-check" style="color:var(--color-basil)"></i>'
+        : '<i class="fa-solid fa-circle-pause" style="color:var(--color-tomato)"></i>';
+    $('#statusModalTitel').textContent = naarOnline ? 'Online gaan?' : 'Offline gaan?';
+    $('#statusModalTekst').textContent = naarOnline
+        ? 'Je bestelpagina gaat open en klanten kunnen direct bestellingen plaatsen.'
+        : 'Je bestelpagina gaat dicht en klanten kunnen niet meer bestellen. Openstaande bestellingen blijven gewoon staan.';
+    $('#statusModalBevestig').textContent = naarOnline ? 'Ja, ga online' : 'Ja, ga offline';
+    statusModal.classList.remove('hidden');
+});
+$('#statusModalBevestig')?.addEventListener('click', () => {
+    statusModal.classList.add('hidden');
     STATUS.online = !STATUS.online;
     renderStatus();
     bewaarStatus();
+});
+$('#statusModalAnnuleer')?.addEventListener('click', () => statusModal.classList.add('hidden'));
+statusModal?.addEventListener('click', (e) => {
+    if (!e.target.closest('.animate-pop')) statusModal.classList.add('hidden');
+});
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') statusModal?.classList.add('hidden');
 });
 $('#modeSwitch')?.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-mode]');
@@ -735,12 +746,12 @@ $('#modeSwitch')?.addEventListener('click', (e) => {
     if (!el) return;
     const DAGKEYS = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'];
     const key = DAGKEYS[new Date().getDay()];
-    if (!DATA.days) { el.textContent = '🕐 Stel eerst je openingstijden in'; return; }
-    if (!DATA.days[key]) { el.textContent = '🕐 Vandaag ben je gesloten'; return; }
+    if (!DATA.days) { el.textContent = 'Stel eerst je openingstijden in'; return; }
+    if (!DATA.days[key]) { el.textContent = 'Vandaag ben je gesloten'; return; }
     const tijd = (DATA.hoursMode === 'perday' && DATA.dayTimes && DATA.dayTimes[key])
         ? DATA.dayTimes[key]
         : { open: DATA.open || '16:00', close: DATA.close || '21:30' };
-    el.textContent = `🕐 Vandaag open van ${tijd.open} tot ${tijd.close}`;
+    el.textContent = `Vandaag open van ${tijd.open} tot ${tijd.close}`;
 })();
 
 renderStatus();
@@ -773,7 +784,7 @@ renderStatus();
             ta.remove();
         }
         const btn = $('#copyLink');
-        btn.textContent = 'Gekopieerd ✓';
+        btn.textContent = 'Gekopieerd';
         setTimeout(() => { btn.textContent = 'Kopieer link'; }, 1600);
     });
 })();
@@ -785,13 +796,12 @@ renderStatus();
     if (!el) return;
     const toppers = (window.PP_STATS?.toppers || []);
     if (!toppers.length) {
-        el.innerHTML = '<p class="text-sm font-extrabold text-cacao/45">Nog geen bestellingen deze week. Je toppers verschijnen hier vanzelf!</p>';
+        el.innerHTML = '<p class="text-sm font-extrabold text-cacao/45">Nog geen bestellingen deze week. Je toppers verschijnen hier vanzelf.</p>';
         return;
     }
-    const medailles = ['🥇', '🥈', '🥉'];
     el.innerHTML = toppers.map((t, i) =>
         `<div class="flex items-center gap-2.5 text-sm font-extrabold">
-            <span class="text-lg">${medailles[i]}</span>
+            <span class="w-5 text-center font-display text-cacao/45">${i + 1}</span>
             <span class="flex-1 truncate">${esc(t.naam)}</span>
             <span class="text-cacao/45">${t.aantal}×</span>
         </div>`
@@ -1021,15 +1031,15 @@ let mVanOverzicht = false;   // via "wijzig" op het overzicht een stap ingedoken
 const naamNu = () => $('#mNaam').value.trim() || 'dit gerecht';
 
 const M_INFO = {
-    naam:         { kicker: () => (bewerkt.id ? 'Even bijwerken ✏️' : 'Nieuw gerecht 🍕'), titel: 'Hoe heet je gerecht?', sub: 'De naam die klanten straks op je kaart zien.', mascot: 'tossing-dough', bubble: 'Mmm, ik krijg al honger! 😋', kant: 'right', enter: true },
-    prijs:        { kicker: 'Kassa! 💶', titel: () => `Wat kost ${naamNu()}?`, sub: 'De normale prijs. Extra opties komen zo nog.', mascot: 'holding-3-pizzas', bubble: 'Die verkoopt zichzelf 🤌', kant: 'left', enter: true },
-    categorie:    { kicker: 'Op de kaart 📋', titel: 'In welke categorie hoort dit?', sub: 'Zo vinden klanten het sneller terug.', mascot: 'writing-chalkboard', bubble: 'Ik schrijf het erbij! ✍️', kant: 'right' },
-    beschrijving: { kicker: 'Vertel, vertel 📝', titel: 'Wil je er iets bij vertellen?', sub: 'Een korte omschrijving maakt het extra smakelijk. Mag ook leeg blijven.', mascot: 'showing-pizza-order', bubble: 'Verse basilicum? Zeg dat dan! 🌿', kant: 'left' },
-    foto:         { kicker: 'Smullen met je ogen 📸', titel: () => `Heb je een foto van ${naamNu()}?`, sub: 'Gerechten met een foto worden vaker besteld. Mag ook zonder.', mascot: 'pizza-in-oven', bubble: 'Mensen eten met hun ogen! 👀', kant: 'right' },
-    ingredienten: { kicker: 'Wat zit erop? 🍅', titel: 'Welke ingrediënten zitten erop?', sub: 'Klanten kunnen deze weglaten bij het bestellen, en gasten met een allergie zien precies wat erin zit.', mascot: 'sprinkling-cheese', bubble: 'Extra kaasje? Altijd goed 🧀', kant: 'right' },
-    allergenen:   { kicker: 'Belangrijk! ⚠️', titel: 'Welke allergenen zitten erin?', sub: 'Tik aan wat erin zit en controleer het altijd zelf. Een pizzabodem bevat gluten!', mascot: 'kneading-dough', bubble: 'Dit moet kloppen voor je gasten 🙏', kant: 'left' },
-    opties:       { kicker: 'Upsell! 🚀', titel: 'Welke opties geef je de klant?', sub: 'Een saus, extra ingrediënten of een drankje erbij. Goed voor je omzet.', mascot: 'running-with-pizza', bubble: 'Extra kaas? Altijd ja 😄', kant: 'right' },
-    overzicht:    { kicker: 'Perfetto! 👌', titel: () => (bewerkt.id ? 'Dit is je gerecht' : 'Klaar om op de kaart te zetten?'), sub: 'Loop alles nog even na, wijzigen kan altijd.', mascot: 'waving-hello', bubble: 'Die staat straks mooi op de kaart! 🎉', kant: 'right' },
+    naam:         { kicker: () => (bewerkt.id ? 'Even bijwerken' : 'Nieuw gerecht'), titel: 'Hoe heet je gerecht?', sub: 'De naam die klanten straks op je kaart zien.', mascot: 'tossing-dough', bubble: 'Kies een naam die klanten herkennen.', kant: 'right', enter: true },
+    prijs:        { kicker: 'De prijs', titel: () => `Wat kost ${naamNu()}?`, sub: 'De normale prijs. Extra opties komen zo nog.', mascot: 'holding-3-pizzas', bubble: 'Een eerlijke prijs werkt het best.', kant: 'left', enter: true },
+    categorie:    { kicker: 'Op de kaart', titel: 'In welke categorie hoort dit?', sub: 'Zo vinden klanten het sneller terug.', mascot: 'writing-chalkboard', bubble: 'Zo blijft je kaart overzichtelijk.', kant: 'right' },
+    beschrijving: { kicker: 'Beschrijving', titel: 'Wil je er iets bij vertellen?', sub: 'Een korte omschrijving maakt het extra smakelijk. Mag ook leeg blijven.', mascot: 'showing-pizza-order', bubble: 'Verse basilicum? Benoem het gerust.', kant: 'left' },
+    foto:         { kicker: 'De foto', titel: () => `Heb je een foto van ${naamNu()}?`, sub: 'Gerechten met een foto worden vaker besteld. Mag ook zonder.', mascot: 'pizza-in-oven', bubble: 'Mensen eten met hun ogen.', kant: 'right' },
+    ingredienten: { kicker: 'Ingrediënten', titel: 'Welke ingrediënten zitten erop?', sub: 'Klanten kunnen deze weglaten bij het bestellen, en gasten met een allergie zien precies wat erin zit.', mascot: 'sprinkling-cheese', bubble: 'Klanten zien precies wat erop zit.', kant: 'right' },
+    allergenen:   { kicker: 'Allergenen', titel: 'Welke allergenen zitten erin?', sub: 'Tik aan wat erin zit en controleer het altijd zelf. Een pizzabodem bevat gluten.', mascot: 'kneading-dough', bubble: 'Dit moet kloppen voor je gasten.', kant: 'left' },
+    opties:       { kicker: 'Opties', titel: 'Welke opties geef je de klant?', sub: 'Een saus, extra ingrediënten of een drankje erbij. Goed voor je omzet.', mascot: 'running-with-pizza', bubble: 'Goed voor je gemiddelde bestelling.', kant: 'right' },
+    overzicht:    { kicker: 'Overzicht', titel: () => (bewerkt.id ? 'Dit is je gerecht' : 'Klaar om op de kaart te zetten?'), sub: 'Loop alles nog even na, wijzigen kan altijd.', mascot: 'waving-hello', bubble: 'Die staat straks mooi op de kaart.', kant: 'right' },
 };
 
 function toonMStap(stap) {
@@ -1044,13 +1054,10 @@ function toonMStap(stap) {
     $('#mKicker').textContent = val(info.kicker);
     $('#mTitel').textContent = val(info.titel);
     $('#mSub').textContent = val(info.sub);
-    $('#mMascotBubble').textContent = info.bubble;
-    $('#mMascotImg').src = `/stickers/${info.mascot}.png`;
-    $('#mMascot').classList.toggle('mascot-left', info.kant === 'left');
-    $('#mMascot').classList.toggle('mascot-right', info.kant !== 'left');
+    /* Huisstijl 2.0: de wizard-mascotte is uit het ontwerp */
     const eerste = !mVanOverzicht && stap === (bewerkt.id ? 'overzicht' : 'naam');
     $('#mTerug').classList.toggle('hidden', eerste);
-    $('#mVolgende').textContent = stap === 'overzicht' ? (bewerkt.id ? 'Opslaan' : 'Op de kaart! 🍕') : (mVanOverzicht ? 'Klaar' : 'Volgende');
+    $('#mVolgende').textContent = stap === 'overzicht' ? (bewerkt.id ? 'Opslaan' : 'Op de kaart zetten') : (mVanOverzicht ? 'Klaar' : 'Volgende');
     $('#mEnterHint').style.visibility = info.enter ? 'visible' : 'hidden';
     $('#menuVerwijder').classList.toggle('hidden', !(stap === 'overzicht' && bewerkt.id));
     if (stap === 'overzicht') renderMOverzicht();
@@ -1061,7 +1068,7 @@ function toonMStap(stap) {
 function valideerMStap() {
     if (mStap === 'naam' && !$('#mNaam').value.trim()) {
         $('#mNaam').classList.add('m-fout');
-        $('#mNaamErr').textContent = 'Geef je gerecht eerst een naam 😉';
+        $('#mNaamErr').textContent = 'Geef je gerecht eerst een naam.';
         return false;
     }
     if (mStap === 'prijs' && naarCenten($('#mPrijs').value) === null) {
@@ -1209,7 +1216,7 @@ function voegIngredientToe(ruw) {
     renderIngChips();
     renderAllergChips();
     if (autoNieuw.length) {
-        $('#mAllergHint').innerHTML = `<b>${autoNieuw.map(cap).join(' en ')}</b> automatisch aangevinkt op basis van je ingrediënten. Controleer het altijd zelf!`;
+        $('#mAllergHint').innerHTML = `<b>${autoNieuw.map(cap).join(' en ')}</b> automatisch aangevinkt op basis van je ingrediënten. Controleer het altijd zelf.`;
     }
 }
 
@@ -1388,7 +1395,7 @@ renderMenu();
 /* ── Bezorgkosten: tarieven per straal, met kaart ─────────────── */
 
 const BEZORG = window.PP_BEZORG || { lat: null, lng: null, tiers: [] };
-const BEZORG_KLEUREN = ['#2F8F46', '#F5B301', '#F97316', '#E63946', '#2563EB', '#38221A'];
+const BEZORG_KLEUREN = ['#2C7A4B', '#B97F10', '#F97316', '#B04A3F', '#2563EB', '#241712'];
 
 let bezorgTiers = (BEZORG.tiers && BEZORG.tiers.length)
     ? BEZORG.tiers.map((t) => ({ km: String(t.km).replace('.', ','), kosten: uitCenten(t.kosten), min: t.min ? uitCenten(t.min) : '' }))
@@ -1429,7 +1436,7 @@ function renderBezorgTiers() {
 function pizzaPin() {
     return L.divIcon({
         className: 'bezorg-pin',
-        html: '<div class="bezorg-pin-bol"><span>🍕</span></div>',
+        html: '<div class="bezorg-pin-bol"><span><i class="fa-solid fa-pizza-slice" aria-hidden="true"></i></span></div>',
         iconSize: [44, 44],
         iconAnchor: [22, 40],
     });
@@ -1534,10 +1541,10 @@ let instKleurTab = 'alle';  // actieve filter-tab in de kleurkiezer
 
 /* Templatekaarten met mini-voorbeeld, zoals in de onboarding */
 const STIJL_THEMAS = [
-    { id: 'template1', emoji: '🛵', naam: 'Presto', desc: 'Licht en modern' },
-    { id: 'template2', emoji: '🍷', naam: 'Notte', desc: 'Klassiek en verfijnd' },
-    { id: 'template3', emoji: '⚡', naam: 'Forza', desc: 'Bold en vol energie' },
-    { id: 'template4', emoji: '📸', naam: 'Giro', desc: 'Fris met grote foto\'s' },
+    { id: 'template1', emoji: '<i class="fa-solid fa-moped" aria-hidden="true"></i>', naam: 'Presto', desc: 'Licht en modern' },
+    { id: 'template2', emoji: '<i class="fa-solid fa-wine-glass" aria-hidden="true"></i>', naam: 'Notte', desc: 'Klassiek en verfijnd' },
+    { id: 'template3', emoji: '<i class="fa-solid fa-bolt" aria-hidden="true"></i>', naam: 'Forza', desc: 'Bold en vol energie' },
+    { id: 'template4', emoji: '<i class="fa-solid fa-camera" aria-hidden="true"></i>', naam: 'Giro', desc: 'Fris met grote foto\'s' },
 ];
 
 function renderStijlThemas() {
@@ -1589,7 +1596,7 @@ function renderKleurKiezer() {
     grid.innerHTML = lijst.map((k) => `
         <button type="button" data-i-kleur="${k.hex}" title="${esc(k.naam)}" aria-label="${esc(k.naam)}"
             class="w-10 h-10 rounded-xl grid place-items-center text-white font-extrabold shadow-sm cursor-pointer shrink-0"
-            style="background:${k.palet.primair}; ${k.hex === instKleur ? 'outline:3px solid var(--color-basil); outline-offset:2px;' : ''}">${k.hex === instKleur ? '✓' : ''}</button>`).join('');
+            style="background:${k.palet.primair}; ${k.hex === instKleur ? 'outline:3px solid var(--color-basil); outline-offset:2px;' : ''}">${k.hex === instKleur ? '<i class="fa-solid fa-check" aria-hidden="true"></i>' : ''}</button>`).join('');
     const gekozen = STIJL_KLEUREN.find((k) => k.hex === instKleur);
     $('#iKleurNaam').textContent = gekozen ? `Gekozen: ${gekozen.naam}` : '';
 }
@@ -1616,11 +1623,11 @@ function logoNaarThumb(file) {
 
 const INST_SECTIES = {
     stijl: {
-        kicker: 'Jouw stijl 🎨', titel: 'Style je bestelpagina', sub: 'Kies je kleur en logo; de rest van het kleurenpalet stemmen we automatisch af.',
-        mascot: 'behind-laptop', bubble: 'Mamma mia, wat een pagina! 🤌', kant: 'right', breed: true,
+        kicker: 'Jouw stijl', titel: 'Style je bestelpagina', sub: 'Kies je kleur en logo; de rest van het kleurenpalet stemmen we automatisch af.',
+        mascot: 'behind-laptop', bubble: 'Zo zien je klanten je pagina.', kant: 'right', breed: true,
         velden: () => {
             instLogo = DATA.logo || null;
-            instKleur = STIJL_KLEUREN.some((k) => k.hex === DATA.color) ? DATA.color : (STIJL_KLEUREN[0]?.hex || '#E63946');
+            instKleur = STIJL_KLEUREN.some((k) => k.hex === DATA.color) ? DATA.color : (STIJL_KLEUREN[0]?.hex || '#B04A3F');
             instThema = ['template1', 'template2', 'template3', 'template4'].includes(DATA.theme) ? DATA.theme : 'template1';
             instKleurTab = 'alle';
             instPagina = 'menu';
@@ -1664,7 +1671,7 @@ const INST_SECTIES = {
                     <p class="m-label">Jouw logo</p>
                     <div class="flex items-center gap-3">
                         <div id="iLogoVak" class="w-14 h-14 rounded-xl border-2 border-crema-dark bg-crema grid place-items-center overflow-hidden shrink-0">
-                            ${instLogo ? `<img id="iLogoPreview" src="${instLogo}" class="w-full h-full object-cover" alt="">` : '<span class="text-xl">🍕</span>'}
+                            ${instLogo ? `<img id="iLogoPreview" src="${instLogo}" class="w-full h-full object-cover" alt="">` : '<span class="text-xl text-cacao/30"><i class="fa-solid fa-pizza-slice" aria-hidden="true"></i></span>'}
                         </div>
                         <button type="button" data-i-logo-kies class="keuze-chip">${instLogo ? 'Ander logo kiezen' : 'Logo uploaden'}</button>
                         <button type="button" data-i-logo-weg class="skip-link !mt-0 ${instLogo ? '' : 'hidden'}">Verwijderen</button>
@@ -1675,8 +1682,8 @@ const INST_SECTIES = {
         payload: () => ({ color: instKleur, logo: instLogo, theme: instThema }),
     },
     zaak: {
-        kicker: 'Jouw zaak 🍕', titel: 'Gegevens van je zaak', sub: 'Zo kennen je klanten en wij je zaak.',
-        mascot: 'tossing-dough', bubble: 'Aangenaam! 😄', kant: 'right',
+        kicker: 'Jouw zaak', titel: 'Gegevens van je zaak', sub: 'Zo kennen je klanten en wij je zaak.',
+        mascot: 'tossing-dough', bubble: 'Aangenaam kennis te maken.', kant: 'right',
         velden: () => `
             <div><label class="m-label" for="iNaam">Naam van je zaak</label><input id="iNaam" class="m-inp" maxlength="60" value="${esc(DATA.name || '')}"></div>
             <div><label class="m-label" for="iPersoon">Contactpersoon</label><input id="iPersoon" class="m-inp" maxlength="60" value="${esc(DATA.person || '')}"></div>
@@ -1690,8 +1697,8 @@ const INST_SECTIES = {
         },
     },
     bedrijf: {
-        kicker: 'Bedrijfsgegevens 📇', titel: 'Jouw bedrijfsgegevens', sub: 'Met je adres zetten we je zaak ook meteen op de kaart bij je bezorggebied.',
-        mascot: 'behind-laptop', bubble: 'Even de administratie 🧾', kant: 'left',
+        kicker: 'Bedrijfsgegevens', titel: 'Jouw bedrijfsgegevens', sub: 'Met je adres zetten we je zaak ook meteen op de kaart bij je bezorggebied.',
+        mascot: 'behind-laptop', bubble: 'Even de administratie.', kant: 'left',
         velden: () => `
             <div><label class="m-label" for="iKvk">KVK-nummer</label><input id="iKvk" class="m-inp" maxlength="8" inputmode="numeric" value="${esc(DATA.kvk || '')}"></div>
             <div><label class="m-label" for="iStraat">Straat + huisnummer</label><input id="iStraat" class="m-inp" maxlength="80" value="${esc(DATA.street || '')}"></div>
@@ -1702,8 +1709,8 @@ const INST_SECTIES = {
         payload: () => ({ kvk: $('#iKvk').value.trim(), street: $('#iStraat').value.trim(), zip: $('#iPostcode').value.trim(), city: $('#iPlaats').value.trim() }),
     },
     tijden: {
-        kicker: 'Openingstijden 🕐', titel: 'Wanneer ben je open?', sub: 'Tik op een dag om hem open of dicht te zetten.',
-        mascot: 'pizza-in-oven', bubble: 'De oven staat al aan 🔥', kant: 'right',
+        kicker: 'Openingstijden', titel: 'Wanneer ben je open?', sub: 'Tik op een dag om hem open of dicht te zetten.',
+        mascot: 'pizza-in-oven', bubble: 'De oven staat al aan.', kant: 'right',
         velden: () => Object.keys(DAGNAMEN_VOL).map((d) => {
             const aan = !!(DATA.days || {})[d];
             const t = (DATA.hoursMode === 'perday' && DATA.dayTimes && DATA.dayTimes[d])
@@ -1732,8 +1739,8 @@ const INST_SECTIES = {
         },
     },
     punten: {
-        kicker: 'Spaarpunten 🌟', titel: 'Klanten laten sparen?', sub: 'Klanten sparen automatisch punten met elke bestelling. Die punten leveren straks extra korting op bij het afrekenen.',
-        mascot: 'waving-hello', bubble: 'Zo komen ze terug! 🌟', kant: 'right',
+        kicker: 'Spaarpunten', titel: 'Klanten laten sparen?', sub: 'Klanten sparen automatisch punten met elke bestelling. Die punten leveren straks extra korting op bij het afrekenen.',
+        mascot: 'waving-hello', bubble: 'Zo komen klanten terug.', kant: 'right',
         velden: () => {
             const nu = DATA.spaarpunten ? 'aan' : 'uit';
             const labels = { aan: 'Aan, klanten sparen automatisch mee', uit: 'Uit, geen spaarprogramma' };
@@ -1743,8 +1750,8 @@ const INST_SECTIES = {
         payload: () => ({ spaarpunten: $('#instVelden .keuze-chip.aan')?.dataset.iKeuze === 'aan' }),
     },
     domein: {
-        kicker: 'Jouw domein 🌐', titel: 'Waar bestellen je klanten?', sub: 'Een gratis subdomein, of je eigen domeinnaam.',
-        mascot: 'showing-pizza-order', bubble: 'Lekker professioneel! 😎', kant: 'right',
+        kicker: 'Jouw domein', titel: 'Waar bestellen je klanten?', sub: 'Een gratis subdomein, of je eigen domeinnaam.',
+        mascot: 'showing-pizza-order', bubble: 'Een eigen adres voor je zaak.', kant: 'right',
         velden: () => {
             const slug = String(DATA.name || 'jouwpizzeria')
                 .normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -1755,7 +1762,7 @@ const INST_SECTIES = {
             return `
                 <div class="flex flex-col gap-2">
                     <button type="button" class="keuze-chip justify-center !py-2.5 ${eigen ? '' : 'aan'}" data-i-keuze="sub">Gratis subdomein: ${slug}.mijnpizzeria.nl</button>
-                    <button type="button" class="keuze-chip justify-center !py-2.5 ${eigen ? 'aan' : ''} ${proef ? 'opacity-40 cursor-not-allowed' : ''}" ${proef ? 'disabled title="Kan zodra je abonnement actief is"' : ''} data-i-keuze="own">Mijn eigen domein${proef ? ' 🔐' : ''}</button>
+                    <button type="button" class="keuze-chip justify-center !py-2.5 ${eigen ? 'aan' : ''} ${proef ? 'opacity-40 cursor-not-allowed' : ''}" ${proef ? 'disabled title="Kan zodra je abonnement actief is"' : ''} data-i-keuze="own">Mijn eigen domein${proef ? ' <i class="fa-solid fa-lock" aria-hidden="true"></i>' : ''}</button>
                 </div>
                 ${proef ? '<p class="m-hint mt-1">Een eigen domein kan zodra je abonnement actief is.</p>' : ''}
                 <div id="iEigenDomeinVak" class="${eigen ? '' : 'hidden'}">
@@ -1778,10 +1785,7 @@ function openInstModal(sectie) {
     $('#instKicker').textContent = info.kicker;
     $('#instTitel').textContent = info.titel;
     $('#instSub').textContent = info.sub;
-    $('#instMascotBubble').textContent = info.bubble;
-    $('#instMascotImg').src = `/stickers/${info.mascot}.png`;
-    $('#instMascot').classList.toggle('mascot-left', info.kant === 'left');
-    $('#instMascot').classList.toggle('mascot-right', info.kant !== 'left');
+    /* Huisstijl 2.0: de wizard-mascotte is uit het ontwerp */
     $('#instKaartWrap').classList.toggle('max-w-xl', !info.breed);
     $('#instKaartWrap').classList.toggle('max-w-7xl', !!info.breed);
     $('#instVelden').innerHTML = info.velden();
@@ -1831,7 +1835,7 @@ $('#instVelden')?.addEventListener('click', (e) => {
     if (e.target.closest('[data-i-logo-kies]')) return $('#iLogoInp').click();
     if (e.target.closest('[data-i-logo-weg]')) {
         instLogo = null;
-        $('#iLogoVak').innerHTML = '<span class="text-xl">🍕</span>';
+        $('#iLogoVak').innerHTML = '<span class="text-xl text-cacao/30"><i class="fa-solid fa-pizza-slice" aria-hidden="true"></i></span>';
         $('#instVelden [data-i-logo-kies]').textContent = 'Logo uploaden';
         $('#instVelden [data-i-logo-weg]').classList.add('hidden');
         return;
@@ -1861,7 +1865,7 @@ $('#instOpslaan')?.addEventListener('click', async () => {
     const res = await postJson('/instellingen/gegevens', payload).catch(() => null);
     if (!res || !res.ok) return;
     /* Verse herlaad zodat drukte, checklist en waarschuwingen overal meebewegen */
-    history.replaceState(null, '', '/dashboard/' + (instSectie === 'stijl' ? 'bestelpagina' : 'instellingen'));
+    history.replaceState(null, '', '/dashboard/instellingen');
     location.reload();
 });
 
@@ -1918,16 +1922,16 @@ $('#instVelden')?.addEventListener('change', async (e) => {
     $('#paginaOpen').href = link;
     $('#paginaKopieer').addEventListener('click', async () => {
         try { await navigator.clipboard.writeText(link); } catch { /* stil */ }
-        $('#paginaKopieer').textContent = 'Gekopieerd ✓';
+        $('#paginaKopieer').textContent = 'Gekopieerd';
         setTimeout(() => { $('#paginaKopieer').textContent = 'Kopieer link'; }, 1600);
     });
 
-    /* Het voorbeeld pas laden zodra het paneel opengaat */
-    $$('[data-nav="bestelpagina"]').forEach((knop) => knop.addEventListener('click', () => {
+    /* Het voorbeeld pas laden zodra het instellingen-paneel opengaat */
+    $$('[data-nav="instellingen"]').forEach((knop) => knop.addEventListener('click', () => {
         const frame = $('#paginaPreview');
         if (frame && !frame.src) frame.src = link;
     }));
-    if (location.hash === '#bestelpagina' || location.pathname.endsWith('/bestelpagina')) {
+    if (location.hash === '#instellingen' || location.pathname.endsWith('/instellingen')) {
         const frame = $('#paginaPreview');
         if (frame && !frame.src) frame.src = link;
     }
@@ -1937,48 +1941,13 @@ $('#instVelden')?.addEventListener('change', async (e) => {
 const startPaneel = location.pathname.split('/')[2] || (location.hash.length > 1 ? location.hash.slice(1) : '');
 if (startPaneel) document.querySelector(`.rail-item[data-nav="${startPaneel}"]`)?.click();
 
-/* Feestje bij een net geactiveerd abonnement: dezelfde confetti als in de
-   onboarding, plus een toast midden onderin het scherm */
+/* Mislukte of afgebroken betaling: even melden, verder niks kapot */
+if (typeof window.PP_ABO_FOUT === 'string' && window.PP_ABO_FOUT) dashToast(window.PP_ABO_FOUT, 5200);
+
+/* Melding bij een net geactiveerd abonnement: een toast midden onderin het scherm */
 (function abonnementFeest() {
     if (window.PP_ABO_FEEST !== true) return;
-
-    dashToast('Je abonnement is geactiveerd! 🎉', 5200);
-
-    const canvas = $('#confetti');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    canvas.width = innerWidth;
-    canvas.height = innerHeight;
-    canvas.classList.remove('hidden');
-
-    const colors = ['#E63946', '#2F8F46', '#F5B301', '#7C3AED', '#2563EB', '#FFF6E8'];
-    const pieces = Array.from({ length: 160 }, () => ({
-        x: Math.random() * canvas.width,
-        y: -20 - Math.random() * canvas.height * 0.5,
-        w: 6 + Math.random() * 8,
-        h: 8 + Math.random() * 10,
-        vy: 2.5 + Math.random() * 3.5,
-        vx: -1.5 + Math.random() * 3,
-        rot: Math.random() * Math.PI,
-        vr: -0.12 + Math.random() * 0.24,
-        color: colors[Math.floor(Math.random() * colors.length)],
-    }));
-
-    const start = performance.now();
-    (function tick(now) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        for (const p of pieces) {
-            p.y += p.vy; p.x += p.vx; p.rot += p.vr;
-            ctx.save();
-            ctx.translate(p.x, p.y);
-            ctx.rotate(p.rot);
-            ctx.fillStyle = p.color;
-            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
-            ctx.restore();
-        }
-        if (now - start < 4000) requestAnimationFrame(tick);
-        else canvas.classList.add('hidden');
-    })(start);
+    dashToast('Je abonnement is geactiveerd.', 5200);
 })();
 
 /* Abonnement-overlay: komt terug zodra iemand hem via devtools weghaalt of verbergt.
@@ -1993,3 +1962,13 @@ if (startPaneel) document.querySelector(`.rail-item[data-nav="${startPaneel}"]`)
     }).observe(document.documentElement, { childList: true, subtree: true, attributes: true });
 })();
 
+
+/* ── Topbalk: de klok tikt per kwart minuut ─────────────────────── */
+const topbalkKlok = $('#topbalkKlok');
+if (topbalkKlok) {
+    const topbalkTik = () => {
+        topbalkKlok.textContent = new Date().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+    };
+    topbalkTik();
+    setInterval(topbalkTik, 15000);
+}

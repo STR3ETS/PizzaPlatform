@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\NieuweAanmeldingMail;
+use App\Mail\WelkomMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class OnboardingController extends Controller
@@ -97,6 +100,17 @@ class OnboardingController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+
+        // Welkom voor de pizzeria plus een seintje naar het beheer; mislukte
+        // mail mag de registratie nooit blokkeren
+        try {
+            Mail::to($user->email)->send(new WelkomMail($user));
+            if (config('mail.beheer')) {
+                Mail::to(config('mail.beheer'))->send(new NieuweAanmeldingMail($user));
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return response()->json(['ok' => true]);
     }

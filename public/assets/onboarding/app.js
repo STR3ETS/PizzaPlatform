@@ -79,25 +79,25 @@ let kleurTab = 'alle';
 /* De templates: Presto (licht en modern) en Notte (donker en chic). De hoofdkleur bepaalt de rest van het palet. */
 const THEMES = [
     {
-        id: 'template1', emoji: '🛵', name: 'Presto', desc: 'Licht en modern',
+        id: 'template1', name: 'Presto', desc: 'Licht en modern',
         font: '"Inter Tight", sans-serif', uppercase: false,
         cardBg: '#FFF7F0', itemBg: '#FFFFFF', text: '#3E2716', priceCol: 'rgba(62,39,22,.55)',
         headerUseAccent: true, itemRadius: '.7rem', btnRadius: '9999px',
     },
     {
-        id: 'template2', emoji: '🍷', name: 'Notte', desc: 'Klassiek en verfijnd',
+        id: 'template2', name: 'Notte', desc: 'Klassiek en verfijnd',
         font: '"Fraunces", serif', uppercase: false,
         cardBg: '#FFF7F0', itemBg: '#FFFFFF', text: '#3E2716', priceCol: '#8A5A2B',
         headerUseAccent: false, itemRadius: '.4rem', btnRadius: '.25rem',
     },
     {
-        id: 'template3', emoji: '⚡', name: 'Forza', desc: 'Bold en vol energie',
+        id: 'template3', name: 'Forza', desc: 'Bold en vol energie',
         font: '"Anton", sans-serif', uppercase: true,
         cardBg: '#FFF7F0', itemBg: '#FFFFFF', text: '#3E2716', priceCol: '#3E2716',
         headerUseAccent: true, itemRadius: '0', btnRadius: '0',
     },
     {
-        id: 'template4', emoji: '📸', name: 'Giro', desc: 'Fris met grote fotos',
+        id: 'template4', name: 'Giro', desc: 'Fris met grote fotos',
         font: '"Plus Jakarta Sans", sans-serif', uppercase: false,
         cardBg: '#FFFFFF', itemBg: '#FFFFFF', text: '#3E2716', priceCol: '#3E2716',
         headerUseAccent: false, itemRadius: '1rem', btnRadius: '9999px',
@@ -185,7 +185,9 @@ function renderPwChecklist() {
         if (!rij) return;
         const ok = eis(pw);
         rij.classList.toggle('aan', ok);
-        rij.querySelector('.pw-dot').textContent = ok ? '✓' : '✕';
+        rij.querySelector('.pw-dot').innerHTML = ok
+            ? '<i class="fa-solid fa-check" aria-hidden="true"></i>'
+            : '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
     });
 }
 
@@ -322,7 +324,7 @@ async function emailVrij() {
         const data = res.ok ? await res.json() : { bestaat: false };
         if (data.bestaat) {
             const el = $('[data-err="email"]');
-            if (el) el.innerHTML = 'Er bestaat al een account met dit e-mailadres. <a href="/login" class="underline font-extrabold">Log hier in</a> om verder te gaan.';
+            if (el) el.innerHTML = 'Er bestaat al een account met dit e-mailadres. <a href="/login" class="underline font-semibold">Log hier in</a> om verder te gaan.';
             nudge($('#inpEmail'));
             return false;
         }
@@ -372,7 +374,7 @@ function updateChrome() {
 
     if (state.step === 'overview') {
         $('#progressBar').style.width = '100%';
-        $('#stepCounter').textContent = 'Laatste check ✓';
+        $('#stepCounter').textContent = 'Laatste check';
     } else if (isQuestion) {
         const i = QUESTION_STEPS.indexOf(state.step);
         $('#progressBar').style.width = `${Math.round(((i + 1) / (QUESTION_STEPS.length + 1)) * 100)}%`;
@@ -396,31 +398,31 @@ function nudge(input) {
 function validate(step) {
     switch (step) {
         case 'name':
-            if (state.name.trim().length < 2) { setError('name', 'Zonder naam geen pizza 😉'); nudge($('#inpName')); return false; }
+            if (state.name.trim().length < 2) { setError('name', 'Vul eerst de naam van je pizzeria in.'); nudge($('#inpName')); return false; }
             setError('name'); return true;
         case 'person':
-            if (state.person.trim().length < 2) { setError('person', 'We willen toch écht even weten wie je bent 😄'); nudge($('#inpPerson')); return false; }
+            if (state.person.trim().length < 2) { setError('person', 'Vul nog even je naam in.'); nudge($('#inpPerson')); return false; }
             setError('person'); return true;
         case 'contact':
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(state.email.trim())) {
-                setError('email', 'Hmm, dit e-mailadres ziet er nog niet helemaal lekker uit 🧐'); nudge($('#inpEmail')); return false;
+                setError('email', 'Dit e-mailadres lijkt niet te kloppen, check het even.'); nudge($('#inpEmail')); return false;
             }
             setError('email'); return true;
         case 'wachtwoord':
-            if (!pwVoldoet()) { setError('password', 'Nog niet helemaal: check de eisen hierboven 💪'); nudge($('#inpPassword')); return false; }
-            if (pw !== pw2) { setError('password', 'De wachtwoorden zijn niet hetzelfde 🧐'); nudge($('#inpPassword2')); return false; }
+            if (!pwVoldoet()) { setError('password', 'Je wachtwoord voldoet nog niet aan de eisen hierboven.'); nudge($('#inpPassword')); return false; }
+            if (pw !== pw2) { setError('password', 'De wachtwoorden zijn niet hetzelfde.'); nudge($('#inpPassword2')); return false; }
             setError('password'); return true;
         case 'company':
-            if ((state.kvk || '').trim() !== '' && !/^\d{8}$/.test(state.kvk.trim())) { setError('company', 'Een KvK-nummer bestaat uit 8 cijfers 📋'); nudge($('#inpKvk')); return false; }
-            if ((state.street || '').trim().length < 3) { setError('company', 'Vul je straat en huisnummer in 🏠'); nudge($('#inpStreet')); return false; }
-            if (!/^\d{4}\s?[a-zA-Z]{2}$/.test((state.zip || '').trim())) { setError('company', 'Die postcode klopt nog niet, bijv. 1234 AB 🧐'); nudge($('#inpZip')); return false; }
-            if ((state.city || '').trim().length < 2) { setError('company', 'Vul je plaats nog even in 🏙️'); nudge($('#inpCity')); return false; }
+            if ((state.kvk || '').trim() !== '' && !/^\d{8}$/.test(state.kvk.trim())) { setError('company', 'Een KvK-nummer bestaat uit 8 cijfers.'); nudge($('#inpKvk')); return false; }
+            if ((state.street || '').trim().length < 3) { setError('company', 'Vul je straat en huisnummer in.'); nudge($('#inpStreet')); return false; }
+            if (!/^\d{4}\s?[a-zA-Z]{2}$/.test((state.zip || '').trim())) { setError('company', 'Die postcode klopt nog niet, bijv. 1234 AB.'); nudge($('#inpZip')); return false; }
+            if ((state.city || '').trim().length < 2) { setError('company', 'Vul je plaats nog even in.'); nudge($('#inpCity')); return false; }
             setError('company'); return true;
         case 'hours':
-            if (!Object.values(state.days).some(Boolean)) { setError('hours', 'Kies minstens één dag dat je open bent 👇'); return false; }
+            if (!Object.values(state.days).some(Boolean)) { setError('hours', 'Kies minstens één dag dat je open bent.'); return false; }
             setError('hours'); return true;
         case 'menu':
-            if (!state.menu.some((m) => (m.name || '').trim() !== '')) { toast('Voeg minstens één gerecht toe aan je menukaart 🍕'); return false; }
+            if (!state.menu.some((m) => (m.name || '').trim() !== '')) { toast('Voeg minstens één gerecht toe aan je menukaart.'); return false; }
             return true;
         case 'domain':
             if (state.domainMode === 'own' && !/.+\..{2,}/.test(state.ownDomain.trim())) {
@@ -462,7 +464,7 @@ function formatPrice(raw) {
 
 function iconHtml(item, cls) {
     if (item.icon?.t === 'p') return `<img src="${item.icon.v}" class="${cls} rounded-md object-cover inline-block align-middle" alt="">`;
-    return '<span class="inline-block align-middle opacity-40">📷</span>';
+    return '<i class="fa-solid fa-camera inline-block align-middle opacity-40" aria-hidden="true"></i>';
 }
 
 function toast(msg, ms = 2600) {
@@ -500,7 +502,7 @@ function renderPerDayRows() {
                 <input type="time" class="inp-time" value="${state.dayTimes[d.key].close}" data-dt="close" data-dtday="${d.key}" aria-label="Sluitingstijd ${d.label}">
             </div>`
         ).join('')
-        : `<div class="empty-box">Tik hierboven eerst een dag aan 👆</div>`;
+        : `<div class="empty-box">Tik hierboven eerst een dag aan</div>`;
 }
 
 function renderHoursUI() {
@@ -539,7 +541,7 @@ function renderCatBar() {
     const own = state.categories.map((c) =>
         `<button type="button" class="cat-chip ${c.id === state.activeCat ? 'active' : ''}" data-cat="${c.id}">
             <span>${c.emoji}</span><span>${esc(c.name)}</span>
-            <span class="cat-del" data-delcat="${c.id}" title="Categorie verwijderen">✕</span>
+            <span class="cat-del" data-delcat="${c.id}" title="Categorie verwijderen"><i class="fa-solid fa-xmark" aria-hidden="true"></i></span>
         </button>`
     ).join('');
     const suggest = remaining.map((s) =>
@@ -547,7 +549,7 @@ function renderCatBar() {
     ).join('');
     const custom = addingCat
         ? `<input id="newCatInp" type="text" class="cat-inp" placeholder="Bijv. Broodjes" maxlength="24">`
-        : `<button type="button" id="addOwnCat" class="cat-chip suggest">+ ✏️ Eigen categorie</button>`;
+        : `<button type="button" id="addOwnCat" class="cat-chip suggest">+ Eigen categorie</button>`;
     $('#catBar').innerHTML = own + suggest + custom;
     if (addingCat) $('#newCatInp')?.focus();
 }
@@ -568,7 +570,7 @@ function removeCategory(id) {
     if (state.activeCat === id) state.activeCat = state.categories[0]?.id || null;
     renderMenuUI();
     save();
-    toast(`Categorie "${cat.name}" verwijderd 🗑️`);
+    toast(`Categorie "${cat.name}" verwijderd`);
 }
 
 function confirmOwnCat() {
@@ -601,22 +603,22 @@ function renderPresets() {
 function renderMenuList(popIdx = null) {
     const list = $('#menuList');
     if (!state.categories.length) {
-        list.innerHTML = `<div class="empty-box">Voeg eerst een categorie toe 👆</div>`;
+        list.innerHTML = `<div class="empty-box">Voeg eerst een categorie toe</div>`;
         return;
     }
     const cat = activeCategory();
     const items = state.menu.map((m, gi) => ({ ...m, gi })).filter((m) => m.cat === state.activeCat);
     if (!items.length) {
-        list.innerHTML = `<div class="empty-box">Nog niks in ${esc(cat.name)}. Tik hierboven iets aan of voeg zelf toe 👇</div>`;
+        list.innerHTML = `<div class="empty-box">Nog niks in ${esc(cat.name)}. Tik hierboven iets aan of voeg zelf toe.</div>`;
         return;
     }
     list.innerHTML = items.map((m) =>
         `<div class="menu-row${m.gi === popIdx ? ' pop' : ''}">
             <button type="button" class="m-icon" data-icon-idx="${m.gi}" title="Foto kiezen">${iconHtml(m, 'w-full h-full')}</button>
             <span class="m-name">${esc(m.name)}</span>
-            <span class="font-extrabold text-cacao/40 text-sm">€</span>
+            <span class="font-semibold text-cacao/40 text-sm">€</span>
             <input type="text" inputmode="decimal" value="${m.price}" data-price-idx="${m.gi}" aria-label="Prijs van ${esc(m.name)}">
-            <button type="button" class="m-del" data-del-idx="${m.gi}" aria-label="Verwijder ${esc(m.name)}">✕</button>
+            <button type="button" class="m-del" data-del-idx="${m.gi}" aria-label="Verwijder ${esc(m.name)}"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         </div>`
     ).join('');
 }
@@ -705,11 +707,11 @@ function runDomainCheck() {
     const el = $('#domainCheck');
     clearTimeout(domainCheckTimer);    /* ook annuleren bij wissel naar eigen domein */
     if (state.domainMode !== 'sub') { el.textContent = ''; return; }
-    el.textContent = 'Even checken of dit adres vrij is… 🔍';
-    el.className = 'mt-4 h-6 text-sm font-extrabold text-cacao/45';
+    el.textContent = 'Even checken of dit adres vrij is…';
+    el.className = 'mt-4 h-6 text-sm font-semibold text-cacao/45';
     domainCheckTimer = setTimeout(() => {
-        el.textContent = '✓ Beschikbaar! Die is voor jou.';
-        el.className = 'mt-4 h-6 text-sm font-extrabold text-basil';
+        el.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i> Beschikbaar, die is voor jou.';
+        el.className = 'mt-4 h-6 text-sm font-semibold text-basil';
     }, 900);
 }
 
@@ -726,7 +728,7 @@ function renderThemes() {
     $('#themeGrid').innerHTML = THEMES.map((t) =>
         `<button type="button" class="theme-card ${state.theme === t.id ? 'selected' : ''}" data-theme="${t.id}">
             <span class="t-tile" style="background:${t.itemBg}; height:auto; aspect-ratio:16/9; padding:0;">${TILES[t.id](state.color)}</span>
-            <span class="t-name">${t.emoji} ${t.name}</span>
+            <span class="t-name">${t.name}</span>
             <span class="t-desc">${t.desc}</span>
         </button>`
     ).join('');
@@ -754,7 +756,7 @@ function renderColors() {
             `<button type="button" class="swatch ${state.color === k.hex ? 'selected' : ''}" data-color="${k.hex}"
                 style="background:${k.palet.primair}" title="${esc(k.naam)}" aria-label="${esc(k.naam)}"></button>`).join('')}
         </div>
-        <p class="mt-3 text-sm font-extrabold text-cacao/50">${gekozen ? 'Gekozen: ' + esc(gekozen.naam) : ''}</p>`;
+        <p class="mt-3 text-sm font-semibold text-cacao/50">${gekozen ? 'Gekozen: ' + esc(gekozen.naam) : ''}</p>`;
 }
 
 /* De preview is een werkende mini-bestelpagina: categorieën, plusjes, mandje */
@@ -1040,26 +1042,26 @@ function renderSummary() {
     const usedCats = state.categories.filter((c) => state.menu.some((m) => m.cat === c.id));
     const menuValue = state.menu.length
         ? `${state.menu.length} gerecht${state.menu.length === 1 ? '' : 'en'} in ${usedCats.length} categorie${usedCats.length === 1 ? '' : 'ën'}: ${usedCats.map((c) => esc(c.name)).join(', ')}`
-        : 'Maken we later samen af 👍';
+        : 'Maken we later samen af';
 
     const rows = [
         { label: 'Pizzeria',      value: esc(state.name), step: 'name' },
         { label: 'Contact',       value: `${esc(state.person)}${state.phone ? ', ' + esc(state.phone) : ''}`, step: 'person' },
         { label: 'E-mail',        value: esc(state.email), step: 'contact' },
         ...(IS_AUTH ? [] : [{ label: 'Wachtwoord', value: pw ? '••••••••' : 'Nog niet gekozen', step: 'wachtwoord' }]),
-        { label: 'KvK & adres',   value: esc([state.kvk, address].filter(Boolean).join(', ')) || 'Doen we later samen 👍', step: 'company' },
+        { label: 'KvK & adres',   value: esc([state.kvk, address].filter(Boolean).join(', ')) || 'Doen we later samen', step: 'company' },
         { label: 'Open',          value: formatDaysSummary(), step: 'hours' },
         { label: 'Menu',          value: menuValue, step: 'menu' },
         { label: 'Spaarpunten',   value: state.spaarpunten ? 'Aan' : 'Uit', step: 'punten' },
         { label: 'Bestel-adres',  value: esc(orderUrl), step: 'domain' },
-        { label: 'Template',      value: `${theme.emoji} ${esc(theme.name)}, <span class="inline-block w-4 h-4 rounded-full align-middle mx-1" style="background:${paletVoor(state.color).primair}"></span>${colorName}${state.logo ? ', met logo' : ''}`, step: 'style' },
+        { label: 'Template',      value: `${esc(theme.name)}, <span class="inline-block w-4 h-4 rounded-full align-middle mx-1" style="background:${paletVoor(state.color).primair}"></span>${colorName}${state.logo ? ', met logo' : ''}`, step: 'style' },
     ];
 
     $('#summary').innerHTML = rows.filter((r) => STEPS.includes(r.step)).map((r) =>
         `<button type="button" class="sum-row" data-jump="${r.step}">
             <span class="sum-label">${r.label}</span>
             <span class="sum-value">${r.value}</span>
-            <span class="sum-edit">aanpassen ✎</span>
+            <span class="sum-edit">aanpassen <i class="fa-solid fa-pen" aria-hidden="true"></i></span>
         </button>`
     ).join('');
 }
@@ -1073,7 +1075,7 @@ function launchConfetti() {
     canvas.height = innerHeight;
     canvas.classList.remove('hidden');
 
-    const colors = ['#E63946', '#2F8F46', '#F5B301', '#7C3AED', '#2563EB', '#FFF6E8'];
+    const colors = ['#B04A3F', '#2C7A4B', '#B97F10', '#7C3AED', '#2563EB', '#FAF8F4'];
     const pieces = Array.from({ length: 160 }, () => ({
         x: Math.random() * canvas.width,
         y: -20 - Math.random() * canvas.height * 0.5,
@@ -1240,9 +1242,9 @@ function init() {
         if (!file) return;
         try {
             setItemIcon({ t: 'p', v: await photoToThumb(file) });
-            toast('Mooie foto! 📸');
+            toast('Foto toegevoegd');
         } catch {
-            toast('Hmm, die afbeelding lukt niet. Probeer een andere 🙈');
+            toast('Die afbeelding lukt niet, probeer een andere.');
         }
     });
 
@@ -1267,7 +1269,7 @@ function init() {
         card.addEventListener('click', () => {
             /* Eigen domein is voor abonnees: in de proefperiode blijft het subdomein actief */
             if (card.dataset.domain === 'own' && window.PP_PROEF === true) {
-                toast('Een eigen domein kan zodra je abonnement actief is 🔐 Start \'m vanuit je dashboard.', 4200);
+                toast('Een eigen domein kan zodra je abonnement actief is. Start \'m vanuit je dashboard.', 4200);
                 return;
             }
             state.domainMode = card.dataset.domain;
@@ -1341,9 +1343,9 @@ function init() {
             renderLogoUI();
             renderPreview();
             save();
-            toast('Mooi logo! 🤩');
+            toast('Logo toegevoegd');
         } catch {
-            toast('Hmm, dat bestand lukt niet. Probeer een ander 🙈');
+            toast('Dat bestand lukt niet, probeer een ander.');
         }
         e.target.value = '';
     });
@@ -1380,7 +1382,9 @@ function init() {
         const veld = $('#' + oog.dataset.oog);
         const toon = veld.type === 'password';
         veld.type = toon ? 'text' : 'password';
-        oog.textContent = toon ? '🙈' : '👁️';
+        oog.innerHTML = toon
+            ? '<i class="fa-solid fa-eye-slash" aria-hidden="true"></i>'
+            : '<i class="fa-solid fa-eye" aria-hidden="true"></i>';
         veld.focus();
         veld.setSelectionRange(veld.value.length, veld.value.length);
     }));
@@ -1389,12 +1393,12 @@ function init() {
     $('#submitBtn').addEventListener('click', async () => {
         const btn = $('#submitBtn');
         if (!IS_AUTH && !pwVoldoet()) {
-            toast('Kies eerst nog even een wachtwoord 🔐');
+            toast('Kies eerst nog een wachtwoord.');
             jumpTo('wachtwoord');
             return;
         }
         btn.disabled = true;
-        btn.textContent = 'Momentje… 🛵💨';
+        btn.textContent = 'Momentje…';
 
         /* Ingelogd afronden = de vervolg-stappen zijn doorlopen: de zaak is compleet */
         if (IS_AUTH) { state.setup_compleet = true; save(); }
@@ -1404,29 +1408,29 @@ function init() {
             if (res.ok) {
                 state.submitted = true;
                 save();
-                btn.textContent = 'Klaar! 🎉';
+                btn.textContent = 'Klaar!';
                 launchConfetti();
                 setTimeout(() => { window.location.href = '/dashboard'; }, 1400);
                 return;
             }
             const data = await res.json().catch(() => ({}));
-            const firstError = data.errors ? Object.values(data.errors)[0][0] : 'Er ging iets mis. Probeer het zo nog eens 🙏';
+            const firstError = data.errors ? Object.values(data.errors)[0][0] : 'Er ging iets mis. Probeer het zo nog eens.';
             toast(firstError, 4200);
             if (data.errors?.['state.email']) jumpTo('contact');
             else if (data.errors?.password) jumpTo('wachtwoord');
             else if (['state.kvk', 'state.street', 'state.zip', 'state.city'].some((k) => data.errors?.[k])) jumpTo('company');
         } catch {
-            toast('Geen verbinding. Check je internet en probeer opnieuw 📶');
+            toast('Geen verbinding. Check je internet en probeer opnieuw.');
         }
         btn.disabled = false;
-        btn.textContent = 'Onboarding afronden 🚀';
+        btn.textContent = 'Onboarding afronden';
     });
 
     /* Navigatie-knoppen */
     /* Live voorbeeld op mobiel: standaard ingeklapt, uitklappen via de knop */
     $('#pvToggle')?.addEventListener('click', () => {
         const open = ! $('#pvInhoud').classList.toggle('hidden');
-        $('#pvToggle').textContent = open ? 'Verberg live voorbeeld 🙈' : 'Bekijk live voorbeeld 👀';
+        $('#pvToggle').textContent = open ? 'Verberg live voorbeeld' : 'Bekijk live voorbeeld';
     });
 
     $$('[data-next]').forEach((btn) => btn.addEventListener('click', next));
@@ -1454,7 +1458,7 @@ function init() {
     } else if (hadProgress) {
         $$('.step').forEach((s) => s.classList.add('hidden'));
         show(state.step, { animate: false });
-        toast('We zijn verdergegaan waar je was gebleven 👌');
+        toast('We zijn verdergegaan waar je was gebleven.');
     } else {
         show('name', { animate: false });
     }

@@ -62,6 +62,7 @@ class User extends Authenticatable
             'abonnement_actief' => 'boolean',
             'abonnement_sinds' => 'datetime',
             'proef_tot' => 'datetime',
+            'opvolgen_vanaf' => 'datetime',
             'lat' => 'float',
             'lng' => 'float',
             'bezorgkosten' => 'array',

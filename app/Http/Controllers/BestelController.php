@@ -1031,6 +1031,23 @@ class BestelController extends Controller
             'is_demo' => false,
         ]);
 
+        // Bevestiging naar de klant en een seintje naar de zaak. De demo-zaak
+        // (template-speeltuinen) slaan we over, en een mailstoring mag een
+        // bestelling nooit tegenhouden.
+        if ($user->email !== 'demo@pizzeria.nl') {
+            $statusLink = $request->getSchemeAndHttpHost()
+                . ($request->is('bestellen/*') ? '/bestellen/' . $user->slug : '')
+                . '/bestelling/' . $order->token;
+            try {
+                if ($klantAccount?->email) {
+                    \Illuminate\Support\Facades\Mail::to($klantAccount->email)->send(new \App\Mail\BestelBevestigingMail($order, $user, $statusLink));
+                }
+                \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\NieuweBestellingMail($order, $user));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
         return response()->json([
             'ok' => true, 'nummer' => $order->nummer, 'token' => $order->token, 'totaal' => $totaal,
             'punten' => $puntenVerdiend, 'korting' => $korting,

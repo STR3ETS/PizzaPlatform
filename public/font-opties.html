@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MijnPizzeria, lettertype-opties voor de koppen</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ivoor: #FAF8F4; --lijn: #E9E2D8; --pomodoro: #B04A3F; --ink: #241712; --salie: #2C7A4B;
+        }
+        * { margin: 0; box-sizing: border-box; }
+        body { background: var(--ivoor); color: var(--ink); font-family: 'Plus Jakarta Sans', sans-serif; padding: 3rem 1.5rem 5rem; }
+        .wrap { max-width: 64rem; margin: 0 auto; }
+        .kicker { font-size: .72rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--pomodoro); }
+        h1 { font-size: 1.6rem; font-weight: 800; letter-spacing: -.01em; margin-top: .6rem; }
+        .intro { margin-top: .6rem; color: rgb(36 23 18 / .65); font-weight: 500; font-size: .95rem; max-width: 42rem; line-height: 1.6; }
+        .optie { background: #fff; border: 1px solid var(--lijn); border-radius: 1rem; box-shadow: 0 1px 2px rgb(36 23 18 / .05); padding: 2.2rem 2.4rem; margin-top: 1.6rem; }
+        .optie .label { display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap; }
+        .optie .naam { font-weight: 800; font-size: .95rem; }
+        .optie .sub { font-size: .8rem; font-weight: 600; color: rgb(36 23 18 / .45); }
+        .optie .aanrader { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--salie); background: rgb(44 122 75 / .1); border-radius: .5rem; padding: .25rem .55rem; }
+        .demo { margin-top: 1.4rem; }
+        .demo .regel1 { font-size: 2.6rem; line-height: 1.12; }
+        .demo .regel2 { font-size: 3.1rem; line-height: 1.1; color: var(--pomodoro); letter-spacing: -.01em; }
+        .demo .body { margin-top: 1rem; font-weight: 500; color: rgb(36 23 18 / .7); font-size: 1rem; max-width: 36rem; line-height: 1.65; }
+        .demo .ui { margin-top: 1.3rem; display: flex; align-items: center; gap: 1.6rem; flex-wrap: wrap; }
+        .demo .kaartkop { font-size: 1.25rem; }
+        .demo .knop { background: var(--pomodoro); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: .9rem; border-radius: .625rem; padding: .65rem 1.35rem; box-shadow: 0 1px 2px rgb(36 23 18 / .15); }
+        .demo .bedrag { font-size: 1.7rem; }
+
+        .f-young  .demo .regel1, .f-young .demo .regel2, .f-young .demo .kaartkop, .f-young .demo .bedrag { font-family: 'Young Serif', serif; font-weight: 400; }
+        .f-source .demo .regel1, .f-source .demo .regel2, .f-source .demo .kaartkop, .f-source .demo .bedrag { font-family: 'Source Serif 4', serif; font-weight: 600; }
+        .f-sans   .demo .regel1, .f-sans .demo .regel2, .f-sans .demo .kaartkop, .f-sans .demo .bedrag { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; letter-spacing: -.02em; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <p class="kicker">Huisstijl 2.0, de kop-letter</p>
+        <h1>Drie opties in plaats van Fraunces</h1>
+        <p class="intro">Zelfde pagina-opbouw, drie karakters. De bodytekst blijft in alle gevallen Plus Jakarta Sans; dit gaat alleen over de koppen, cijfers en kaarttitels.</p>
+
+        <section class="optie f-young">
+            <p class="label"><span class="naam">1. Young Serif</span><span class="sub">warm en ambachtelijk, bakkerij-gevoel, nauwelijks gebruikt door AI-tools</span><span class="aanrader">Mijn aanrader</span></p>
+            <div class="demo">
+                <p class="regel1">Jouw pizzeria online,</p>
+                <p class="regel2">zonder commissie.</p>
+                <p class="body">Binnen tien minuten online: je menukaart, betalingen en een spaarprogramma dat klanten laat terugkomen. Elke bestelling is van jou, elke euro ook.</p>
+                <div class="ui"><span class="kaartkop">Openstaande bestellingen</span><span class="bedrag">&euro; 486,50</span><span class="knop">Gratis starten</span></div>
+            </div>
+        </section>
+
+        <section class="optie f-source">
+            <p class="label"><span class="naam">2. Source Serif 4</span><span class="sub">redactioneel en klassiek, krant-achtig, tijdloos en veilig</span></p>
+            <div class="demo">
+                <p class="regel1">Jouw pizzeria online,</p>
+                <p class="regel2">zonder commissie.</p>
+                <p class="body">Binnen tien minuten online: je menukaart, betalingen en een spaarprogramma dat klanten laat terugkomen. Elke bestelling is van jou, elke euro ook.</p>
+                <div class="ui"><span class="kaartkop">Openstaande bestellingen</span><span class="bedrag">&euro; 486,50</span><span class="knop">Gratis starten</span></div>
+            </div>
+        </section>
+
+        <section class="optie f-sans">
+            <p class="label"><span class="naam">3. Volledig sans (Plus Jakarta Sans overal)</span><span class="sub">de Mollie/Moneybird-look, maximaal zakelijk, geen serif-risico</span></p>
+            <div class="demo">
+                <p class="regel1">Jouw pizzeria online,</p>
+                <p class="regel2">zonder commissie.</p>
+                <p class="body">Binnen tien minuten online: je menukaart, betalingen en een spaarprogramma dat klanten laat terugkomen. Elke bestelling is van jou, elke euro ook.</p>
+                <div class="ui"><span class="kaartkop">Openstaande bestellingen</span><span class="bedrag">&euro; 486,50</span><span class="knop">Gratis starten</span></div>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

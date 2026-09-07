@@ -35,12 +35,28 @@ Route::get('/', function () {
     return view('site.home');
 })->name('home');
 
+// De blog op de marketingsite, gevuld door de content-machine in het beheer
+Route::get('/blog', [\App\Http\Controllers\BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [\App\Http\Controllers\BlogController::class, 'show'])->name('blog.show');
+Route::get('/sitemap.xml', [\App\Http\Controllers\BlogController::class, 'sitemap'])->name('sitemap');
+
 // De onboarding is tegelijk de registratie
 Route::get('/onboarding', function () {
     return view('onboarding');
 })->name('onboarding');
 Route::post('/onboarding/afronden', [OnboardingController::class, 'finish'])->name('onboarding.finish');
 Route::post('/onboarding/email-check', [OnboardingController::class, 'emailCheck'])->name('onboarding.emailcheck');
+
+// Het zaakscherm voor aan de muur: ondertekende link, geen login of sessie nodig
+Route::get('/scherm', [AdminController::class, 'scherm'])->middleware('signed')->name('admin.scherm');
+
+// Feedbackformulieren vanuit de mails: ondertekende links, geen login nodig
+Route::middleware('signed')->group(function () {
+    Route::get('/feedback/{user}/{context}', [\App\Http\Controllers\FeedbackController::class, 'formulier'])->name('feedback.formulier');
+    Route::post('/feedback/{user}/{context}', [\App\Http\Controllers\FeedbackController::class, 'opslaan'])->name('feedback.opslaan');
+    Route::get('/verlenging/{user}', [\App\Http\Controllers\FeedbackController::class, 'verlenging'])->name('feedback.verlenging');
+    Route::post('/verlenging/{user}', [\App\Http\Controllers\FeedbackController::class, 'verleng'])->name('feedback.verleng');
+});
 Route::redirect('/registreren', '/onboarding');
 
 // Speeltuinen: dezelfde code als de echte bestelpagina, gevuld met de demo-pizzeria.
@@ -95,9 +111,25 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    // Platformbeheer: alle pizzeria's inzien (alleen voor beheerders)
-    Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
+    // Platformbeheer (alleen voor beheerders); het paneel staat in de url, wisselen is client-side
+    Route::get('/admin/{paneel?}', [AdminController::class, 'index'])
+        ->whereIn('paneel', ['overzicht', 'pizzerias', 'financieel', 'sales', 'blog'])
+        ->name('admin.index');
     Route::get('/admin/pizzeria/{user}', [AdminController::class, 'pizzeria'])->name('admin.pizzeria');
+    Route::post('/admin/notitie/{user}', [AdminController::class, 'notitie'])->name('admin.notitie');
+    Route::post('/admin/verleng/{user}', [AdminController::class, 'verlengProef'])->name('admin.verleng');
+    Route::post('/admin/inloggen-als/{user}', [AdminController::class, 'inloggenAls'])->name('admin.inloggenals');
+
+    // De blog-machine: onderwerpen, schrijven, de review-gate en publiceren
+    Route::post('/admin/blog/topic', [\App\Http\Controllers\BlogBeheerController::class, 'topicToevoegen'])->name('blog.topic');
+    Route::delete('/admin/blog/topic/{topic}', [\App\Http\Controllers\BlogBeheerController::class, 'topicVerwijderen'])->name('blog.topic.weg');
+    Route::post('/admin/blog/plan', [\App\Http\Controllers\BlogBeheerController::class, 'plan'])->name('blog.plan');
+    Route::post('/admin/blog/schrijf', [\App\Http\Controllers\BlogBeheerController::class, 'schrijf'])->name('blog.schrijf');
+    Route::get('/admin/blog/voorbeeld/{post}', [\App\Http\Controllers\BlogBeheerController::class, 'voorbeeld'])->name('blog.voorbeeld');
+    Route::post('/admin/blog/hergate/{post}', [\App\Http\Controllers\BlogBeheerController::class, 'hergate'])->name('blog.hergate');
+    Route::post('/admin/blog/publiceer/{post}', [\App\Http\Controllers\BlogBeheerController::class, 'publiceer'])->name('blog.publiceer');
+    Route::post('/admin/blog/afwijzen/{post}', [\App\Http\Controllers\BlogBeheerController::class, 'afwijzen'])->name('blog.afwijzen');
+    Route::post('/admin/blog/offline/{post}', [\App\Http\Controllers\BlogBeheerController::class, 'offline'])->name('blog.offline');
 
     // Het paneel staat in de url (/dashboard/bestellingen); de wissel zelf blijft client-side
     Route::get('/dashboard/{paneel?}', function (\Illuminate\Http\Request $request) {
@@ -172,20 +204,11 @@ Route::middleware('auth')->group(function () {
         }
 
         return view('dashboard.index');
-    })->whereIn('paneel', ['overzicht', 'bestellingen', 'menukaart', 'bestelpagina', 'webshop', 'instellingen'])->name('dashboard');
+    })->whereIn('paneel', ['overzicht', 'bestellingen', 'menukaart', 'webshop', 'instellingen'])->name('dashboard');
 
-    // TODO Stripe: zodra de Stripe-gegevens er zijn wordt dit een Checkout-sessie
-    // (abonnement 24,95 per maand via Stripe Billing) met een webhook die activeert.
-    // Tot die tijd activeren we direct, zodat de hele flow te testen is zonder betaling.
-    Route::post('/abonnement/starten', function (\Illuminate\Http\Request $request) {
-        $request->user()->forceFill([
-            'abonnement_actief' => true,
-            'abonnement_sinds' => now(),
-        ])->save();
-
-        // Eenmalig reclamebord op het overzicht als felicitatie
-        return redirect()->route('dashboard')->with('abonnementGestart', true);
-    })->name('abonnement.starten');
+    // Abonnement via Stripe Checkout (test-mode); zonder Stripe-config activeert het direct
+    Route::post('/abonnement/starten', [\App\Http\Controllers\AbonnementController::class, 'starten'])->name('abonnement.starten');
+    Route::get('/abonnement/klaar', [\App\Http\Controllers\AbonnementController::class, 'klaar'])->name('abonnement.klaar');
 
     // Alles hieronder is pas bruikbaar met een actief abonnement (beheerders uitgezonderd)
     Route::middleware('abonnement')->group(function () {

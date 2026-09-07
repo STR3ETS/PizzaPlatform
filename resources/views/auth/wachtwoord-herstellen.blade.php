@@ -1,15 +1,14 @@
 @extends('layouts.gast')
 
-@section('title', 'Nieuw wachtwoord 🍕')
+@section('title', 'Nieuw wachtwoord')
 
 @section('content')
     <div class="text-center mb-6">
-        <img src="{{ asset('stickers/kneading-dough.png') }}" alt="" class="h-28 w-auto mx-auto mb-3 select-none pointer-events-none">
-        <p class="step-kicker">Vers deeg, verse start 💪</p>
+        <p class="step-kicker">Account herstellen</p>
         <h1 class="step-title">Nieuw wachtwoord</h1>
     </div>
 
-    <div class="bg-white rounded-3xl border-4 border-crema-dark shadow-[0_8px_0_0_var(--color-crema-dark)] p-6 sm:p-8">
+    <div class="bg-white rounded-2xl border border-crema-dark shadow-[0_1px_2px_rgb(36_23_18_/_.1)] p-6 sm:p-8">
         <form method="POST" action="{{ route('password.update') }}" class="space-y-4">
             @csrf
             <input type="hidden" name="token" value="{{ $token }}">
@@ -26,7 +25,7 @@
                 @error('password')<p class="err">{{ $message }}</p>@enderror
             </div>
             <div>
-                <label for="password_confirmation" class="lbl">Nog een keer</label>
+                <label for="password_confirmation" class="lbl">Herhaal wachtwoord</label>
                 <input id="password_confirmation" name="password_confirmation" type="password" required
                     autocomplete="new-password" placeholder="Zelfde als hierboven" class="inp !text-base">
             </div>
