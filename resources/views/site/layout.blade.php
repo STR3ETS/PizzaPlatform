@@ -35,11 +35,6 @@
 
     @include('site.deel.voet')
 
-    <script>
-        document.querySelector('#menuKnop')?.addEventListener('click', () => {
-            document.querySelector('#mobielMenu').classList.toggle('hidden');
-        });
-    </script>
     @yield('scripts')
 </body>
 </html>

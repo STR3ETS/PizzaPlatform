@@ -1403,3 +1403,16 @@
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* ── Marketing-site: gedeelde blokken ───────────────────────────── */
+html { overflow-x: clip; }
+.kop-streep { position: absolute; left: 0; right: 0; bottom: -.12em; height: .14em; border-radius: 9999px; background: var(--color-gold); }
+@keyframes wiebel { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-9deg); } 70% { transform: rotate(9deg); } }
+.functie-kaart:hover .f-icoon { animation: wiebel .5s ease-in-out; }
+.template-knop { width: 100%; text-align: left; border: 1px solid rgba(255,255,255,.16); border-radius: 1.1rem; background: rgba(255,255,255,.06); color: #fff; cursor: pointer; transition: background .15s ease, border-color .15s ease; }
+.template-knop:hover { background: rgba(255,255,255,.13); }
+.template-knop.aan { background: var(--color-gold); border-color: var(--color-gold); color: var(--color-cacao); }
+.template-knop.aan .t-sub { color: rgba(36,23,18,.6); }
+.template-knop .t-sub { color: rgba(255,255,255,.5); }
+/* Kop van elke subpagina: links uitgelijnd, rustig */
+.pagina-kop { max-width: 42rem; }

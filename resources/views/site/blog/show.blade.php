@@ -50,7 +50,7 @@
     </div>
 @endif
 
-<main class="max-w-3xl mx-auto px-5 pt-10 pb-20">
+<main class="max-w-3xl mx-auto px-5 pt-14 sm:pt-20 pb-24 sm:pb-32">
 
     {{-- Kruimelpad --}}
     <nav class="text-xs font-semibold text-cacao/40" aria-label="Kruimelpad">

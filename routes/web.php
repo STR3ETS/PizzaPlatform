@@ -31,9 +31,8 @@ if ($centraalDomein) {
     });
 }
 
-Route::get('/', function () {
-    return view('site.home');
-})->name('home');
+// De site zelf is nog niet live: een coming soon pagina met de twee knoppen die tellen
+Route::view('/', 'site.binnenkort')->name('home');
 
 // De blog op de marketingsite, gevuld door de content-machine in het beheer
 Route::get('/blog', [\App\Http\Controllers\BlogController::class, 'index'])->name('blog.index');

@@ -4,7 +4,7 @@
 @section('omschrijving', 'Praktische artikelen over online bestellen zonder commissie, marketing en het runnen van je pizzeria. Geschreven voor pizzeria-eigenaren in Nederland.')
 
 @section('inhoud')
-<main class="max-w-6xl mx-auto px-5 pt-12 pb-20">
+<main class="max-w-6xl mx-auto px-5 pt-16 sm:pt-24 pb-24 sm:pb-32">
 
     {{-- Kop: links uitgelijnd --}}
     <div class="max-w-2xl">

@@ -27,20 +27,7 @@
             </div>
 
             {{-- Linkkolommen --}}
-            <div class="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-10 lg:pt-3">
-                <div>
-                    <p class="font-display text-lg mb-3.5">Product</p>
-                    <ul class="space-y-2.5 text-sm font-bold text-white/55">
-                        <li><a href="/#functies" class="hover:text-white transition-colors">Functies</a></li>
-                        <li><a href="/#templates" class="hover:text-white transition-colors">Templates</a></li>
-                        <li><a href="/#spaarprogramma" class="hover:text-white transition-colors">Spaarprogramma</a></li>
-                        <li><a href="/#prijzen" class="hover:text-white transition-colors">Prijzen</a></li>
-                        <li><a href="/blog" class="hover:text-white transition-colors">Blog</a></li>
-                        <li><a href="/#functies" class="hover:text-white transition-colors">Pizza Coach</a></li>
-                        <li><a href="/#functies" class="hover:text-white transition-colors">Dozen met opdruk</a></li>
-                        <li><a href="/#functies" class="hover:text-white transition-colors">Live bezorgstatus</a></li>
-                    </ul>
-                </div>
+            <div class="lg:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-10 lg:pt-3">
                 <div>
                     <p class="font-display text-lg mb-3.5">Proef de stijlen</p>
                     <ul class="space-y-2.5 text-sm font-bold text-white/55">
@@ -56,18 +43,10 @@
                     <ul class="space-y-2.5 text-sm font-bold text-white/55">
                         <li><a href="/onboarding" class="hover:text-white transition-colors">Gratis starten</a></li>
                         <li><a href="/login" class="hover:text-white transition-colors">Inloggen</a></li>
+                        <li><a href="/blog" class="hover:text-white transition-colors">Blog</a></li>
                         <li><a href="/bestellen/pizzeriasole" target="_blank" rel="noopener" class="hover:text-white transition-colors">Voorbeeld bestelpagina</a></li>
                         <li><a href="/bestellen/pizzeriasole/afrekenen?voorbeeld=1" target="_blank" rel="noopener" class="hover:text-white transition-colors">Voorbeeld afrekenen</a></li>
                         <li><a href="/bestellen/pizzeriasole/bestelling?voorbeeld=1" target="_blank" rel="noopener" class="hover:text-white transition-colors">Voorbeeld bezorgstatus</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <p class="font-display text-lg mb-3.5">Praktisch</p>
-                    <ul class="space-y-2.5 text-sm font-bold text-white/55">
-                        <li><span class="text-white/35">Contact, volgt binnenkort</span></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Algemene voorwaarden</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Privacy</a></li>
-                        <li><span class="text-white/35">KVK, volgt binnenkort</span></li>
                     </ul>
                 </div>
             </div>

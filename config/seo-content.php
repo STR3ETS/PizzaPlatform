@@ -95,7 +95,7 @@ return [
 
     /* ---------- Echte, linkbare interne pagina's ---------- */
     'internal_pages' => [
-        '/' => 'Homepagina van MijnPizzeria, met functies, templates en prijzen',
+        '/' => 'Homepagina van MijnPizzeria',
         '/onboarding' => 'Gratis starten: registratie en het opzetten van je bestelpagina',
     ],
 
