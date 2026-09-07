@@ -47,7 +47,7 @@
 
     @include('admin.deel.nav', ['actiefPaneel' => 'pizzerias'])
 
-    <main class="relative z-10 md:ml-[16rem] px-5 md:px-8 pt-7 pb-28 md:pb-10">
+    <main class="relative z-10 lg:ml-[16rem] px-5 md:px-8 pt-7 pb-28 lg:pb-10">
         <div class="max-w-6xl mx-auto">
 
         <a href="/admin/pizzerias" class="inline-flex items-center gap-2 text-sm font-semibold text-cacao/50 hover:text-tomato transition-colors mb-5">

@@ -41,7 +41,7 @@
 
     @include('admin.deel.nav')
 
-    <main class="relative z-10 md:ml-[16rem] px-5 md:px-8 pt-5 pb-28 md:pb-10">
+    <main class="relative z-10 lg:ml-[16rem] px-5 md:px-8 pt-5 pb-28 lg:pb-10">
         <div class="max-w-6xl mx-auto">
 
         {{-- Topbalk: de platformcijfers die je op elk paneel wilt zien. Plakt bij het scrollen. --}}

@@ -179,8 +179,8 @@
     transform: translate(-50%, 0) scale(1);
 }
 
-/* Mobiel: de toast komt van boven, onderin zit de tabbalk al */
-@media (max-width: 47.99rem) {
+/* Zolang de tabbalk onderin staat komt de toast van boven, anders botsen ze */
+@media (max-width: 63.99rem) {
     #toast, #dashToast {
         bottom: auto;
         top: 1.25rem;
@@ -854,7 +854,9 @@
     z-index: 40;
     overflow: hidden;
 }
-@media (min-width: 48rem) { .dash-rail { display: flex; } }
+/* De rail pas vanaf echte laptopbreedte; daaronder neemt de tabbalk het over,
+   anders wordt de inhoud tussen 48 en 64rem platgedrukt naast de vaste balk */
+@media (min-width: 64rem) { .dash-rail { display: flex; } }
 
 .rail-item {
     display: flex;
@@ -909,7 +911,7 @@
     padding: .35rem;
     z-index: 40;
 }
-@media (min-width: 48rem) { .dash-tabbar { display: none; } }
+@media (min-width: 64rem) { .dash-tabbar { display: none; } }
 .tab-item {
     display: grid;
     place-items: center;

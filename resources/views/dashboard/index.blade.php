@@ -34,7 +34,7 @@
 <body class="bg-crema font-body text-cacao min-h-screen antialiased overflow-x-hidden {{ $abonnementNodig ? 'overflow-hidden' : '' }}">
 
     <!-- Zwevende navigatie-rail (desktop) -->
-    <aside class="dash-rail min-w-[300px]">
+    <aside class="dash-rail">
         <div class="flex items-center gap-2.5 px-5 py-5">
             <span class="text-2xl text-tomato"><i class="fa-solid fa-pizza-slice" aria-hidden="true"></i></span>
             <span class="font-display text-lg tracking-wide">Dashboard</span>
@@ -85,7 +85,7 @@
         </button>
     </nav>
 
-    <main class="relative z-10 md:ml-[16rem] px-5 md:px-8 pt-5 pb-28 md:pb-10">
+    <main class="relative z-10 lg:ml-[16rem] px-5 md:px-8 pt-5 pb-28 lg:pb-10">
         <div class="max-w-6xl mx-auto">
 
         {{-- Topbalk: de dingen die je op elk paneel wilt zien: status, uren van
@@ -129,7 +129,7 @@
             @php $setupKlaar = (bool) (auth()->user()->onboarding['setup_compleet'] ?? false); @endphp
 
             <!-- Bovenblok: meldingen en status links, profielkaart rechts -->
-            <div class="grid grid-cols-1 lg:grid-cols-[1fr_19rem] gap-4 mb-4 items-stretch">
+            <div class="grid grid-cols-1 xl:grid-cols-[1fr_19rem] gap-4 mb-4 items-stretch">
             <div class="space-y-4 min-w-0 flex flex-col">
             @unless($setupKlaar)
             <!-- Eerst je zaak afmaken: de rest van het dashboard blijft dicht tot dit klaar is -->
@@ -151,7 +151,7 @@
                         <p id="vandaagTijden" class="text-sm font-semibold text-cacao/50 mt-0.5">…</p>
                     </div>
                 </div>
-                <div class="flex flex-col sm:flex-row items-center gap-3">
+                <div class="flex flex-col sm:flex-row sm:flex-wrap items-center justify-end gap-3 min-w-0">
                     <div id="modeSwitch" class="mode-switch hidden">
                         <button type="button" data-mode="bezorgen_afhalen" class="mode-opt">Bezorgen &amp; afhalen</button>
                         <button type="button" data-mode="alleen_afhalen" class="mode-opt">Alleen afhalen</button>
@@ -408,7 +408,7 @@
             </div>
 
             <!-- De coach: inzichten die geld opleveren, naast de drukteverwachting -->
-            <div class="grid grid-cols-1 lg:grid-cols-[1fr_20rem] gap-4 mb-4">
+            <div class="grid grid-cols-1 xl:grid-cols-[1fr_20rem] gap-4 mb-4">
                 <div class="dash-card rise" style="--d:.17s">
                     <div class="flex items-center gap-3 mb-1">
                         <p class="font-display text-xl flex-1"><i class="fa-solid fa-pizza-slice" aria-hidden="true"></i> Pizza Coach</p>
