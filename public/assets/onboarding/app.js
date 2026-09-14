@@ -1,12 +1,21 @@
 /* ═══════════════ PizzaPlatform onboarding wizard ═══════════════ */
 
+/* Eigen scope: dit script draait ook in het dashboard (venster "zaak afmaken"),
+   naast dashboard.js dat dezelfde hulpnamen ($, $$, esc) gebruikt. */
+(() => {
+
 /* De onboarding is ook de registratie: gasten krijgen alleen wat echt nodig is
    voor een account. Ingelogd zijn alle stappen beschikbaar, voor het aanvullen
    vanuit het dashboard (de setup-banner) en losse bewerkingen. */
 const IS_AUTH = window.PP_AUTH === true;
-const STEPS = IS_AUTH
-    ? ['name', 'person', 'contact', 'company', 'hours', 'menu', 'punten', 'domain', 'style', 'overview']
-    : ['name', 'person', 'contact', 'wachtwoord', 'company', 'overview'];
+/* Modal-modus: het venster "zaak afmaken" in het dashboard, direct na de registratie.
+   Alleen de vervolgstappen; na afronden herlaadt het dashboard zonder venster. */
+const IS_MODAL = window.PP_MODAL === true;
+const STEPS = IS_MODAL
+    ? ['hours', 'punten', 'domain', 'style']   /* geen menukaart en geen overzicht: huisstijl is de laatste vraag */
+    : IS_AUTH
+        ? ['name', 'person', 'contact', 'company', 'hours', 'menu', 'punten', 'domain', 'style', 'overview']
+        : ['name', 'person', 'contact', 'wachtwoord', 'company', 'overview'];
 const QUESTION_STEPS = STEPS.filter((s) => s !== 'overview');
 const STORAGE_KEY = 'pp_onboarding_v2';
 
@@ -203,7 +212,7 @@ function save() {
 }
 
 function normaliseerState() {
-    if (!STEPS.includes(state.step)) state.step = 'name';
+    if (!STEPS.includes(state.step)) state.step = STEPS[0];
     if (!THEMES.some((t) => t.id === state.theme)) state.theme = 'template1';
     state.spaarpunten = state.spaarpunten !== false;   // standaard aan
     if (!state.categories?.length) {
@@ -247,7 +256,7 @@ function restore() {
     /* Ingelogd: je opgeslagen onboarding uit de database is leidend,
        zodat je nooit iets opnieuw hoeft in te vullen */
     if (IS_AUTH && window.PP_SAVED && typeof window.PP_SAVED === 'object') {
-        state = { ...state, ...window.PP_SAVED, step: 'name', returnTo: null, submitted: false };
+        state = { ...state, ...window.PP_SAVED, step: STEPS[0], returnTo: null, submitted: false };
         laadEchteMenukaart();
         normaliseerState();
         return false;
@@ -290,7 +299,7 @@ function show(id, { animate = true } = {}) {
         }
         updateChrome();
         save();
-        window.scrollTo({ top: 0 });
+        ($('#setupOverlay') || window).scrollTo({ top: 0 });
         animating = false;
         const firstInput = to.querySelector('input:not([type="time"])');
         if (firstInput && window.matchMedia('(hover: hover)').matches) firstInput.focus();
@@ -358,7 +367,7 @@ function back() {
     }
     const i = STEPS.indexOf(state.step);
     if (i > 0) show(STEPS[i - 1]);
-    else window.location.href = '/';    /* eerste stap: terug naar de welkomstpagina */
+    else if (!IS_MODAL) window.location.href = '/';    /* eerste stap: terug naar de welkomstpagina; in het venster is er geen terug */
 }
 
 function jumpTo(id) {
@@ -373,13 +382,35 @@ function updateChrome() {
     wrap.classList.toggle('hidden', !isQuestion);
 
     if (state.step === 'overview') {
-        $('#progressBar').style.width = '100%';
+        if ($('#progressBar')) $('#progressBar').style.width = '100%';
         $('#stepCounter').textContent = 'Laatste check';
     } else if (isQuestion) {
         const i = QUESTION_STEPS.indexOf(state.step);
-        $('#progressBar').style.width = `${Math.round(((i + 1) / (QUESTION_STEPS.length + 1)) * 100)}%`;
+        if ($('#progressBar')) $('#progressBar').style.width = `${Math.round(((i + 1) / (QUESTION_STEPS.length + 1)) * 100)}%`;
         $('#stepCounter').textContent = `Stap ${i + 1} van ${QUESTION_STEPS.length}`;
     }
+    renderStapBalk();
+}
+
+/* Stappenbalk (venster in het dashboard): een segment per stap met de naam eronder.
+   Gedane stappen zijn gevuld, de huidige licht op, de rest is nog leeg. */
+const STAP_NAMEN = {
+    name: 'Naam', person: 'Contactpersoon', contact: 'Contact', wachtwoord: 'Wachtwoord', company: 'Bedrijf',
+    hours: 'Openingstijden', menu: 'Menukaart', punten: 'Spaarpunten', domain: 'Bestel-adres', style: 'Huisstijl',
+};
+
+function renderStapBalk() {
+    const balk = $('#stapBalk');
+    if (!balk) return;
+    const huidig = state.step === 'overview' ? QUESTION_STEPS.length : QUESTION_STEPS.indexOf(state.step);
+    balk.style.gridTemplateColumns = `repeat(${QUESTION_STEPS.length}, minmax(0, 1fr))`;
+    balk.innerHTML = QUESTION_STEPS.map((s, i) => {
+        const stand = i < huidig ? 'klaar' : (i === huidig ? 'actief' : '');
+        return `<div class="stap-segment ${stand}">
+            <span class="s-lijn"></span>
+            <span class="s-tekst">${i < huidig ? '<i class="fa-solid fa-check" aria-hidden="true"></i> ' : ''}${STAP_NAMEN[s] || s}</span>
+        </div>`;
+    }).join('');
 }
 
 /* ── Validatie ────────────────────────────────────────────────── */
@@ -469,6 +500,7 @@ function iconHtml(item, cls) {
 
 function toast(msg, ms = 2600) {
     const el = $('#toast');
+    if (!el) return;
     el.textContent = msg;
     el.classList.add('aan');
     clearTimeout(el._t);
@@ -1070,6 +1102,7 @@ function renderSummary() {
 
 function launchConfetti() {
     const canvas = $('#confetti');
+    if (!canvas) return;   /* geen confetti in het dashboard-venster */
     const ctx = canvas.getContext('2d');
     canvas.width = innerWidth;
     canvas.height = innerHeight;
@@ -1127,6 +1160,7 @@ function verstuurOnboarding() {
 
 function bindInput(id, key, extra) {
     const el = $(id);
+    if (!el) return;   /* in het venster bestaan de registratievelden niet */
     el.value = state[key];
     el.addEventListener('input', () => {
         state[key] = el.value;
@@ -1153,7 +1187,7 @@ function init() {
     $('#inpClose').addEventListener('change', (e) => { state.close = e.target.value; save(); });
 
     renderHoursUI();
-    renderMenuUI();
+    if ($('#menuList')) renderMenuUI();   /* de menustap zit niet in het venster */
     renderThemes();
     renderColors();
 
@@ -1182,7 +1216,7 @@ function init() {
     });
 
     /* Categorieën */
-    $('#catBar').addEventListener('click', (e) => {
+    $('#catBar')?.addEventListener('click', (e) => {
         const del = e.target.closest('[data-delcat]');
         if (del) { removeCategory(del.dataset.delcat); return; }
         const add = e.target.closest('[data-addcat]');
@@ -1203,12 +1237,12 @@ function init() {
             save();
         }
     });
-    $('#catBar').addEventListener('focusout', (e) => {
+    $('#catBar')?.addEventListener('focusout', (e) => {
         if (e.target.id === 'newCatInp') confirmOwnCat();
     });
 
     /* Menu-presets & lijst */
-    $('#presetGrid').addEventListener('click', (e) => {
+    $('#presetGrid')?.addEventListener('click', (e) => {
         const card = e.target.closest('[data-preset]');
         if (!card) return;
         const p = suggestionFor(state.activeCat)?.presets[card.dataset.preset];
@@ -1217,7 +1251,7 @@ function init() {
         if (idx >= 0) { state.menu.splice(idx, 1); renderMenuUI(); save(); }
         else addMenuItem(p.name, p.price);
     });
-    $('#menuList').addEventListener('click', (e) => {
+    $('#menuList')?.addEventListener('click', (e) => {
         const icon = e.target.closest('[data-icon-idx]');
         if (icon) { openIconPicker(Number(icon.dataset.iconIdx)); return; }
         const del = e.target.closest('[data-del-idx]');
@@ -1226,7 +1260,7 @@ function init() {
         renderMenuUI();
         save();
     });
-    $('#menuList').addEventListener('change', (e) => {
+    $('#menuList')?.addEventListener('change', (e) => {
         const inp = e.target.closest('[data-price-idx]');
         if (!inp) return;
         const formatted = formatPrice(inp.value);
@@ -1234,10 +1268,10 @@ function init() {
         inp.value = state.menu[inp.dataset.priceIdx].price;
         save();
     });
-    $('#customAdd').addEventListener('click', addCustomItem);
+    $('#customAdd')?.addEventListener('click', addCustomItem);
 
     /* Foto-kiezer */
-    $('#photoInp').addEventListener('change', async (e) => {
+    $('#photoInp')?.addEventListener('change', async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
         try {
@@ -1367,7 +1401,7 @@ function init() {
     });
 
     /* Overzicht */
-    $('#summary').addEventListener('click', (e) => {
+    $('#summary')?.addEventListener('click', (e) => {
         const row = e.target.closest('[data-jump]');
         if (row) jumpTo(row.dataset.jump);
     });
@@ -1390,8 +1424,10 @@ function init() {
     }));
 
     /* Versturen: maakt het account aan (of werkt het bij) en logt direct in */
-    $('#submitBtn').addEventListener('click', async () => {
+    $('#submitBtn')?.addEventListener('click', async () => {
         const btn = $('#submitBtn');
+        /* In het venster staat de knop op de laatste vraag zelf: die eerst nog even nakijken */
+        if (IS_MODAL && !validate(state.step)) return;
         if (!IS_AUTH && !pwVoldoet()) {
             toast('Kies eerst nog een wachtwoord.');
             jumpTo('wachtwoord');
@@ -1409,6 +1445,11 @@ function init() {
                 state.submitted = true;
                 save();
                 btn.textContent = 'Klaar!';
+                if (IS_MODAL) {
+                    /* Het dashboard herlaadt zonder venster, met de menukaart erin */
+                    setTimeout(() => { window.location.reload(); }, 600);
+                    return;
+                }
                 launchConfetti();
                 setTimeout(() => { window.location.href = '/dashboard'; }, 1400);
                 return;
@@ -1423,7 +1464,7 @@ function init() {
             toast('Geen verbinding. Check je internet en probeer opnieuw.');
         }
         btn.disabled = false;
-        btn.textContent = 'Onboarding afronden';
+        btn.textContent = IS_MODAL ? 'Zaak afronden' : 'Onboarding afronden';
     });
 
     /* Navigatie-knoppen */
@@ -1435,7 +1476,7 @@ function init() {
 
     $$('[data-next]').forEach((btn) => btn.addEventListener('click', next));
     $$('[data-back]').forEach((btn) => btn.addEventListener('click', back));
-    $('#resetLink').addEventListener('click', resetAll);
+    $('#resetLink')?.addEventListener('click', resetAll);
 
     /* Enter = volgende */
     document.addEventListener('keydown', (e) => {
@@ -1460,9 +1501,11 @@ function init() {
         show(state.step, { animate: false });
         toast('We zijn verdergegaan waar je was gebleven.');
     } else {
-        show('name', { animate: false });
+        show(STEPS[0], { animate: false });
     }
-    if (hadSaved || hadProgress) $('#resetLink').classList.remove('hidden');
+    if (hadSaved || hadProgress) $('#resetLink')?.classList.remove('hidden');
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+})();

@@ -266,6 +266,7 @@ class PizzeriaSeeder extends Seeder
                     'naam' => $itemNaam,
                     'prijs' => $prijs,
                     'icoon' => $icoon,
+                    'foto' => $this->gerechtFoto($itemNaam, $categorie),
                     'ingredienten' => $ingredienten,
                     'allergenen' => $allergenen,
                     'opties' => str_contains($categorie, 'izza') || $categorie === 'Klassiekers' || $categorie === 'Calzones' ? $pizzaOpties : [],
@@ -274,6 +275,37 @@ class PizzeriaSeeder extends Seeder
                 ]);
             }
         }
+    }
+
+    /** Elke demozaak toont gerechten met foto: eerst op naam, dan op categorie, anders een pizzafoto op toerbeurt */
+    private function gerechtFoto(string $naam, string $categorie): string
+    {
+        static $beurt = 0;
+        $naam = mb_strtolower($naam);
+        $opNaam = [
+            'margherita' => 'margherita.jpg',
+            'salami' => 'pepperoni.jpg', 'pepperoni' => 'pepperoni.jpg', 'diavola' => 'pepperoni.jpg',
+            'funghi' => 'rustiek.jpg', 'champignon' => 'rustiek.jpg',
+            'formaggi' => 'koken.jpg', 'kaas' => 'koken.jpg',
+            'calzone' => 'oven.jpg',
+            'tonno' => 'donker.jpg', 'mare' => 'donker.jpg',
+            'tiramisu' => 'dessert.jpg', 'panna' => 'dessert.jpg',
+        ];
+        foreach ($opNaam as $trefwoord => $foto) {
+            if (str_contains($naam, $trefwoord)) {
+                return asset('assets/eten/' . $foto);
+            }
+        }
+        $categorie = mb_strtolower($categorie);
+        if (str_contains($categorie, 'drank')) {
+            return asset('assets/eten/drank.jpg');
+        }
+        if (str_contains($categorie, 'dessert')) {
+            return asset('assets/eten/dessert.jpg');
+        }
+        $roulatie = ['pepperoni.jpg', 'margherita.jpg', 'rustiek.jpg', 'oven.jpg', 'ingredienten.jpg'];
+
+        return asset('assets/eten/' . $roulatie[$beurt++ % count($roulatie)]);
     }
 
     /** Bestellingen verspreid over de laatste acht weken, met klanten en spaarpunten */

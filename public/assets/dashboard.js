@@ -37,8 +37,8 @@ function dashToast(msg, ms = 3200) {
     el._t = setTimeout(() => el.classList.remove('aan'), ms);
 }
 
-/* Zaak nog niet af: panelen zichtbaar op slot, en elke klik op een knop of link
-   geeft een toast. Alleen de weg naar het afmaken zelf blijft open. */
+/* Zaak nog niet af: het venster "zaak afmaken" staat boven het dashboard, de panelen
+   erachter staan op slot en elke klik daar geeft een toast. */
 if (window.PP_SETUP === false) {
     $$('[data-nav]').forEach((b) => { if (b.dataset.nav !== 'overzicht') b.classList.add('opacity-40'); });
     $$('.qa-btn').forEach((b) => b.classList.add('opacity-40'));
@@ -51,9 +51,9 @@ if (window.PP_SETUP === false) {
     document.addEventListener('click', (e) => {
         const doel = e.target.closest('a, button');
         if (!doel) return;
-        /* Wat wel mag: de setup-banner, onboarding-links en checklist-stappen,
-           de uitlegvideo, de abonnement-overlay, abonneren en uitloggen */
-        if (doel.closest('#setupBanner') || doel.closest('#introModal') || doel.closest('#abonnementOverlay')) return;
+        /* Wat wel mag: alles in het venster zelf, onboarding-links, de uitlegvideo,
+           de abonnement-overlay, abonneren en uitloggen */
+        if (doel.closest('#setupOverlay') || doel.closest('#introModal') || doel.closest('#abonnementOverlay')) return;
         /* De snelknoppen onder "Snel regelen" zijn allemaal op slot, ook de
            twee die naar de wizard linken: afmaken gaat via de banner */
         if (!doel.classList.contains('qa-btn')) {
@@ -64,7 +64,7 @@ if (window.PP_SETUP === false) {
         }
         e.preventDefault();
         e.stopPropagation();
-        dashToast('Maak eerst je zaak af via "Verder met instellen".');
+        dashToast('Maak eerst je zaak af in het venster.');
     }, true);
 }
 

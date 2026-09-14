@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stijlopties homepagina | MijnPizzeria</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Inter+Tight:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/fontawesome/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+        @theme static {
+            --color-crema: #FAF8F4;
+            --color-crema-dark: #E9E2D8;
+            --color-tomato: #B04A3F;
+            --color-tomato-dark: #93382F;
+            --color-basil: #2C7A4B;
+            --color-gold: #B97F10;
+            --color-cacao: #241712;
+            --font-display: "Young Serif", serif;
+            --font-body: "Inter Tight", sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-cacao font-body text-cacao antialiased">
+
+    <header class="max-w-3xl mx-auto px-6 pt-16 pb-12 text-center text-white">
+        <p class="text-xs font-bold uppercase tracking-[0.2em] text-white/50">Kies de richting</p>
+        <h1 class="font-display text-4xl mt-4">Drie smaken voor de homepagina</h1>
+        <p class="mt-4 text-white/60 font-semibold">Zelfde verhaal, drie totaal verschillende uitvoeringen. Scroll erdoorheen en zeg welke het wordt: A, B of C. Daarna bouw ik de hele pagina in die stijl af.</p>
+    </header>
+
+    <!-- ═══════════════ OPTIE A: PRODUCT-FIRST, STRAK ═══════════════ -->
+    <section class="relative">
+        <div class="sticky top-0 z-30 bg-cacao text-white px-6 py-3 flex items-baseline gap-4">
+            <span class="font-display text-2xl text-gold">A</span>
+            <p class="font-bold">Product-first, strak</p>
+            <p class="hidden sm:block text-sm text-white/50 font-semibold">Zoals Owner.com: wit, groot type, het product als bewijs, nul versiering</p>
+        </div>
+
+        <div class="bg-white">
+            <div class="max-w-6xl mx-auto px-6">
+                <div class="flex items-center justify-between py-6 border-b border-cacao/10">
+                    <p class="font-display text-xl">MijnPizzeria</p>
+                    <nav class="hidden md:flex items-center gap-8 text-sm font-semibold text-cacao/60">
+                        <span>Functies</span><span>Templates</span><span>Prijzen</span><span>Blog</span>
+                    </nav>
+                    <div class="flex items-center gap-5">
+                        <span class="text-sm font-semibold text-cacao/60">Inloggen</span>
+                        <span class="rounded-lg bg-cacao text-white text-sm font-bold px-5 py-2.5">Gratis starten</span>
+                    </div>
+                </div>
+
+                <div class="pt-20 pb-16 max-w-3xl">
+                    <h2 class="font-display text-5xl sm:text-[4.2rem] leading-[1.03]">Jouw pizzeria online, <span class="text-tomato">zonder commissie.</span></h2>
+                    <p class="mt-7 text-xl font-semibold text-cacao/55 max-w-2xl">Eigen bestelpagina, iDEAL en een spaarprogramma dat klanten laat terugkomen. 24,95 euro per maand, verder niets.</p>
+                    <div class="mt-9 flex flex-wrap items-center gap-4">
+                        <span class="rounded-lg bg-tomato text-white text-lg font-bold px-8 py-4">Gratis starten</span>
+                        <span class="text-base font-bold text-cacao underline underline-offset-4 decoration-cacao/30">Bekijk een echte bestelpagina</span>
+                    </div>
+                    <div class="mt-12 flex flex-wrap gap-x-10 gap-y-3 text-sm font-semibold text-cacao/50">
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-check text-basil"></i> 30 dagen gratis</span>
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-check text-basil"></i> 0% commissie</span>
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-check text-basil"></i> Maandelijks opzegbaar</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="max-w-6xl mx-auto px-6 pb-24">
+                <div class="rounded-xl border border-cacao/10 shadow-[0_40px_80px_-30px_rgb(36_23_18/.25)] overflow-hidden">
+                    <img src="/assets/site/bestel-groot.png" alt="" class="w-full">
+                </div>
+            </div>
+
+            <div class="border-t border-cacao/10">
+                <div class="max-w-6xl mx-auto px-6 py-20 grid md:grid-cols-3 gap-x-12 gap-y-14">
+                    <div>
+                        <i class="fa-solid fa-palette text-tomato text-xl"></i>
+                        <p class="font-display text-2xl mt-4">Eigen bestelpagina</p>
+                        <p class="mt-2 text-[15px] font-semibold text-cacao/55 leading-relaxed">Vier templates, jouw kleur en logo. Klaar in tien minuten, zonder technische kennis.</p>
+                    </div>
+                    <div>
+                        <i class="fa-solid fa-credit-card text-tomato text-xl"></i>
+                        <p class="font-display text-2xl mt-4">Betalingen via Stripe</p>
+                        <p class="mt-2 text-[15px] font-semibold text-cacao/55 leading-relaxed">iDEAL, Apple Pay en Google Pay. Het geld gaat rechtstreeks naar jouw rekening.</p>
+                    </div>
+                    <div>
+                        <i class="fa-solid fa-star text-tomato text-xl"></i>
+                        <p class="font-display text-2xl mt-4">Spaarprogramma</p>
+                        <p class="mt-2 text-[15px] font-semibold text-cacao/55 leading-relaxed">Klanten sparen automatisch punten en wisselen ze in voor korting. Zo komen ze terug.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ OPTIE B: FOOD BRAND, VOL ═══════════════ -->
+    <section class="relative">
+        <div class="sticky top-0 z-30 bg-cacao text-white px-6 py-3 flex items-baseline gap-4">
+            <span class="font-display text-2xl text-gold">B</span>
+            <p class="font-bold">Food brand, vol en warm</p>
+            <p class="hidden sm:block text-sm text-white/50 font-semibold">Zoals Slice: eten voorop, volle kleur, een merk dat naar pizza smaakt in plaats van naar software</p>
+        </div>
+
+        <div style="background:var(--color-tomato)">
+            <div class="max-w-6xl mx-auto px-6">
+                <div class="flex items-center justify-between py-6">
+                    <p class="font-display text-xl text-white">MijnPizzeria</p>
+                    <nav class="hidden md:flex items-center gap-8 text-sm font-bold text-white/70">
+                        <span>Functies</span><span>Templates</span><span>Prijzen</span><span>Blog</span>
+                    </nav>
+                    <div class="flex items-center gap-5">
+                        <span class="text-sm font-bold text-white/70">Inloggen</span>
+                        <span class="rounded-full bg-white text-tomato text-sm font-extrabold px-6 py-2.5">Gratis starten</span>
+                    </div>
+                </div>
+
+                <div class="grid lg:grid-cols-2 gap-10 items-center pt-14 pb-0">
+                    <div class="pb-16">
+                        <h2 class="font-display text-5xl sm:text-[4.4rem] leading-[1.0] text-white">Meer marge op elke margherita.</h2>
+                        <p class="mt-6 text-xl font-bold text-white/80 max-w-lg">Je eigen bestelpagina zonder commissie per bestelling. Jij bakt, jij verdient. Wij regelen de techniek voor 24,95 per maand.</p>
+                        <div class="mt-9 flex flex-wrap items-center gap-4">
+                            <span class="rounded-full bg-white text-tomato text-lg font-extrabold px-9 py-4 shadow-xl">Gratis starten</span>
+                            <span class="rounded-full border-2 border-white/40 text-white text-lg font-bold px-8 py-[0.9rem]">Proef een demo</span>
+                        </div>
+                        <p class="mt-8 text-sm font-bold text-white/60">30 dagen gratis &middot; geen betaalgegevens &middot; maandelijks opzegbaar</p>
+                    </div>
+                    <div class="relative self-end">
+                        <img src="/assets/eten/margherita.jpg" alt="" class="w-full aspect-[4/3] object-cover rounded-t-[2.5rem]">
+                        <div class="absolute -left-4 bottom-6 bg-white rounded-2xl shadow-2xl px-6 py-4">
+                            <p class="text-xs font-extrabold uppercase tracking-wider text-cacao/50">Deze bestelling</p>
+                            <p class="font-display text-3xl mt-1">&euro; 34,00 <span class="text-basil text-lg">voor jou</span></p>
+                            <p class="text-sm font-bold text-cacao/55">&euro; 0,00 commissie</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white">
+                <div class="max-w-6xl mx-auto px-6 py-20">
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="rounded-[2rem] overflow-hidden relative min-h-72" style="background:var(--color-cacao)">
+                            <img src="/assets/eten/oven.jpg" alt="" class="absolute inset-0 w-full h-full object-cover opacity-60">
+                            <div class="relative p-7 flex flex-col justify-end h-full min-h-72">
+                                <p class="font-display text-2xl text-white">Binnen 10 minuten online</p>
+                                <p class="mt-1.5 text-sm font-bold text-white/75">Menukaart erin, kleur kiezen, klaar.</p>
+                            </div>
+                        </div>
+                        <div class="rounded-[2rem] p-7 flex flex-col justify-between min-h-72" style="background:var(--color-gold)">
+                            <p class="font-display text-6xl text-white">0%</p>
+                            <div>
+                                <p class="font-display text-2xl text-white">commissie, altijd</p>
+                                <p class="mt-1.5 text-sm font-bold text-white/80">Vast bedrag per maand. Elke euro omzet is van jou.</p>
+                            </div>
+                        </div>
+                        <div class="rounded-[2rem] overflow-hidden relative min-h-72" style="background:var(--color-basil)">
+                            <img src="/assets/eten/ingredienten.jpg" alt="" class="absolute inset-0 w-full h-full object-cover opacity-50">
+                            <div class="relative p-7 flex flex-col justify-end h-full min-h-72">
+                                <p class="font-display text-2xl text-white">Klanten komen terug</p>
+                                <p class="mt-1.5 text-sm font-bold text-white/80">Spaarpunten bij jou, niet bij een app.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ OPTIE C: DONKER PREMIUM ═══════════════ -->
+    <section class="relative">
+        <div class="sticky top-0 z-30 bg-cacao text-white px-6 py-3 flex items-baseline gap-4 border-b border-white/10">
+            <span class="font-display text-2xl text-gold">C</span>
+            <p class="font-bold">Donker en premium</p>
+            <p class="hidden sm:block text-sm text-white/50 font-semibold">Trattoria bij avond: cacao en goud, rustig en duur, het product licht op in het donker</p>
+        </div>
+
+        <div style="background:var(--color-cacao)">
+            <div class="max-w-6xl mx-auto px-6">
+                <div class="flex items-center justify-between py-6">
+                    <p class="font-display text-xl text-white">MijnPizzeria</p>
+                    <nav class="hidden md:flex items-center gap-8 text-sm font-semibold text-white/55">
+                        <span>Functies</span><span>Templates</span><span>Prijzen</span><span>Blog</span>
+                    </nav>
+                    <div class="flex items-center gap-5">
+                        <span class="text-sm font-semibold text-white/55">Inloggen</span>
+                        <span class="rounded-lg text-cacao text-sm font-bold px-5 py-2.5" style="background:var(--color-gold)">Gratis starten</span>
+                    </div>
+                </div>
+
+                <div class="pt-20 pb-14 text-center max-w-3xl mx-auto">
+                    <p class="text-xs font-bold uppercase tracking-[0.25em]" style="color:var(--color-gold)">Voor pizzeria's in Nederland</p>
+                    <h2 class="font-display text-5xl sm:text-[4.2rem] leading-[1.05] text-white mt-6">Jouw pizzeria online, <em class="not-italic" style="color:var(--color-gold)">zonder commissie.</em></h2>
+                    <p class="mt-7 text-lg font-semibold text-white/55 max-w-xl mx-auto">Eigen bestelpagina, iDEAL en een spaarprogramma dat klanten laat terugkomen. Voor een vast bedrag per maand.</p>
+                    <div class="mt-9 flex flex-wrap items-center justify-center gap-4">
+                        <span class="rounded-lg text-cacao text-lg font-bold px-8 py-4" style="background:var(--color-gold)">Gratis starten</span>
+                        <span class="text-base font-semibold text-white/70 underline underline-offset-4 decoration-white/30">Bekijk een echte bestelpagina</span>
+                    </div>
+                </div>
+
+                <div class="pb-24 relative">
+                    <div class="absolute inset-x-10 top-10 bottom-0 rounded-full blur-3xl opacity-25" style="background:var(--color-gold)"></div>
+                    <div class="relative rounded-2xl overflow-hidden ring-1 ring-white/15 shadow-2xl">
+                        <img src="/assets/site/bestel-groot.png" alt="" class="w-full">
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-white/10">
+                <div class="max-w-6xl mx-auto px-6 py-20 grid md:grid-cols-3 gap-x-12 gap-y-12">
+                    <div class="md:border-r md:border-white/10 md:pr-12">
+                        <p class="font-display text-4xl" style="color:var(--color-gold)">0%</p>
+                        <p class="font-display text-xl text-white mt-3">Commissie per bestelling</p>
+                        <p class="mt-2 text-sm font-semibold text-white/50 leading-relaxed">Een vast bedrag per maand, elke euro omzet is van de zaak.</p>
+                    </div>
+                    <div class="md:border-r md:border-white/10 md:pr-12">
+                        <p class="font-display text-4xl" style="color:var(--color-gold)">10 min</p>
+                        <p class="font-display text-xl text-white mt-3">Van menukaart tot live</p>
+                        <p class="mt-2 text-sm font-semibold text-white/50 leading-relaxed">Vier templates, jouw kleur en logo, zonder technische kennis.</p>
+                    </div>
+                    <div>
+                        <p class="font-display text-4xl" style="color:var(--color-gold)">100 pt</p>
+                        <p class="font-display text-xl text-white mt-3">Is vijf euro korting</p>
+                        <p class="mt-2 text-sm font-semibold text-white/50 leading-relaxed">Spaarpunten binden klanten aan jouw zaak, niet aan een app.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="max-w-3xl mx-auto px-6 py-16 text-center text-white/50 text-sm font-semibold">
+        Zeg gewoon A, B of C. Mixen mag ook, bijvoorbeeld "A met de foto's van B".
+    </footer>
+</body>
+</html>

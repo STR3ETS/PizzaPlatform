@@ -31,8 +31,12 @@ if ($centraalDomein) {
     });
 }
 
-// De site zelf is nog niet live: een coming soon pagina met de twee knoppen die tellen
-Route::view('/', 'site.binnenkort')->name('home');
+// De homepagina; site/binnenkort.blade.php staat klaar als coming soon voor de livegang
+Route::get('/', function () {
+    return view('site.home', [
+        'posts' => \App\Models\Post::published()->orderByDesc('published_at')->take(3)->get(),
+    ]);
+})->name('home');
 
 // De blog op de marketingsite, gevuld door de content-machine in het beheer
 Route::get('/blog', [\App\Http\Controllers\BlogController::class, 'index'])->name('blog.index');

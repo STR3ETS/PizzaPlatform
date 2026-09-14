@@ -35,6 +35,31 @@
 
     @include('site.deel.voet')
 
+    <script>
+        /* Kop: wit zodra je van de pizza af scrolt (homepagina), en schuift weg bij
+           naar beneden scrollen; omhoog scrollen brengt hem direct terug */
+        const siteKop = document.querySelector('#siteKop');
+        if (siteKop) {
+            const doorzichtig = siteKop.classList.contains('site-kop-doorzichtig');
+            let vorigeScroll = window.scrollY;
+            const bijScroll = () => {
+                const y = window.scrollY;
+                if (doorzichtig) siteKop.classList.toggle('vast', y > 16);
+                const menuOpen = ! (document.querySelector('#mobielMenu')?.classList.contains('hidden') ?? true);
+                siteKop.classList.toggle('weg', y > 140 && y > vorigeScroll && ! menuOpen);
+                vorigeScroll = y;
+            };
+            window.addEventListener('scroll', bijScroll, { passive: true });
+            bijScroll();
+        }
+
+        const menuKnop = document.querySelector('#menuKnop');
+        menuKnop?.addEventListener('click', () => {
+            const menu = document.querySelector('#mobielMenu');
+            menu.classList.toggle('hidden');
+            menuKnop.setAttribute('aria-expanded', menu.classList.contains('hidden') ? 'false' : 'true');
+        });
+    </script>
     @yield('scripts')
 </body>
 </html>

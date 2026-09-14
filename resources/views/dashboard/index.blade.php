@@ -1,5 +1,13 @@
+@php
+    $abonnementNodig = ! auth()->user()->heeftToegang();
+    // Zaak compleet? Zo niet, dan staat het venster "zaak afmaken" boven het dashboard
+    $setupKlaar = (bool) (auth()->user()->onboarding['setup_compleet'] ?? false);
+    // Zolang een venster de pagina blokkeert, mag de pagina eronder niet scrollen.
+    // Dat moet op <html>: door overflow-x: clip (style.css) geeft <body> zijn overflow niet door aan het venster.
+    $paginaOpSlot = $abonnementNodig || ! $setupKlaar;
+@endphp
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="nl" class="{{ $paginaOpSlot ? 'overflow-hidden' : '' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,8 +38,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
     <link rel="stylesheet" href="{{ asset('assets/onboarding/style.css') }}?v={{ filemtime(public_path('assets/onboarding/style.css')) }}">
 </head>
-@php $abonnementNodig = ! auth()->user()->heeftToegang(); @endphp
-<body class="bg-crema font-body text-cacao min-h-screen antialiased overflow-x-hidden {{ $abonnementNodig ? 'overflow-hidden' : '' }}">
+<body class="bg-crema font-body text-cacao min-h-screen antialiased overflow-x-hidden {{ $paginaOpSlot ? 'overflow-hidden' : '' }}">
 
     <!-- Zwevende navigatie-rail (desktop) -->
     <aside class="dash-rail">
@@ -126,21 +133,10 @@
 
         <!-- PANEEL: Overzicht -->
         <section data-panel="overzicht" class="panel actief">
-            @php $setupKlaar = (bool) (auth()->user()->onboarding['setup_compleet'] ?? false); @endphp
 
             <!-- Bovenblok: meldingen en status links, profielkaart rechts -->
             <div class="grid grid-cols-1 xl:grid-cols-[1fr_19rem] gap-4 mb-4 items-stretch">
             <div class="space-y-4 min-w-0 flex flex-col">
-            @unless($setupKlaar)
-            <!-- Eerst je zaak afmaken: de rest van het dashboard blijft dicht tot dit klaar is -->
-            <div id="setupBanner" class="dash-card rise flex flex-col md:flex-row md:items-center gap-4" style="--d:.02s; background:color-mix(in srgb, var(--color-gold) 16%, #fff); border-color:color-mix(in srgb, var(--color-gold) 55%, transparent)">
-                <div class="flex-1">
-                    <p class="font-display text-xl leading-tight">Nog even je zaak afmaken</p>
-                    <p class="text-sm font-semibold text-cacao/55 mt-1">Je account staat. Vul nu stap voor stap je openingstijden, menukaart, spaarpunten, bestel-adres en huisstijl in. Daarna kun je echt aan de slag.</p>
-                </div>
-                <a href="{{ route('onboarding') }}?stap=hours" class="btn-primary shrink-0 !px-6 !py-3">Verder met instellen</a>
-            </div>
-            @endunless
 
             <!-- Online-status -->
             <div class="dash-card rise flex flex-col md:flex-row md:items-center gap-4" style="--d:.03s">
@@ -987,8 +983,8 @@
     @endphp
     <script>window.PP_STATS = @json($ppStats);</script>
     <script>window.PP_MENU = @json(auth()->user()->menuItems()->orderBy('volgorde')->orderBy('id')->get());</script>
-    {{-- De uitlegvideo wacht tot het abonnement gestart is, anders staan er twee vensters tegelijk open --}}
-    <script>window.PP_INTRO = @json(! auth()->user()->intro_seen && ! $abonnementNodig);</script>
+    {{-- De uitlegvideo wacht tot het abonnement gestart is en de zaak af is, anders staan er twee vensters tegelijk open --}}
+    <script>window.PP_INTRO = @json(! auth()->user()->intro_seen && ! $abonnementNodig && $setupKlaar);</script>
     <script>window.PP_STATUS = @json(['online' => (bool) auth()->user()->is_online, 'mode' => auth()->user()->order_mode ?? 'bezorgen_afhalen']);</script>
     <script>window.PP_SETUP = @json($setupKlaar);</script>
     <script>window.PP_ABO = @json((bool) auth()->user()->abonnement_actief);</script>
@@ -1015,8 +1011,15 @@
     @if($abonnementNodig)
         @include('dashboard.abonnement-overlay')
     @endif
+    @unless($setupKlaar)
+        @include('dashboard.setup-modal')
+    @endunless
 
     <script src="{{ asset('assets/stijl-tiles.js') }}?v={{ filemtime(public_path('assets/stijl-tiles.js')) }}"></script>
     <script src="{{ asset('assets/dashboard.js') }}?v={{ filemtime(public_path('assets/dashboard.js')) }}"></script>
+    @unless($setupKlaar)
+        {{-- Dezelfde wizard als /onboarding, in modal-modus (zie setup-modal.blade.php) --}}
+        <script src="{{ asset('assets/onboarding/app.js') }}?v={{ filemtime(public_path('assets/onboarding/app.js')) }}"></script>
+    @endunless
 </body>
 </html>

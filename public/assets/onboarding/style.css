@@ -1416,3 +1416,96 @@ html { overflow-x: clip; }
 .template-knop .t-sub { color: rgba(255,255,255,.5); }
 /* Kop van elke subpagina: links uitgelijnd, rustig */
 .pagina-kop { max-width: 42rem; }
+@media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+}
+/* Lichte templatekiezer op de homepagina: zelfde kaarttaal als de bento */
+.template-chip-licht { width: 100%; text-align: left; border: 1px solid var(--color-crema-dark); border-radius: 1.1rem; background: #fff; color: var(--color-cacao); cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease; }
+.template-chip-licht:hover { border-color: rgba(176, 74, 63, .45); }
+.template-chip-licht.aan { border-color: var(--color-tomato); box-shadow: 0 6px 18px rgb(36 23 18 / .08); }
+.template-chip-licht .t-icoon { background: var(--color-crema); color: var(--color-cacao); transition: background .15s ease, color .15s ease; }
+.template-chip-licht.aan .t-icoon { background: var(--color-tomato); color: #fff; }
+.template-chip-licht .t-sub { color: rgba(36, 23, 18, .5); }
+.template-chip-licht .t-check { opacity: 0; transition: opacity .15s ease; }
+.template-chip-licht.aan .t-check { opacity: 1; }
+/* Editorial bouwstenen voor de homepagina */
+.tekst-omtrek { color: transparent; -webkit-text-stroke: 2px rgb(185 127 16 / .55); }
+.loopband { display: flex; overflow: hidden; user-select: none; }
+.loopband-rij { display: flex; align-items: center; gap: 3rem; padding-right: 3rem; flex-shrink: 0; min-width: 100%; justify-content: space-around; animation: loopband 30s linear infinite; }
+@keyframes loopband { to { transform: translateX(-100%); } }
+@media (prefers-reduced-motion: reduce) { .loopband-rij { animation: none; } }
+.korrel { position: relative; isolation: isolate; }
+.korrel::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .5; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E"); }
+.hoofdstuk { display: flex; align-items: center; gap: .9rem; font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .22em; }
+.hoofdstuk .h-nr { font-family: var(--font-display); font-size: 1.15rem; letter-spacing: 0; color: var(--color-gold); }
+.hoofdstuk .h-lijn { height: 1px; width: 2.6rem; background: currentColor; opacity: .3; }
+.template-tab { border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.06); color: rgba(255,255,255,.85); border-radius: 9999px; cursor: pointer; transition: background .15s ease, color .15s ease, border-color .15s ease; }
+.template-tab:hover { background: rgba(255,255,255,.14); }
+.template-tab.aan { background: var(--color-gold); border-color: var(--color-gold); color: var(--color-cacao); }
+/* De taal van de zaak: bon, menukaart, plakband en krabbels */
+.bon { position: relative; font-family: ui-monospace, 'Cascadia Mono', 'Courier New', monospace; background: #fff; color: var(--color-cacao); box-shadow: 0 18px 40px rgb(36 23 18 / .18); }
+.bon::after { content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 14px; background: linear-gradient(-45deg, #fff 7px, transparent 0), linear-gradient(45deg, #fff 7px, transparent 0); background-repeat: repeat-x; background-size: 14px 14px; }
+.bon-lijn { display: flex; justify-content: space-between; gap: 1rem; white-space: nowrap; }
+.bon-streep { border-top: 2px dashed rgb(36 23 18 / .25); }
+.mono-label { font-family: ui-monospace, 'Cascadia Mono', 'Courier New', monospace; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .2em; }
+.stippel { flex: 1; min-width: 2rem; border-bottom: 2px dotted rgb(36 23 18 / .3); transform: translateY(-.3em); margin: 0 .6rem; }
+.plakband { position: absolute; width: 6.5rem; height: 1.9rem; background: rgb(250 248 244 / .55); box-shadow: 0 1px 4px rgb(36 23 18 / .14); z-index: 2; }
+.krabbel { position: absolute; left: -2%; right: -2%; bottom: -.3em; width: 104%; height: .5em; overflow: visible; }
+.krabbel path { stroke: var(--color-gold); stroke-width: 7; fill: none; stroke-linecap: round; }
+/* Strakke monochrome templatekiezer (stijl A, product-first) */
+.template-tab-strak { border: 1px solid rgb(36 23 18 / .18); background: #fff; color: var(--color-cacao); border-radius: 9999px; cursor: pointer; transition: background .15s ease, color .15s ease, border-color .15s ease; }
+.template-tab-strak:hover { border-color: rgb(36 23 18 / .45); }
+.template-tab-strak.aan { background: var(--color-cacao); border-color: var(--color-cacao); color: #fff; }
+/* Stijl A aanvullingen: secundaire knoppen en achtergrondeffecten */
+.btn-tweede { display: inline-block; border-radius: .625rem; border: 1px solid rgb(36 23 18 / .22); background: #fff; color: var(--color-cacao); font-weight: 700; padding: .8rem 1.7rem; transition: border-color .15s ease, background .15s ease; }
+.btn-tweede:hover { border-color: rgb(36 23 18 / .5); background: var(--color-crema); }
+.btn-tweede-donker { display: inline-block; border-radius: .625rem; border: 1px solid rgb(255 255 255 / .35); background: transparent; color: #fff; font-weight: 700; padding: .8rem 1.7rem; transition: border-color .15s ease, background .15s ease; }
+.btn-tweede-donker:hover { border-color: rgb(255 255 255 / .7); background: rgb(255 255 255 / .1); }
+.stippen { background-image: radial-gradient(rgb(36 23 18 / .08) 1.5px, transparent 1.5px); background-size: 24px 24px; }
+.gloed { position: absolute; border-radius: 9999px; filter: blur(90px); pointer-events: none; }
+/* De pizza-hero: een reuzenpizza over de volle breedte, saus als tekstvlak */
+.pizza-schijf { position: absolute; left: 50%; transform: translateX(-50%); bottom: 0; aspect-ratio: 1; border-radius: 9999px; }
+.pizza-korst { position: absolute; inset: 0; border-radius: 9999px; background: #DCA658; }
+.pizza-saus { position: absolute; inset: 5.5%; border-radius: 9999px; background: var(--color-tomato); }
+.peperoni { position: absolute; transform: translate(-50%, -50%); background: #8F3129; border-radius: 9999px; }
+/* Doorzichtige kop op de homepagina: transparant bovenaan de pizza, wit zodra je scrolt */
+.site-kop-doorzichtig { border-bottom: 1px solid transparent; transition: background-color .25s ease, border-color .25s ease, box-shadow .25s ease; }
+.site-kop-doorzichtig:not(.vast) .kop-tekst { color: rgb(255 255 255 / .85); }
+.site-kop-doorzichtig:not(.vast) .kop-tekst:hover { color: #fff; }
+.site-kop-doorzichtig:not(.vast) .kop-knop { background: #fff; color: var(--color-tomato); }
+.site-kop-doorzichtig:not(.vast) .kop-menu { border-color: rgb(255 255 255 / .45); color: #fff; }
+.site-kop-doorzichtig.vast { background: rgb(255 255 255 / .92); backdrop-filter: blur(8px); border-bottom-color: rgb(36 23 18 / .1); }
+/* Carrousel op de korstrand: voorste groot, zijkanten kleiner, vierde verstopt erachter */
+.car-dia { position: absolute; inset: 0; display: flex; flex-direction: column; border-radius: .75rem; overflow: hidden; background: #fff; box-shadow: 0 40px 80px -30px rgb(36 23 18 / .35); transition: transform .75s cubic-bezier(.45, .05, .2, 1), opacity .75s ease; will-change: transform; }
+.car-dia[data-pos="voor"]   { transform: translateX(0) scale(1); z-index: 30; opacity: 1; }
+.car-dia[data-pos="rechts"] { transform: translateX(42%) scale(.68); z-index: 20; opacity: .85; }
+.car-dia[data-pos="achter"] { transform: translateY(-8%) scale(.52); z-index: 10; opacity: .5; }
+.car-dia[data-pos="links"]  { transform: translateX(-42%) scale(.68); z-index: 20; opacity: .85; }
+.car-dia:not([data-pos="voor"]) { cursor: pointer; }
+.car-dia:not([data-pos="voor"]) * { pointer-events: none; }
+@media (max-width: 40rem) {
+    .car-dia[data-pos="rechts"] { transform: translateX(16%) scale(.6); }
+    .car-dia[data-pos="links"]  { transform: translateX(-16%) scale(.6); }
+}
+.car-stip { width: .65rem; height: .65rem; border-radius: 9999px; background: rgb(36 23 18 / .18); cursor: pointer; transition: background .2s ease, transform .2s ease; }
+.car-stip.aan { background: var(--color-tomato); transform: scale(1.25); }
+/* De kop schuift weg bij naar beneden scrollen en komt terug zodra je omhoog scrolt */
+#siteKop { transition: transform .35s ease, background-color .25s ease, border-color .25s ease, box-shadow .25s ease; }
+#siteKop.weg { transform: translateY(-100%); }
+/* Donker verloop onder de slide-teksten van de templateshow */
+.dia-verloop { background: rgba(36, 23, 18, .92); backdrop-filter: blur(6px); }
+
+/* Stappenbalk in het venster "zaak afmaken": segment per stap, naam eronder */
+.stap-segment { display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
+.stap-segment .s-lijn { height: .45rem; border-radius: 9999px; background: var(--color-crema-dark); transition: background .25s ease; }
+.stap-segment .s-tekst { font-size: .72rem; font-weight: 700; color: rgb(36 23 18 / .38); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stap-segment.klaar .s-lijn, .stap-segment.actief .s-lijn { background: var(--color-tomato); }
+.stap-segment.klaar .s-tekst { color: rgb(36 23 18 / .6); }
+.stap-segment.klaar .s-tekst i { color: var(--color-basil); margin-right: .1rem; }
+.stap-segment.actief .s-tekst { color: var(--color-cacao); }
+@media (max-width: 40rem) { .stap-segment .s-tekst { display: none; } }
+
+/* In het venster "zaak afmaken" zijn de staptitels een maat kleiner dan op de losse onboardingpagina */
+#setupOverlay .step-kicker { margin-bottom: .5rem; }
+#setupOverlay .step-title { font-size: clamp(1.5rem, 2.6vw, 2rem); margin-bottom: .5rem; }
+#setupOverlay .step-sub { font-size: .95rem; margin-bottom: 1.5rem; }
