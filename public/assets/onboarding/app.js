@@ -1094,7 +1094,7 @@ function renderSummary() {
     const address = [state.street, [state.zip, state.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
     const orderUrl = state.domainMode === 'own' && state.ownDomain
         ? `bestellen.${cleanDomain(state.ownDomain)}`
-        : `${slugify(state.name) || 'jouwzaak'}.mijnpizzeria.nl`;
+        : `${slugify(state.name) || 'jouwzaak'}.${window.PP_DOMEIN}`;
     const colorName = KLEUREN.find((k) => k.hex === state.color)?.naam || 'Eigen kleur';
     const theme = currentTheme();
     const usedCats = state.categories.filter((c) => state.menu.some((m) => m.cat === c.id));

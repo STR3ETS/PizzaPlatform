@@ -2,7 +2,7 @@
      Weghalen via devtools heeft geen zin: de actie-routes weigeren ook server-side (middleware 'abonnement')
      en dashboard.js herlaadt de pagina zodra de overlay verdwijnt. --}}
 @php
-    $abDomein = auth()->user()->slug . '.' . config('app.centraal_domein', 'mijnpizzeria.nl');
+    $abDomein = auth()->user()->slug . '.' . config('app.centraal_domein');
     $abNaam = auth()->user()->onboarding['name'] ?? 'je zaak';
     $abProefVoorbij = auth()->user()->proef_tot !== null && auth()->user()->proef_tot->isPast();
 @endphp

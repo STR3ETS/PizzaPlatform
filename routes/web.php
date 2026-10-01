@@ -7,7 +7,7 @@ use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OnboardingController;
 use Illuminate\Support\Facades\Route;
 
-// Subdomein per pizzeria: zaaknaam.mijnpizzeria.nl (lokaal: zaaknaam.localhost).
+// Subdomein per zaak: zaaknaam.{CENTRAAL_DOMEIN}, in productie zaaknaam.shopandeat.eu (lokaal: zaaknaam.localhost).
 // Staat boven de gewone routes zodat '/' op een subdomein de bestelpagina is, niet de marketingsite.
 // De templates krijgen basis '' mee, dus alle links en formulieren wijzen naar /afrekenen, /bestelling enzovoort op het subdomein zelf.
 $centraalDomein = config('app.centraal_domein');

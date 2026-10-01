@@ -61,7 +61,7 @@ return [
     |
     | Elke pizzeria krijgt zaaknaam.{dit domein}. Lokaal is 'localhost' handig:
     | Chrome stuurt *.localhost vanzelf naar 127.0.0.1, zonder hosts-bestand.
-    | In productie wordt dit mijnpizzeria.nl.
+    | In productie: shopandeat.eu (CENTRAAL_DOMEIN in .env).
     |
     */
 

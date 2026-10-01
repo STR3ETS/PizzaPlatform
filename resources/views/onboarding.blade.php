@@ -311,6 +311,7 @@
 
     <script>window.PP_PROEF = @json(auth()->check() && ! auth()->user()->abonnement_actief);</script>
     <script>window.PP_AUTH = @json(auth()->check());</script>
+    <script>window.PP_DOMEIN = @json(config('app.centraal_domein'));</script>
     <script>window.PP_KLEUREN = @json(\App\Http\Controllers\BestelController::KLEUREN);</script>
     <script>window.PP_SAVED = @json(auth()->check() ? auth()->user()->onboarding : null);</script>
     @php

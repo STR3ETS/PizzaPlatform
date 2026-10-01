@@ -31,15 +31,15 @@ return [
     /* ---------- Factsheet: de enige waarheid over het merk ---------- */
     'factsheet' => [
         'merk' => 'MijnPizzeria',
-        'site' => 'https://mijnpizzeria.nl',
-        'omschrijving' => 'Platform waarmee pizzeria\'s in tien minuten een eigen online bestelpagina hebben op zaaknaam.mijnpizzeria.nl. Zonder commissie per bestelling: klanten betalen rechtstreeks aan de zaak.',
+        'site' => env('APP_URL', 'https://shopandeat.eu'),
+        'omschrijving' => 'Platform waarmee pizzeria\'s in tien minuten een eigen online bestelpagina hebben op zaaknaam.' . env('CENTRAAL_DOMEIN', 'shopandeat.eu') . '. Zonder commissie per bestelling: klanten betalen rechtstreeks aan de zaak.',
         'prijzen' => [
             'Abonnement: 24,95 euro per maand, maandelijks opzegbaar',
             'Eerste 30 dagen gratis uitproberen, zonder betaalgegevens vooraf',
             'Geen commissie per bestelling: de omzet gaat volledig naar de pizzeria',
         ],
         'features' => [
-            'Eigen bestelpagina op zaaknaam.mijnpizzeria.nl, eigen domein mogelijk met een actief abonnement',
+            'Eigen bestelpagina op zaaknaam.' . env('CENTRAAL_DOMEIN', 'shopandeat.eu') . ', eigen domein mogelijk met een actief abonnement',
             'Vier ontwerpstijlen (templates) met eigen kleur en logo',
             'Menukaart zelf samenstellen en aanpassen, zonder technische kennis',
             'Bestellingen beheren op een overzichtelijk dashboard, met live status voor de klant',
@@ -104,7 +104,7 @@ return [
         'naam' => 'Team MijnPizzeria',
         'functie' => 'Makers van MijnPizzeria',
         'bio' => 'Het team achter MijnPizzeria bouwt bestelpagina\'s zonder commissie voor pizzeria\'s in Nederland en schrijft over online bestellen, marketing en het runnen van een zaak.',
-        'url' => 'https://mijnpizzeria.nl',
+        'url' => env('APP_URL', 'https://shopandeat.eu'),
         'foto' => null,
         'profielen' => [],
     ],

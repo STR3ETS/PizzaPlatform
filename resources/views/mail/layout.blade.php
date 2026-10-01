@@ -46,8 +46,8 @@
                     </tr>
                     <tr>
                         <td align="center" style="padding:18px 10px 0; font-size:11px; font-weight:600; color:#241712; opacity:.45;">
-                            MijnPizzeria, jouw eigen bestelpagina zonder commissie<br>
-                            mijnpizzeria.nl
+                            Shop &amp; Eat, jouw eigen bestelpagina zonder commissie<br>
+                            {{ config('app.centraal_domein') }}
                         </td>
                     </tr>
                 </table>

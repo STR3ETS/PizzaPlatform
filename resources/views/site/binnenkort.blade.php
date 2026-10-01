@@ -54,7 +54,7 @@
         <footer class="px-5 py-6">
             <div class="max-w-xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-semibold text-cacao/40">
                 <p>&copy; {{ date('Y') }} MijnPizzeria. Alle rechten voorbehouden.</p>
-                <p>mijnpizzeria.nl en mijnpizzeria.com</p>
+                <p>{{ config('app.centraal_domein') }}</p>
             </div>
         </footer>
     </div>

@@ -42,7 +42,7 @@
     };
     $domein = ($ob['domainMode'] ?? 'sub') === 'own' && ! empty($ob['ownDomain'])
         ? 'bestellen.' . strtolower(preg_replace('#^(https?://)?(www\.)?#', '', $ob['ownDomain']))
-        : $pizzeria->slug . '.mijnpizzeria.nl';
+        : $pizzeria->slug . '.' . config('app.centraal_domein');
 @endphp
 
     @include('admin.deel.nav', ['actiefPaneel' => 'pizzerias'])

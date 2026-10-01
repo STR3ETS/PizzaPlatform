@@ -787,9 +787,9 @@ renderStatus();
     const linkEl = $('#shareLink');
     if (!linkEl) return;
 
-    const slug = window.PP_SLUG || String(DATA.name || 'jouwpizzeria')
+    const slug = window.PP_SLUG || String(DATA.name || 'jouwzaak')
         .normalize('NFD').replace(/[̀-ͯ]/g, '')
-        .toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 30) || 'jouwpizzeria';
+        .toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 30) || 'jouwzaak';
     const link = window.PP_BESTEL_URL || `${location.origin}/bestellen/${slug}`;
     linkEl.innerHTML = `<a href="${link}" target="_blank" rel="noopener" class="hover:underline">${link}</a>`;
 
@@ -1764,15 +1764,15 @@ const INST_SECTIES = {
         kicker: 'Jouw domein', titel: 'Waar bestellen je klanten?', sub: 'Een gratis subdomein, of je eigen domeinnaam.',
         mascot: 'showing-pizza-order', bubble: 'Een eigen adres voor je zaak.', kant: 'right',
         velden: () => {
-            const slug = String(DATA.name || 'jouwpizzeria')
+            const slug = window.PP_SLUG || String(DATA.name || 'jouwzaak')
                 .normalize('NFD').replace(/[̀-ͯ]/g, '')
-                .toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 30) || 'jouwpizzeria';
+                .toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 30) || 'jouwzaak';
             const eigen = DATA.domainMode === 'own';
             /* Eigen domein is voor abonnees: in de proefperiode staat de keuze op slot */
             const proef = window.PP_ABO === false;
             return `
                 <div class="flex flex-col gap-2">
-                    <button type="button" class="keuze-chip justify-center !py-2.5 ${eigen ? '' : 'aan'}" data-i-keuze="sub">Gratis subdomein: ${slug}.mijnpizzeria.nl</button>
+                    <button type="button" class="keuze-chip justify-center !py-2.5 ${eigen ? '' : 'aan'}" data-i-keuze="sub">Gratis subdomein: ${slug}.${window.PP_DOMEIN}</button>
                     <button type="button" class="keuze-chip justify-center !py-2.5 ${eigen ? 'aan' : ''} ${proef ? 'opacity-40 cursor-not-allowed' : ''}" ${proef ? 'disabled title="Kan zodra je abonnement actief is"' : ''} data-i-keuze="own">Mijn eigen domein${proef ? ' <i class="fa-solid fa-lock" aria-hidden="true"></i>' : ''}</button>
                 </div>
                 ${proef ? '<p class="m-hint mt-1">Een eigen domein kan zodra je abonnement actief is.</p>' : ''}

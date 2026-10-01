@@ -87,6 +87,7 @@
 
 <script>window.PP_MODAL = true;</script>
 <script>window.PP_AUTH = true;</script>
+<script>window.PP_DOMEIN = @json(config('app.centraal_domein'));</script>
 <script>window.PP_PROEF = @json(! auth()->user()->abonnement_actief);</script>
 <script>window.PP_KLEUREN = @json(\App\Http\Controllers\BestelController::KLEUREN);</script>
 <script>window.PP_SAVED = @json(auth()->user()->onboarding);</script>

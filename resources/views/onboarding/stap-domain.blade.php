@@ -6,7 +6,7 @@
     <div class="flex flex-col gap-2 text-left">
         <button type="button" data-domain="sub" class="keuze cursor-pointer">
             <span class="rol-icoon"><i class="fa-solid fa-bolt" aria-hidden="true"></i></span>
-            <span class="min-w-0 flex-1"><b class="break-all"><span data-slug>jouwzaak</span>.mijnpizzeria.nl</b><span class="block">Direct live, je hebt niks nodig</span></span>
+            <span class="min-w-0 flex-1"><b class="break-all"><span data-slug>jouwzaak</span>.{{ config('app.centraal_domein') }}</b><span class="block">Direct live, je hebt niks nodig</span></span>
         </button>
         <button type="button" data-domain="own" class="keuze cursor-pointer">
             <span class="rol-icoon"><i class="fa-solid fa-house" aria-hidden="true"></i></span>

@@ -1,7 +1,7 @@
 {{-- Blogbeheer: de content-machine schrijft, de AI-review-gate controleert, jij publiceert --}}
 <section data-panel="blog" class="panel">
     <p class="font-display text-2xl mb-1">Blog</p>
-    <p class="text-sm font-semibold text-cacao/50 mb-4">De machine schrijft artikelen voor mijnpizzeria.nl/blog, de AI-gate controleert op verzinsels en jij hebt het laatste woord.</p>
+    <p class="text-sm font-semibold text-cacao/50 mb-4">De machine schrijft artikelen voor {{ parse_url(config('app.url'), PHP_URL_HOST) }}/blog, de AI-gate controleert op verzinsels en jij hebt het laatste woord.</p>
 
     {{-- Meldingen van de blog-acties --}}
     @if(session('blogSucces'))
@@ -119,7 +119,7 @@
                                 <button type="submit" class="btn-primary btn-grey !text-sm !px-4 !py-2 cursor-pointer"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Gate opnieuw</button>
                             </form>
                             <form method="POST" action="{{ route('blog.publiceer', $concept) }}" class="flex items-center gap-2"
-                                  data-bevestig="Het artikel komt direct live op mijnpizzeria.nl/blog/{{ $concept->slug }} en in de sitemap."
+                                  data-bevestig="Het artikel komt direct live op {{ parse_url(config('app.url'), PHP_URL_HOST) }}/blog/{{ $concept->slug }} en in de sitemap."
                                   data-bevestig-titel="Artikel publiceren?" data-bevestig-icoon="fa-rocket"
                                   data-bevestig-knop="Ja, publiceer">
                                 @csrf
@@ -149,7 +149,7 @@
     {{-- Gepubliceerde artikelen --}}
     <div class="dash-card rise mb-4" style="--d:.21s">
         <p class="font-display text-xl"><i class="fa-solid fa-book-open" aria-hidden="true"></i> Live op de blog</p>
-        <p class="text-sm font-semibold text-cacao/50 mb-3">Deze artikelen staan op <a href="/blog" target="_blank" rel="noopener" class="text-tomato hover:underline underline-offset-2">mijnpizzeria.nl/blog</a> en in de sitemap.</p>
+        <p class="text-sm font-semibold text-cacao/50 mb-3">Deze artikelen staan op <a href="/blog" target="_blank" rel="noopener" class="text-tomato hover:underline underline-offset-2">{{ parse_url(config('app.url'), PHP_URL_HOST) }}/blog</a> en in de sitemap.</p>
         <div class="divide-y divide-crema-dark">
             @forelse($blog['gepubliceerd'] as $artikel)
                 <div class="py-3 flex flex-col md:flex-row md:items-center gap-3">

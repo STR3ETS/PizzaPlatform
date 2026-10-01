@@ -184,11 +184,11 @@
 
         <div class="schaalrij">
             <h1 style="flex:1;min-width:280px">Online bestellen, <b>zonder gedoe</b>.</h1>
-            <span class="meta">h1 · 300 · clamp 38 tot 72px · -.03em</span>
+            <span class="meta">h1 · 300 · clamp 38 tot 72px · -.03em · var(--maat-h1), ook voor grote displaytekst</span>
         </div>
         <div class="schaalrij">
             <h2 style="flex:1;min-width:280px">Een dashboard dat <b>meedenkt</b></h2>
-            <span class="meta">h2 · 300 · clamp 26 tot 42px · -.02em</span>
+            <span class="meta">h2 · 300 · clamp 26 tot 42px · -.02em · var(--maat-h2), elke sectiekop</span>
         </div>
         <div class="schaalrij">
             <h3 style="flex:1;min-width:280px">Klanten bestellen in een paar tikken</h3>
@@ -345,7 +345,7 @@
         <div class="rooster r2" style="margin-top:var(--gap)">
             <div>
                 <div class="scherm">
-                    <div class="url"><i aria-hidden="true"></i> pizzeriasole.mijnpizzeria.nl</div>
+                    <div class="url"><i aria-hidden="true"></i> pizzeriasole.{{ config('app.centraal_domein') }}</div>
                     <div class="photo" style="aspect-ratio:16/10;--ph:linear-gradient(160deg,#f8f8f8,#dedede)"></div>
                 </div>
                 <p class="bijschrift">Schermafbeelding in een browserbalkje: <code>.scherm</code></p>

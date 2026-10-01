@@ -18,7 +18,7 @@
             <b style="font-weight:600;">Telefoon:</b> {{ ($ob['phone'] ?? '') !== '' ? $ob['phone'] : 'Niet ingevuld' }}<br>
             <b style="font-weight:600;">Plaats:</b> {{ ($ob['city'] ?? '') !== '' ? $ob['city'] : 'Niet ingevuld' }}<br>
             <b style="font-weight:600;">KvK:</b> {{ ($ob['kvk'] ?? '') !== '' ? $ob['kvk'] : 'Nog niet ingevuld' }}<br>
-            <b style="font-weight:600;">Subdomein:</b> {{ $user->slug }}.mijnpizzeria.nl<br>
+            <b style="font-weight:600;">Subdomein:</b> {{ $user->slug }}.{{ config('app.centraal_domein') }}<br>
             <b style="font-weight:600;">Proefperiode tot:</b> {{ $user->proef_tot?->locale('nl')->isoFormat('D MMMM YYYY') ?? '-' }}
         </td></tr>
     </table>

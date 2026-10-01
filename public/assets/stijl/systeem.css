@@ -70,6 +70,13 @@
     /* Beweging: één curve voor alles */
     --soepel: cubic-bezier(.2, .7, .2, 1);
 
+    /* De drie kopmaten. Alles wat groot moet zijn gebruikt een van deze, nooit een eigen maat:
+       --maat-h1 voor de hero en grote displaytekst (cijfers, statements), --maat-h2 voor elke
+       sectiekop, --maat-h3 voor kopjes in kaarten en formulieren. */
+    --maat-h1: clamp(38px, min(5.6vw, 8.5vh), 72px);
+    --maat-h2: clamp(26px, min(3.2vw, 5.2vh), 42px);
+    --maat-h3: clamp(20px, min(2.1vw, 3.6vh), 27px);
+
     box-sizing: border-box;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -183,19 +190,19 @@
    Ook in de basislaag, zodat een utility als text-xl op een kop gewoon wint. */
 @layer base {
     h1, .h1 {
-        font-size: clamp(38px, min(5.6vw, 8.5vh), 72px);
+        font-size: var(--maat-h1);
         font-weight: 300;
         line-height: 1.02;
         letter-spacing: -.03em;
     }
     h2, .h2 {
-        font-size: clamp(26px, min(3.2vw, 5.2vh), 42px);
+        font-size: var(--maat-h2);
         font-weight: 300;
         line-height: 1.12;
         letter-spacing: -.02em;
     }
     h3, .h3 {
-        font-size: clamp(20px, min(2.1vw, 3.6vh), 27px);
+        font-size: var(--maat-h3);
         font-weight: 300;
         line-height: 1.35;
         letter-spacing: -.01em;

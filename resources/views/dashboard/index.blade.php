@@ -291,7 +291,7 @@
                     $profielOb = auth()->user()->onboarding ?? [];
                     $profielDomein = ($profielOb['domainMode'] ?? 'sub') === 'own' && ! empty($profielOb['ownDomain'])
                         ? 'bestellen.' . strtolower(preg_replace('#^(https?://)?(www\.)?#', '', $profielOb['ownDomain']))
-                        : auth()->user()->slug . '.mijnpizzeria.nl';
+                        : auth()->user()->slug . '.' . config('app.centraal_domein');
                 @endphp
 
             {{-- Twee vaste kolommen. Links wat elke dag verandert: bestellingen, drukte
@@ -780,7 +780,7 @@
         <!-- PANEEL: Instellingen -->
         @php
             $ob = auth()->user()->onboarding ?? [];
-            $obSlug = substr(preg_replace('/[^a-z0-9]+/', '', strtolower(\Illuminate\Support\Str::ascii($ob['name'] ?? ''))), 0, 30) ?: 'jouwzaak';
+            $obSlug = auth()->user()->slug ?: 'jouwzaak';
             $eigenDomein = ($ob['domainMode'] ?? 'sub') === 'own' && ! empty($ob['ownDomain']);
             $stripeKlaar = \App\Support\StripeConnect::kanOntvangen(auth()->user());
             $stripeGekoppeld = auth()->user()->stripe_account_id !== null;
@@ -879,7 +879,7 @@
                                 <p class="kop">Jouw domein</p>
                                 <button type="button" data-inst="domein" class="btn line klein shrink-0 cursor-pointer">Wijzigen</button>
                             </div>
-                            <p id="domeinWaarde" class="text-[14px] break-all">{{ $eigenDomein ? 'bestellen.' . strtolower(preg_replace('#^(https?://)?(www\.)?#', '', $ob['ownDomain'])) : $obSlug . '.mijnpizzeria.nl' }}</p>
+                            <p id="domeinWaarde" class="text-[14px] break-all">{{ $eigenDomein ? 'bestellen.' . strtolower(preg_replace('#^(https?://)?(www\.)?#', '', $ob['ownDomain'])) : $obSlug . '.' . config('app.centraal_domein') }}</p>
                         </div>
 
                         <div class="vlak app">
@@ -1080,6 +1080,7 @@
     @endphp
     <script>window.PP_ORDERS = @json($ppOrders);</script>
     <script>window.PP_SLUG = @json(auth()->user()->slug);</script>
+    <script>window.PP_DOMEIN = @json(config('app.centraal_domein'));</script>
     @php
         // De publieke bestel-URL: subdomein als dat gekozen is, anders het padadres
         $ppDomeinModus = (auth()->user()->onboarding ?? [])['domainMode'] ?? 'sub';
