@@ -52,7 +52,7 @@ class AbonnementController extends Controller
         }
 
         try {
-            $sessie = (new StripeClient(config('services.stripe.secret')))->checkout->sessions->create($params);
+            $sessie = \App\Support\StripeConnect::stil(fn () => (new StripeClient(config('services.stripe.secret')))->checkout->sessions->create($params));
         } catch (\Throwable $e) {
             report($e);
 
@@ -72,7 +72,7 @@ class AbonnementController extends Controller
         }
 
         try {
-            $sessie = (new StripeClient(config('services.stripe.secret')))->checkout->sessions->retrieve($sessieId);
+            $sessie = \App\Support\StripeConnect::stil(fn () => (new StripeClient(config('services.stripe.secret')))->checkout->sessions->retrieve($sessieId));
             $klopt = ($sessie->metadata->user_id ?? null) === (string) $user->id
                 && $sessie->status === 'complete'
                 && in_array($sessie->payment_status, ['paid', 'no_payment_required'], true);

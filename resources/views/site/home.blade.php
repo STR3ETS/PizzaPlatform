@@ -1,384 +1,493 @@
 @extends('site.layout')
 
+{{-- De homepagina: de hero uit shop-and-eat.html, de leestekst met de collage en het deel waar
+     het vel donker kleurt. De vaste kop en de voet van de andere pagina's blijven hier weg.
+     Alle teksten komen uit lang/{nl,en}/site.php; de taalkeuze staat in de hero. --}}
+@section('titel', __('site.titel'))
+@section('omschrijving', __('site.omschrijving'))
+@section('html-klasse', '')
+@section('kop')@endsection
+@section('voet')@endsection
+
 @section('inhoud')
-    {{-- HERO: een reuzenpizza over de volle breedte, de tekst staat in de saus --}}
-    <section class="relative overflow-hidden" style="background:var(--color-crema)">
-        {{-- Een echte pepperoni pizza als reuzenbeeld; de donkere waas zit in de afbeelding zelf
-             gebakken (alleen op de pizza-pixels), zodat de niet-perfect-ronde korstrand vrij blijft --}}
-        <div class="pizza-schijf w-[320vw] sm:w-[220vw] lg:w-[170vw]" aria-hidden="true">
-            <img id="pizzaDraai" src="{{ asset('assets/eten/pizza-heel.jpg') }}" alt="" class="absolute inset-0 w-full h-full object-cover">
-        </div>
+    <section class="vlak slide hero" id="top">
+        <video class="bgv" id="heroVideo" autoplay muted loop playsinline preload="metadata" poster="{{ asset('assets/site/hero-poster.jpg') }}" aria-hidden="true">
+            <source src="{{ asset('assets/site/hero.mp4') }}" type="video/mp4">
+        </video>
+        <div class="shade"></div>
 
-        <div class="relative max-w-3xl mx-auto px-5 text-center pt-32 sm:pt-40" style="padding-bottom:clamp(22rem, 30vw, 30rem)">
-            <h1 class="font-display text-5xl sm:text-6xl lg:text-[4.2rem] leading-[1.04] text-white" data-intro>Jouw pizzeria online, zonder commissie.</h1>
-            <p class="mt-7 text-xl font-semibold text-white/85 max-w-2xl mx-auto" data-intro>Eigen bestelpagina, iDEAL en een spaarprogramma dat klanten laat terugkomen. 24,95 euro per maand, verder niets.</p>
-            <div class="mt-9 flex flex-wrap items-center justify-center gap-4" data-intro>
-                <a href="/onboarding" class="inline-block rounded-lg bg-white text-tomato text-lg font-bold px-8 py-4 shadow-lg hover:bg-crema transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Gratis starten</a>
-                <a href="/bestellen/pizzeriasole" target="_blank" rel="noopener" class="btn-tweede-donker !text-lg !px-8 !py-[0.95rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Bekijk een echte bestelpagina</a>
-            </div>
-            <div class="mt-11 flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-sm font-semibold text-white/80" data-intro>
-                <span class="flex items-center gap-2"><i class="fa-solid fa-check" aria-hidden="true"></i> 30 dagen gratis, zonder betaalgegevens</span>
-                <span class="flex items-center gap-2"><i class="fa-solid fa-check" aria-hidden="true"></i> 0% commissie</span>
-                <span class="flex items-center gap-2"><i class="fa-solid fa-check" aria-hidden="true"></i> Maandelijks opzegbaar</span>
-            </div>
-        </div>
-    </section>
-
-    {{-- HET PRODUCT: carrousel op de korstrand; de voorste groot, de zijkanten kleiner, de vierde verstopt erachter (flow-root voorkomt dat de negatieve marge de hele sectie optrekt) --}}
-    <section class="relative flow-root" style="background:var(--color-crema)">
-        <div class="max-w-6xl mx-auto px-5">
-            <div class="-mt-40 sm:-mt-64 lg:-mt-[23rem] relative z-10 pb-10" data-intro>
-                <div id="carrousel" class="relative w-full max-w-[62rem] mx-auto aspect-[16/10]">
-                    @foreach([
-                        ['bestel-groot.png', 'pizzeriasole.mijnpizzeria.nl', 'De bestelpagina van Pizzeria Sole met menukaart en winkelmand', 'voor'],
-                        ['dashboard-groot.png', 'mijnpizzeria.nl/dashboard', 'Het dashboard met openstaande bestellingen en openingstijden', 'rechts'],
-                        ['afrekenen-mini.png', 'pizzeriasole.mijnpizzeria.nl/afrekenen', 'De afrekenpagina met spaarpunten', 'achter'],
-                        ['status-mini.png', 'pizzeriasole.mijnpizzeria.nl/bestelling', 'De live bezorgstatus die klanten volgen', 'links'],
-                    ] as [$beeld, $url, $alt, $positie])
-                        <div class="car-dia" data-pos="{{ $positie }}" role="button" tabindex="0" aria-label="Toon voorbeeld: {{ $alt }}">
-                            <div class="flex items-center gap-2 px-5 py-3 border-b border-cacao/10 bg-white shrink-0">
-                                <span class="w-3 h-3 rounded-full bg-cacao/15"></span>
-                                <span class="w-3 h-3 rounded-full bg-cacao/15"></span>
-                                <span class="w-3 h-3 rounded-full bg-cacao/15"></span>
-                                <span class="mx-auto w-full max-w-sm rounded-full border border-cacao/10 px-4 py-1 text-xs font-semibold text-cacao/45 text-center truncate">{{ $url }}</span>
-                                <span class="hidden sm:block w-16"></span>
-                            </div>
-                            <div class="flex-1 overflow-hidden">
-                                <img src="{{ asset('assets/site/' . $beeld) }}" alt="{{ $alt }}" class="w-full h-full object-cover object-top" @if($positie !== 'voor') loading="lazy" @endif>
-                            </div>
-                        </div>
+        <div class="top">
+            <a href="/" aria-label="Shop &amp; Eat">@include('deel.merk', ['licht' => true])</a>
+            <nav class="pillnav" aria-label="{{ __('site.nav.home') }}">
+                <a class="aan" href="/">{{ __('site.nav.home') }}</a>
+                <a href="#wat">{{ __('site.nav.functies') }}</a>
+                <a href="#hoe">{{ __('site.nav.oplevert') }}</a>
+                <a href="#prijzen">{{ __('site.nav.prijzen') }}</a>
+                <a href="/blog">{{ __('site.nav.blog') }}</a>
+                <a href="/onboarding">{{ __('site.nav.starten') }}</a>
+            </nav>
+            <div class="top-r">
+                <nav class="taal" aria-label="{{ __('site.nav.taal') }}">
+                    @foreach(\App\Http\Middleware\ZetTaal::TALEN as $taal)
+                        <a href="{{ route('taal', $taal) }}" hreflang="{{ $taal }}" class="{{ app()->getLocale() === $taal ? 'aan' : '' }}">{{ strtoupper($taal) }}</a>
                     @endforeach
+                </nav>
+                <a href="/login" class="btn glass inlog" aria-label="{{ __('site.nav.inloggen') }}"><span class="tekst">{{ __('site.nav.inloggen') }}</span><i class="ar fa-solid fa-chevron-right tekst" aria-hidden="true"></i><i class="fa-solid fa-user icoon" aria-hidden="true"></i></a>
+            </div>
+        </div>
+
+        <div class="hero-b">
+            <div class="hero-t">
+                <h1 class="in">{!! __('site.hero.kop') !!}</h1>
+                <p class="in d1">{{ __('site.hero.tekst') }}</p>
+            </div>
+            <form class="form op-donker in d2" action="/onboarding" method="get">
+                <div class="fh"><span>{{ __('site.hero.chip1') }}</span><span>{{ __('site.hero.chip2') }}</span><span>{{ __('site.hero.chip3') }}</span></div>
+                <h3>{{ __('site.hero.vraag') }}</h3>
+                <p>{{ __('site.hero.uitleg') }}</p>
+                <div class="fld">
+                    <label for="heroNaam">{{ __('site.hero.label') }}</label>
+                    <input id="heroNaam" name="naam" type="text" maxlength="50" autocomplete="organization" placeholder="{{ __('site.hero.voorbeeld') }}">
                 </div>
-                <div class="mt-7 flex items-center justify-center gap-2.5" role="group" aria-label="Kies een voorbeeldscherm">
-                    @foreach(['Bestelpagina', 'Dashboard', 'Afrekenen met punten', 'Live bezorgstatus'] as $i => $naam)
-                        <button type="button" class="car-stip {{ $i === 0 ? 'aan' : '' }}" data-dia="{{ $i }}" aria-label="{{ $naam }}"></button>
-                    @endforeach
-                </div>
-                <p id="carrouselNaam" class="mt-3 text-center text-sm font-semibold text-cacao/50" aria-live="polite">Bestelpagina</p>
+                <button type="submit" class="btn dark">{{ __('site.hero.knop') }} <i class="ar fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+                <div class="feiten"><span>{{ __('site.hero.feit1') }}</span><span>{{ __('site.hero.feit2') }}</span><span>{{ __('site.hero.feit3') }}</span></div>
+            </form>
+        </div>
+    </section>
+
+    {{-- Onder de hero: één grote zin die per letter oplicht terwijl je 'm leest. Het vlak is
+         hoger dan het scherm en de zin plakt in beeld, zodat het scrollen het lezen wordt. --}}
+    <section class="vlak lees-vlak" id="wat">
+        <div class="lees">
+            <div class="lees-l">
+                <span class="tag">{{ __('site.lees.tag') }}</span>
+                <p class="lees-tekst" id="leesTekst">{!! __('site.lees.zin') !!}</p>
+            </div>
+            {{-- Drie foto's, losjes over elkaar en elk een tikje gedraaid; ze schuiven in eigen tempo mee met het scrollen.
+                 Stockfoto's van Unsplash (Unsplash-licentie): bezorger door Lucian Alexe (afDu-GuxjjM),
+                 keuken door Louis Hansel (v3OlBE6-fhU), friet door Emmy Smith (LEjEst7lLfU). --}}
+            <div class="lees-fotos" aria-hidden="true">
+                <div class="photo f1" data-diepte="70"><img src="{{ asset('assets/site/keuken.jpg') }}" alt="" loading="lazy"></div>
+                <div class="photo f2" data-diepte="-50"><img src="{{ asset('assets/site/friet.jpg') }}" alt="" loading="lazy"></div>
+                <div class="photo f3" data-diepte="110"><img src="{{ asset('assets/site/bezorger.jpg') }}" alt="" loading="lazy"></div>
             </div>
         </div>
     </section>
 
-    {{-- FUNCTIES: crema band, zes redenen --}}
-    <section id="functies" class="scroll-mt-24 relative" style="background:var(--color-crema)">
-        <div class="gloed w-[30rem] h-[30rem] bg-gold/10 -top-60 -right-48" data-gloed aria-hidden="true"></div>
-        <div class="max-w-6xl mx-auto px-5 py-24 sm:py-28 relative">
-            <h2 class="font-display text-4xl sm:text-5xl text-cacao max-w-2xl" data-reveal>Alles wat je zaak nodig heeft</h2>
-            <div class="mt-14 sm:mt-16 grid sm:grid-cols-2 md:grid-cols-3 gap-x-12 gap-y-14" data-reveal-groep>
-                @foreach([
-                    ['fa-palette', 'Eigen bestelpagina', 'Vier templates, jouw kleur en logo. Klaar in tien minuten, zonder technische kennis.'],
-                    ['fa-credit-card', 'Betalingen via Stripe', 'iDEAL, creditcard, Apple Pay en Google Pay. Het geld gaat rechtstreeks naar jouw rekening.'],
-                    ['fa-star', 'Spaarprogramma', 'Klanten sparen automatisch punten en wisselen ze in voor korting. Zo komen ze terug.'],
-                    ['fa-moped', 'Live bezorgstatus', 'Klanten volgen hun bestelling van oven tot voordeur, met de route live op de kaart.'],
-                    ['fa-pizza-slice', 'Pizza Coach', 'Ziet slapende klanten en rustige momenten, en stelt acties voor die omzet opleveren.'],
-                    ['fa-box-open', 'Dozen met jouw opdruk', 'Pizzadozen met je logo en een spaar-QR die klanten terugbrengt naar jouw pagina.'],
-                ] as [$icoon, $titel, $tekst])
-                    <div>
-                        <i class="fa-solid {{ $icoon }} text-tomato text-xl" aria-hidden="true"></i>
-                        <p class="font-display text-2xl mt-4">{{ $titel }}</p>
-                        <p class="mt-2 text-[15px] font-semibold text-cacao/55 leading-relaxed">{{ $tekst }}</p>
-                    </div>
-                @endforeach
+    {{-- Daaronder kleurt het vel zelf van licht naar zwart terwijl je verder scrolt (het script zet
+         --t en --tt op <html>, geen zwart vlak). Net zo rustig als de leestekst: een kop, een zin,
+         vier cijfers die één voor één oplopen. --}}
+    <section class="donker-vlak" id="hoe">
+        <div class="donker">
+            {{-- Links twee foto's over elkaar, anders dan de collage erboven: donkere beelden die in het zwart opgaan.
+                 Stockfoto's van Unsplash (Unsplash-licentie): grill door Caramel (JKJmdRDfPfk),
+                 nachtbezorger door Rowan Freeman (clYlmCaQbzY). --}}
+            <div class="donker-fotos" aria-hidden="true">
+                <div class="photo g1" data-diepte="60"><img src="{{ asset('assets/site/grill.jpg') }}" alt="" loading="lazy"></div>
+                <div class="photo g2" data-diepte="-70"><img src="{{ asset('assets/site/nacht.jpg') }}" alt="" loading="lazy"></div>
             </div>
-            <div class="mt-14 flex flex-wrap items-center gap-4" data-reveal>
-                <a href="/onboarding" class="btn-primary !px-7 !py-3.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tomato">Gratis starten</a>
-                <a href="/bestellen/pizzeriasole" target="_blank" rel="noopener" class="btn-tweede !px-7 !py-[0.82rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tomato">Bekijk een demozaak live</a>
+            <div class="cijfers">
+                <div class="cijfer" data-vanaf="0"><span class="n"><span data-tel="100" data-dec="0">0</span>%</span><span class="c">{{ __('site.donker.c1') }}</span></div>
+                <div class="cijfer" data-vanaf=".15"><span class="n">&euro; <span data-tel="24.95" data-dec="2">0</span></span><span class="c">{{ __('site.donker.c2') }}</span></div>
+                <div class="cijfer" data-vanaf=".3"><span class="n"><span data-tel="10" data-dec="0">0</span> {{ __('site.donker.min') }}</span><span class="c">{{ __('site.donker.c3') }}</span></div>
+                <div class="cijfer" data-vanaf=".45"><span class="n"><span data-tel="30" data-dec="0">0</span> {{ __('site.donker.dagen') }}</span><span class="c">{{ __('site.donker.c4') }}</span></div>
             </div>
         </div>
     </section>
 
-    {{-- DE CIJFERS: feiten die optellen zodra je ze ziet --}}
-    <section class="bg-white border-b border-cacao/10">
-        <div class="max-w-6xl mx-auto px-5 py-14 grid grid-cols-2 md:grid-cols-4 gap-y-10 md:divide-x md:divide-cacao/10" data-reveal-groep>
-            <div class="md:px-10 md:pl-0">
-                <p class="font-display text-4xl sm:text-5xl text-cacao"><span data-tel="0" data-dec="0">0</span>%</p>
-                <p class="mt-2 text-sm font-semibold text-cacao/50">commissie per bestelling</p>
+    {{-- Voor elke keuken: twee linten met keukens die zijwaarts meeschuiven met het scrollen, de ene naar
+         links, de andere naar rechts, met kleine ronde foto's ertussen. Het vel is hier al donker. --}}
+    <section class="keukens-vlak" id="keukens">
+        <div class="keukens-kop">
+            <div>
+                <span class="tag">{{ __('site.keukens.tag') }}</span>
+                <h2>{!! __('site.keukens.kop') !!}</h2>
             </div>
-            <div class="md:px-10">
-                <p class="font-display text-4xl sm:text-5xl text-cacao">&euro; <span data-tel="24.95" data-dec="2">24,95</span></p>
-                <p class="mt-2 text-sm font-semibold text-cacao/50">per maand, alles erin</p>
+            <p class="lead">{{ __('site.keukens.tekst') }}</p>
+        </div>
+        @php
+            $keukens = __('site.keukens.lijst');
+            $rondjes = ['pepperoni.jpg', 'drank.jpg', 'dessert.jpg', 'slice.jpg', 'ingredienten.jpg'];
+        @endphp
+        {{-- Twee rijen, de tweede in omgekeerde volgorde en twee keer herhaald zodat er altijd genoeg lint is om te schuiven --}}
+        @foreach([$keukens, array_reverse($keukens)] as $rij => $woorden)
+            <div class="lint" aria-hidden="{{ $rij ? 'true' : 'false' }}">
+                <div class="lint-rij">
+                    @for($herhaling = 0; $herhaling < 2; $herhaling++)
+                        @foreach($woorden as $i => $keuken)
+                            <span class="woord">{{ $keuken }}</span>
+                            @if($i % 3 === $rij)
+                                <span class="photo rond"><img src="{{ asset('assets/eten/' . $rondjes[($i + $rij * 2) % count($rondjes)]) }}" alt="" loading="lazy"></span>
+                            @endif
+                        @endforeach
+                    @endfor
+                </div>
             </div>
-            <div class="md:px-10">
-                <p class="font-display text-4xl sm:text-5xl text-cacao"><span data-tel="10" data-dec="0">10</span> min</p>
-                <p class="mt-2 text-sm font-semibold text-cacao/50">van menukaart tot live</p>
+        @endforeach
+    </section>
+
+    {{-- Alles erin: links de tekst, rechts een losse wolk van USP-kaartjes en twee reviews, elk een tikje
+         gedraaid en in eigen tempo meeschuivend met het scrollen, zoals de foto's eerder. Nog op het
+         donkere vel. De reviews zijn voorbeelden (met een zichtbaar label) tot er echte quotes zijn. --}}
+    <section class="usps-vlak" id="alles">
+        @php
+            $usps = __('site.usps.lijst');
+            /* De kring: acht kaartjes op een ellips om de tekst heen, elke 45 graden één. Ze komen uit het
+               midden gevlogen terwijl je scrolt (het scherm staat dan vast) en landen op hun plek. Per kaartje
+               de plek (x, y in procenten van het podium), de draaiing en de vertraging van het zweven. */
+            $kring = [
+                [0, 50,  8,  '-2deg', '0s'],
+                [1, 76, 19,  '2deg',  '1.2s'],
+                [6, 87, 50,  '1deg',  '2.4s'],
+                [2, 76, 81,  '-1deg', '0.6s'],
+                [3, 50, 90,  '2deg',  '1.8s'],
+                [4, 24, 81,  '-2deg', '3s'],
+                [7, 13, 50,  '-1deg', '0.9s'],
+                [5, 24, 19,  '1deg',  '2.1s'],
+            ];
+        @endphp
+        <div class="kring-podium">
+        <div class="kring" id="kring">
+            <div class="kring-tekst">
+                <span class="tag">{{ __('site.usps.tag') }}</span>
+                <h2>{!! __('site.usps.kop') !!}</h2>
+                <p class="lead">{{ __('site.usps.tekst') }}</p>
             </div>
-            <div class="md:px-10">
-                <p class="font-display text-4xl sm:text-5xl text-cacao"><span data-tel="100" data-dec="0">100</span> pt</p>
-                <p class="mt-2 text-sm font-semibold text-cacao/50">is vijf euro korting</p>
-            </div>
+            @foreach($kring as [$i, $x, $y, $rot, $wacht])
+                <div class="kaartje usp" style="--x:{{ $x }}%;--y0:{{ $y }}%;--rot:{{ $rot }};--wacht:{{ $wacht }}">
+                    <i class="fa-solid {{ $usps[$i][0] }}" aria-hidden="true"></i>
+                    <div><b>{{ $usps[$i][1] }}</b><span>{{ $usps[$i][2] }}</span></div>
+                </div>
+            @endforeach
+        </div>
         </div>
     </section>
 
-    {{-- PRODUCT: de live status, wit --}}
-    <section class="bg-white overflow-x-clip">
-        <div class="max-w-6xl mx-auto px-5 py-24 sm:py-28">
-            <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-                <div data-reveal>
-                    <h2 class="font-display text-3xl sm:text-4xl text-cacao">Klanten volgen hun bestelling live</h2>
-                    <p class="mt-4 text-base font-semibold text-cacao/55 leading-relaxed max-w-lg">Van bevestigd tot bezorgd: elke stap staat live op de statuspagina, inclusief de route van de bezorger op de kaart. Dat scheelt jou de telefoontjes "waar blijft mijn pizza".</p>
-                    <ul class="mt-6 space-y-2.5 text-[15px] font-semibold text-cacao/60" data-reveal-groep>
-                        <li class="flex items-center gap-2.5"><i class="fa-solid fa-check text-basil" aria-hidden="true"></i> Statusstappen met een tik vanuit je dashboard</li>
-                        <li class="flex items-center gap-2.5"><i class="fa-solid fa-check text-basil" aria-hidden="true"></i> Werkt op telefoon, tablet en computer</li>
-                        <li class="flex items-center gap-2.5"><i class="fa-solid fa-check text-basil" aria-hidden="true"></i> Bezorgen en afhalen, met eigen bezorgkosten per afstand</li>
-                    </ul>
-                    <div class="mt-8 flex flex-wrap items-center gap-4">
-                        <a href="/onboarding" class="btn-primary !px-7 !py-3.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tomato">Gratis starten</a>
-                        <a href="/bestellen/pizzeriasole/bestelling?voorbeeld=1" target="_blank" rel="noopener" class="btn-tweede !px-7 !py-[0.82rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tomato">Bekijk de bezorgstatus</a>
-                    </div>
-                </div>
-                <div class="rounded-xl border border-cacao/10 shadow-[0_30px_60px_-25px_rgb(36_23_18/.3)] overflow-hidden" data-reveal data-zweef>
-                    <img src="{{ asset('assets/site/status-mini.png') }}" alt="De live bezorgstatus die klanten volgen" loading="lazy" class="w-full">
-                </div>
-            </div>
-        </div>
-    </section>
-
-    {{-- PRODUCT: sparen en afrekenen, crema band --}}
-    <section id="spaarprogramma" class="scroll-mt-24 relative overflow-hidden" style="background:var(--color-crema)">
-        <div class="gloed w-[30rem] h-[30rem] bg-tomato/10 -bottom-40 -left-40" data-gloed aria-hidden="true"></div>
-        <div class="max-w-6xl mx-auto px-5 py-24 sm:py-28 relative">
-            <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-                <div class="order-1 lg:order-2" data-reveal>
-                    <h2 class="font-display text-3xl sm:text-4xl text-cacao">Sparen en afrekenen in een beweging</h2>
-                    <p class="mt-4 text-base font-semibold text-cacao/55 leading-relaxed max-w-lg">Klanten rekenen af met iDEAL, Apple Pay of Google Pay en sparen automatisch 1 punt per euro. Elke 100 punten zijn 5 euro korting, te verzilveren bij het afrekenen. Jouw klantenbestand, niet dat van een platform.</p>
-                    <ul class="mt-6 space-y-2.5 text-[15px] font-semibold text-cacao/60" data-reveal-groep>
-                        <li class="flex items-center gap-2.5"><i class="fa-solid fa-check text-basil" aria-hidden="true"></i> Punten verzilveren met een tik</li>
-                        <li class="flex items-center gap-2.5"><i class="fa-solid fa-check text-basil" aria-hidden="true"></i> Accounts en bestelgeschiedenis horen bij jouw zaak</li>
-                        <li class="flex items-center gap-2.5"><i class="fa-solid fa-check text-basil" aria-hidden="true"></i> Spaar-QR op de doos brengt klanten terug</li>
-                    </ul>
-                    <div class="mt-8 flex flex-wrap items-center gap-4">
-                        <a href="/onboarding" class="btn-primary !px-7 !py-3.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tomato">Gratis starten</a>
-                        <a href="/bestellen/pizzeriasole/afrekenen?voorbeeld=1" target="_blank" rel="noopener" class="btn-tweede !px-7 !py-[0.82rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tomato">Bekijk het afrekenen met punten</a>
-                    </div>
-                </div>
-                <div class="order-2 lg:order-1 rounded-xl border border-cacao/10 shadow-[0_30px_60px_-25px_rgb(36_23_18/.3)] overflow-hidden" data-reveal data-zweef>
-                    <img src="{{ asset('assets/site/afrekenen-mini.png') }}" alt="De afrekenpagina met spaarpunten" loading="lazy" class="w-full">
-                </div>
-            </div>
-        </div>
-    </section>
-
-    {{-- TEMPLATES: horizontale rit langs de vier stijlen, ingekaderd in de donkere band --}}
-    <section id="templates" class="scroll-mt-24 relative korrel" style="background:var(--color-cacao)">
-        <div id="templatesScherm" class="flex flex-col justify-center py-20 lg:py-0 lg:h-screen">
-            <div class="max-w-6xl mx-auto px-5 w-full">
-                <div class="flex flex-wrap items-end justify-between gap-x-10 gap-y-4">
-                    <h2 class="font-display text-4xl sm:text-5xl text-white">Vier stijlen, een motor</h2>
-                    <p class="max-w-sm text-base font-semibold text-white/60 lg:pb-1.5">Zelfde functies, totaal ander gevoel. Scroll en zie dezelfde zaak in elke stijl.</p>
-                </div>
-            </div>
-            <div id="templatesRit" class="mt-10 sm:mt-12 overflow-x-auto snap-x snap-mandatory">
-                <div id="templatesRij" class="flex gap-6 sm:gap-10 w-max" style="padding-left:max(1.25rem, calc((100vw - 72rem) / 2)); padding-right:max(1.25rem, calc((100vw - 72rem) / 2))">
-                    @foreach([
-                        ['template1.jpg', '%23E63946', 'Presto', 'Licht en modern, als een strakke bestel-app'],
-                        ['template2.jpg', '%237D1D3F', 'Notte', 'Klassiek en verfijnd, als een editoriale menukaart'],
-                        ['template3.jpg', '%231F2937', 'Forza', 'Bold en vol energie, als een menubord aan de muur'],
-                        ['template4.jpg', '%23F5B301', 'Giro', 'Fris met grote foto\'s, als de grote bezorg-apps'],
-                    ] as $i => [$beeld, $kleur, $naam, $sub])
-                        <figure class="w-[84vw] max-w-[56rem] shrink-0 snap-center m-0">
-                            <div class="rounded-xl overflow-hidden bg-white shadow-2xl">
-                                <div class="flex items-center gap-2 px-5 py-3 border-b border-cacao/10 bg-white">
-                                    <span class="w-3 h-3 rounded-full bg-cacao/15"></span>
-                                    <span class="w-3 h-3 rounded-full bg-cacao/15"></span>
-                                    <span class="w-3 h-3 rounded-full bg-cacao/15"></span>
-                                    <span class="mx-auto w-full max-w-sm rounded-full border border-cacao/10 px-4 py-1 text-xs font-semibold text-cacao/45 text-center truncate">pizzeriasole.mijnpizzeria.nl</span>
-                                    <span class="hidden sm:block w-16"></span>
-                                </div>
-                                <div class="aspect-video overflow-hidden">
-                                    <img src="{{ asset('assets/site/' . $beeld) }}" alt="Template {{ $naam }}: {{ $sub }}" class="w-full h-full object-cover object-top" @if($i > 0) loading="lazy" @endif>
-                                </div>
-                            </div>
-                            <figcaption class="mt-5 sm:mt-6 flex flex-wrap items-center justify-between gap-x-8 gap-y-4 text-white">
-                                <div>
-                                    <p class="font-display text-2xl sm:text-3xl">{{ $naam }} <span class="ml-2 align-middle text-sm font-body font-bold text-white/40">{{ $i + 1 }}/4</span></p>
-                                    <p class="mt-1 text-sm font-semibold text-white/65">{{ $sub }}</p>
-                                </div>
-                                <div class="flex flex-wrap items-center gap-3.5">
-                                    <a href="/onboarding" class="btn-primary !px-6 !py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold">Gratis starten</a>
-                                    <a href="/bestellen/pizzeriasole?thema={{ str_replace('.jpg', '', $beeld) }}&kleur={{ $kleur }}" target="_blank" rel="noopener" class="btn-tweede-donker !px-6 !py-[0.7rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold">Bekijk {{ $naam }} live</a>
-                                </div>
-                            </figcaption>
-                        </figure>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-    </section>
-
-    {{-- PRIJS EN VRAGEN --}}
-    <section id="prijzen" class="scroll-mt-24 bg-white relative overflow-hidden">
-        <div class="gloed w-[26rem] h-[26rem] bg-basil/10 top-20 -left-32" data-gloed aria-hidden="true"></div>
-        <div class="max-w-6xl mx-auto px-5 py-24 sm:py-28 grid lg:grid-cols-2 gap-16 lg:gap-24 items-start relative">
-            <div data-reveal>
-                <h2 class="font-display text-4xl sm:text-5xl text-cacao">Een prijs, geen verrassingen</h2>
-                <p class="mt-8"><span class="font-display text-6xl sm:text-7xl text-cacao">&euro; 24,95</span> <span class="text-lg font-semibold text-cacao/45">per maand</span></p>
-                <p class="mt-3 text-base font-semibold text-basil">De eerste 30 dagen gratis, zonder betaalgegevens.</p>
-                <ul class="mt-8 grid sm:grid-cols-2 gap-x-10 gap-y-3 text-[15px] font-semibold text-cacao/65" data-reveal-groep>
-                    @foreach(['Eigen bestelpagina met jouw stijl', 'Onbeperkt bestellingen, 0% commissie', 'Spaarprogramma en klantaccounts', 'Pizza Coach met omzet-inzichten', 'Live bezorgstatus voor je klanten', 'Eigen domein koppelen', 'Maandelijks opzegbaar', 'Hulp van een echt mens'] as $punt)
-                        <li class="flex items-center gap-2.5"><i class="fa-solid fa-check text-basil shrink-0" aria-hidden="true"></i> {{ $punt }}</li>
+    {{-- Prijs en reviews: weer een witte kaart die plakt, zoals de leestekst. Terwijl de kaart in beeld
+         schuift kleurt het vel erachter van zwart terug naar licht (het script zet --t en --tt via deze
+         kaart). Links de prijs met wat erin zit (de vinkjes gaan één voor één aan), rechts drie reviews
+         die één voor één binnenkomen. De reviews zijn voorbeelden met een zichtbaar label tot er echte
+         quotes zijn. --}}
+    <section class="vlak prijs-vlak" id="prijzen">
+        <div class="prijs">
+            <div class="prijs-l">
+                <span class="tag">{{ __('site.prijs.tag') }}</span>
+                <h2>{!! __('site.prijs.kop') !!}</h2>
+                <div class="bedrag"><span class="n">&euro; {{ __('site.prijs.bedrag') }}</span><span class="c">{{ __('site.prijs.per') }}</span></div>
+                <p class="status live"><i></i>{{ __('site.prijs.proef') }}</p>
+                <ul class="vinkjes" id="vinkjes">
+                    @foreach(__('site.prijs.punten') as $punt)
+                        <li><i><span class="fa-solid fa-check" aria-hidden="true"></span></i>{{ $punt }}</li>
                     @endforeach
                 </ul>
-                <div class="mt-10 flex flex-wrap items-center gap-4">
-                    <a href="/onboarding" class="btn-primary !text-lg !px-8 !py-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tomato">Gratis starten</a>
-                    <a href="/bestellen/pizzeriasole" target="_blank" rel="noopener" class="btn-tweede !text-lg !px-8 !py-[0.95rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tomato">Eerst even rondkijken</a>
-                </div>
+                <a href="/onboarding" class="btn dark">{{ __('site.prijs.knop') }} <i class="ar fa-solid fa-chevron-right" aria-hidden="true"></i></a>
             </div>
-
-            <div class="divide-y divide-cacao/10 border-t border-b border-cacao/10" data-reveal>
-                @foreach([
-                    ['Hoe werkt de gratis proefperiode?', 'Je krijgt 30 dagen om alles te proberen, zonder betaalgegevens vooraf. Bevalt het, dan start je het abonnement vanuit je dashboard. Bevalt het niet, dan verloopt je proef vanzelf en zit je nergens aan vast.'],
-                    ['Rekenen jullie echt geen commissie?', 'Nee. Je betaalt alleen het vaste maandbedrag. Elke bestelling en elke euro omzet is volledig van jou. Alleen de gebruikelijke transactiekosten van de betaalprovider (Stripe) gelden, zoals bij elke online betaling.'],
-                    ['Hoe ontvang ik het geld van bestellingen?', 'Klanten betalen online via Stripe met iDEAL, creditcard, Apple Pay of Google Pay. Het geld gaat rechtstreeks naar jouw zaak, niet eerst langs een platform.'],
-                    ['Kan ik mijn eigen domeinnaam gebruiken?', 'Ja. Je start op zaaknaam.mijnpizzeria.nl en met een actief abonnement koppel je je eigen domein, bijvoorbeeld bestellen.jouwzaak.nl.'],
-                    ['Heb ik technische kennis nodig?', 'Nee. Je stelt je menukaart, openingstijden en stijl zelf in via een overzichtelijk dashboard. Kom je er niet uit, dan helpen we je op weg.'],
-                ] as [$vraag, $antwoord])
-                    <details class="group py-5">
-                        <summary class="flex items-center justify-between gap-6 cursor-pointer select-none font-display text-xl text-cacao list-none [&::-webkit-details-marker]:hidden focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-tomato rounded-sm">
-                            {{ $vraag }}
-                            <i class="fa-solid fa-plus text-sm text-cacao/40 shrink-0 transition-transform group-open:rotate-45" aria-hidden="true"></i>
-                        </summary>
-                        <p class="mt-3 pr-10 text-[15px] font-semibold text-cacao/55 leading-relaxed">{{ $antwoord }}</p>
-                    </details>
+            <div class="reviews" id="reviews">
+                @foreach(__('site.prijs.reviews') as $i => [$quote, $naam, $zaak])
+                    <figure class="review" style="--rot:{{ ['-1.5deg', '1deg', '-0.5deg'][$i % 3] }}">
+                        <span class="sterren" aria-label="5/5"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></span>
+                        <blockquote>{{ $quote }}</blockquote>
+                        <figcaption><b>{{ $naam }}</b><span>{{ $zaak }}</span><span class="tag">{{ __('site.prijs.voorbeeld') }}</span></figcaption>
+                    </figure>
                 @endforeach
             </div>
         </div>
     </section>
 
-    {{-- SLOT: warme band met de laatste duw --}}
-    <section class="korrel relative overflow-hidden" style="background:var(--color-tomato)">
-        <div class="gloed w-[32rem] h-[32rem] bg-gold/30 -top-40 -right-32" data-gloed aria-hidden="true"></div>
-        <div class="max-w-6xl mx-auto px-5 py-24 sm:py-28 flex flex-col lg:flex-row lg:items-center justify-between gap-10 relative">
-            <div data-reveal>
-                <h2 class="font-display text-4xl sm:text-5xl text-white">Vanavond nog online staan?</h2>
-                <p class="mt-4 text-base font-semibold text-white/80 max-w-lg">Binnen tien minuten heb je je eigen bestelpagina. De eerste 30 dagen zijn gratis en je zit nergens aan vast.</p>
+    {{-- Slot: op het inmiddels lichte vel veegt de kop van links naar rechts in beeld en staat het
+         startformulier er nog één keer, nu op een witte kaart. Daaronder een kleine voet. --}}
+    <section class="slot-vlak" id="slot">
+        <div class="slot">
+            <div class="slot-l">
+                <span class="tag">{{ __('site.slot.tag') }}</span>
+                <h2 class="veeg">{!! __('site.slot.kop') !!}</h2>
+                <p class="lead">{{ __('site.slot.tekst') }}</p>
             </div>
-            <div class="flex flex-wrap items-center gap-4 shrink-0" data-reveal>
-                <a href="/onboarding" class="inline-block rounded-lg bg-white text-tomato text-lg font-bold px-8 py-4 shadow-lg hover:bg-crema transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Gratis starten</a>
-                <a href="/bestellen/pizzeriasole" target="_blank" rel="noopener" class="btn-tweede-donker !text-lg !px-8 !py-[0.95rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Eerst even rondkijken</a>
-            </div>
+            <form class="vlak slot-form" action="/onboarding" method="get">
+                <div class="fh"><span class="tag">{{ __('site.hero.chip1') }}</span><span class="tag">{{ __('site.hero.chip2') }}</span><span class="tag">{{ __('site.hero.chip3') }}</span></div>
+                <h3>{{ __('site.hero.vraag') }}</h3>
+                <div class="fld">
+                    <label for="slotNaam">{{ __('site.hero.label') }}</label>
+                    <input id="slotNaam" name="naam" type="text" maxlength="50" autocomplete="organization" placeholder="{{ __('site.hero.voorbeeld') }}">
+                </div>
+                <button type="submit" class="btn dark breed">{{ __('site.hero.knop') }} <i class="ar fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+                <p class="small">{{ __('site.hero.feit1') }} &middot; {{ __('site.hero.feit2') }} &middot; {{ __('site.hero.feit3') }}</p>
+            </form>
         </div>
+        {{-- De voet: merk en belofte, drie kolommen met links, de betaalmethoden, en onderin de regel met het jaar --}}
+        <footer class="slot-voet">
+            <div class="voet-merk">
+                <a href="/" aria-label="Shop &amp; Eat">@include('deel.merk')</a>
+                <p>{{ __('site.voet.tagline') }}</p>
+                <nav class="taal licht" aria-label="{{ __('site.nav.taal') }}">
+                    @foreach(\App\Http\Middleware\ZetTaal::TALEN as $taal)
+                        <a href="{{ route('taal', $taal) }}" hreflang="{{ $taal }}" class="{{ app()->getLocale() === $taal ? 'aan' : '' }}">{{ strtoupper($taal) }}</a>
+                    @endforeach
+                </nav>
+            </div>
+            <nav class="voet-kolom" aria-label="{{ __('site.voet.platform') }}">
+                <span class="label">{{ __('site.voet.platform') }}</span>
+                <a href="#wat">{{ __('site.nav.functies') }}</a>
+                <a href="#hoe">{{ __('site.nav.oplevert') }}</a>
+                <a href="#keukens">{{ __('site.keukens.tag') }}</a>
+                <a href="#alles">{{ __('site.usps.tag') }}</a>
+                <a href="#prijzen">{{ __('site.nav.prijzen') }}</a>
+            </nav>
+            <nav class="voet-kolom" aria-label="{{ __('site.voet.zaak') }}">
+                <span class="label">{{ __('site.voet.zaak') }}</span>
+                <a href="/onboarding">{{ __('site.nav.starten') }}</a>
+                <a href="/login">{{ __('site.nav.inloggen') }}</a>
+                <a href="/blog">{{ __('site.nav.blog') }}</a>
+            </nav>
+            <div class="voet-kolom">
+                <span class="label">{{ __('site.voet.betalen') }}</span>
+                <span class="betaal" title="{{ __('site.slot.betaal') }}">
+                    <i class="fa-brands fa-ideal" aria-hidden="true"></i>
+                    <i class="fa-brands fa-cc-apple-pay" aria-hidden="true"></i>
+                    <i class="fa-brands fa-google-pay" aria-hidden="true"></i>
+                    <i class="fa-brands fa-cc-visa" aria-hidden="true"></i>
+                    <i class="fa-brands fa-cc-mastercard" aria-hidden="true"></i>
+                </span>
+                <p>{{ __('site.voet.methodes') }}</p>
+                <p class="status live"><i></i>{{ __('site.slot.betaal') }}</p>
+            </div>
+            <div class="voet-onder">
+                <span>&copy; {{ date('Y') }} Shop &amp; Eat. {{ __('site.voet.rechten') }}</span>
+                <span>{{ __('site.slot.gemaakt') }}</span>
+            </div>
+        </footer>
     </section>
+
+@endsection
+
+{{-- Buiten de smooth-wrapper, want vast op het scherm: zodra de hero uit beeld is, schuiven onderin twee
+     knoppen het scherm in, vanuit elke sectie direct naar de onboarding of het inloggen. --}}
+@section('buiten')
+    {{-- Komt als een ronde schijf (pizza) het beeld in gedraaid en groeit dan uit tot de pil; weg is andersom --}}
+    <div class="zweef-cta" id="zweefCta">
+        <div class="knoppen">
+            <a href="/onboarding" class="btn dark">{{ __('site.nav.starten') }} <i class="ar fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+            <a href="/login" class="btn line">{{ __('site.nav.inloggen') }}</a>
+        </div>
+    </div>
 @endsection
 
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollSmoother.min.js"></script>
     <script>
-        /* Bij 'verminderde beweging' staat alles direct stil op zijn plek */
-        const bewegingOk = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (bewegingOk) {
-            gsap.registerPlugin(ScrollTrigger);
+        (function () {
+            const stilstaan = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const taal = document.documentElement.lang === 'en' ? 'en-GB' : 'nl-NL';
+            const html = document.documentElement;
 
-            /* Binnenkomer: de hero bouwt zich rustig op */
-            gsap.from('[data-intro]', { y: 26, autoAlpha: 0, duration: .7, ease: 'power2.out', stagger: .09 });
+            /* Wie minder beweging wil, krijgt het stilstaande beeld */
+            const heroVideo = document.querySelector('#heroVideo');
+            if (heroVideo && stilstaan) {
+                heroVideo.removeAttribute('autoplay');
+                heroVideo.pause();
+            }
 
-            /* De pizza draait bijna onmerkbaar door */
-            gsap.to('#pizzaDraai', { rotation: 360, duration: 240, repeat: -1, ease: 'none' });
-
-            /* De pizza draait bijna onmerkbaar door: het beleg schuift langzaam langs de rand */
-            gsap.to('#pizzaDraai', { rotation: 360, duration: 240, repeat: -1, ease: 'none' });
-
-            /* Losse blokken faden in zodra ze in beeld komen */
-            document.querySelectorAll('[data-reveal]').forEach((el) => {
-                gsap.from(el, {
-                    y: 24, autoAlpha: 0, duration: .6, ease: 'power2.out',
-                    scrollTrigger: { trigger: el, start: 'top 90%', once: true },
+            /* GSAP ScrollSmoother: de pagina glijdt. Alleen op een breed scherm met een muis en zonder
+               'minder beweging'; op telefoons en tablets blijft het gewone scrollen. Omdat de smoother de
+               inhoud verschuift werkt position: sticky niet meer, dus de drie vastgezette delen worden
+               gepind met ScrollTrigger (html.smooth-aan zet de sticky-regels uit). */
+            const smooth = window.gsap && window.ScrollSmoother && ! stilstaan && window.matchMedia('(min-width: 900px) and (hover: hover)').matches;
+            let smoother = null;
+            if (smooth) {
+                gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
+                html.classList.add('smooth-aan');
+                smoother = ScrollSmoother.create({ smooth: 1.1, effects: false, normalizeScroll: false });
+                [['.lees-vlak', '.lees'], ['.donker-vlak', '.donker'], ['.usps-vlak', '.kring-podium'], ['.prijs-vlak', '.prijs']].forEach(([vlak, deel]) => {
+                    ScrollTrigger.create({
+                        trigger: vlak,
+                        start: 'top top',
+                        end: () => 'bottom bottom',
+                        pin: deel,
+                        pinSpacing: false,
+                    });
                 });
-            });
-
-            /* Groepen (grids, lijstjes) komen een voor een binnen */
-            document.querySelectorAll('[data-reveal-groep]').forEach((groep) => {
-                gsap.from(groep.children, {
-                    y: 22, autoAlpha: 0, duration: .55, ease: 'power2.out', stagger: .08,
-                    scrollTrigger: { trigger: groep, start: 'top 88%', once: true },
-                });
-            });
-
-            /* De kleurgloed drijft langzaam mee met het scrollen */
-            document.querySelectorAll('[data-gloed]').forEach((gloed) => {
-                gsap.to(gloed, {
-                    yPercent: 24, ease: 'none',
-                    scrollTrigger: { trigger: gloed.parentElement, start: 'top bottom', end: 'bottom top', scrub: 1.4 },
-                });
-            });
-
-            /* Productschermen zweven subtiel omhoog terwijl je scrolt */
-            document.querySelectorAll('[data-zweef]').forEach((el) => {
-                gsap.fromTo(el, { y: 34 }, {
-                    y: -34, ease: 'none',
-                    scrollTrigger: { trigger: el, start: 'top bottom', end: 'bottom top', scrub: 1.2 },
-                });
-            });
-
-            /* De cijfers tellen op zodra ze in beeld komen */
-            document.querySelectorAll('[data-tel]').forEach((el) => {
-                const doel = parseFloat(el.dataset.tel);
-                const dec = Number(el.dataset.dec ?? 0);
-                const stand = { n: 0 };
-                gsap.to(stand, {
-                    n: doel, duration: 1.3, ease: 'power1.out',
-                    onUpdate: () => {
-                        el.textContent = stand.n.toLocaleString('nl-NL', { minimumFractionDigits: dec, maximumFractionDigits: dec });
-                    },
-                    scrollTrigger: { trigger: el, start: 'top 92%', once: true },
-                });
-            });
-        }
-
-        /* Carrousel: de schermen draaien als een cirkel rond, de voorste wisselt */
-        const diaLijst = [...document.querySelectorAll('.car-dia')];
-        if (diaLijst.length) {
-            const posities = ['voor', 'rechts', 'achter', 'links'];
-            const namen = ['Bestelpagina', 'Dashboard', 'Afrekenen met punten', 'Live bezorgstatus'];
-            const stippen = [...document.querySelectorAll('.car-stip')];
-            let voorste = 0;
-            let timer = null;
-
-            const zet = () => {
-                diaLijst.forEach((dia, i) => { dia.dataset.pos = posities[(i - voorste + 4) % 4]; });
-                stippen.forEach((stip, i) => stip.classList.toggle('aan', i === voorste));
-                document.querySelector('#carrouselNaam').textContent = namen[voorste];
+                /* Ankers in de navigatie: de smoother scrolt er zelf heen */
+                document.querySelectorAll('a[href^="#"]').forEach((a) => a.addEventListener('click', (e) => {
+                    const doel = document.querySelector(a.getAttribute('href'));
+                    if (! doel) return;
+                    e.preventDefault();
+                    smoother.scrollTo(doel, true, 'top top');
+                }));
+                if (location.hash && document.querySelector(location.hash)) {
+                    setTimeout(() => smoother.scrollTo(location.hash, false, 'top top'), 50);
+                }
+            }
+            /* Alles wat met het scrollen meebeweegt hangt aan één haak: de smoother als die er is, anders het scroll-event */
+            const bijScroll = (fn) => {
+                if (smoother) { ScrollTrigger.create({ onUpdate: fn }); return; }
+                window.addEventListener('scroll', () => requestAnimationFrame(fn), { passive: true });
             };
-            const kies = (i) => { voorste = (i + 4) % 4; zet(); };
-            const start = () => { if (bewegingOk && !timer) timer = setInterval(() => kies(voorste + 1), 4200); };
-            const stop = () => { clearInterval(timer); timer = null; };
-            const herstart = () => { stop(); start(); };
 
-            diaLijst.forEach((dia, i) => {
-                dia.addEventListener('click', () => { if (dia.dataset.pos !== 'voor') { kies(i); herstart(); } });
-                dia.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); kies(i); herstart(); }
+            /* De zwevende knoppen onderin: in beeld zodra de hero grotendeels voorbij is, ook zonder beweging */
+            const hero = document.querySelector('.hero');
+            const slot = document.querySelector('.slot-vlak');
+            const prijsVlak = document.querySelector('.prijs-vlak');
+            const zweefCta = document.querySelector('#zweefCta');
+            /* In twee stappen: eerst draait een ronde schijf het beeld in (.rond), dan groeit die uit tot de
+               pil met de knoppen (.aan). Weg is andersom. De breedte van de pil wordt gemeten, zodat de
+               schijf vanuit het midden kan opengaan. */
+            const knoppen = zweefCta.querySelector('.knoppen');
+            const meetCta = () => zweefCta.style.setProperty('--w', (knoppen.offsetWidth + 12) + 'px');
+            meetCta();
+            window.addEventListener('resize', meetCta);
+            let ctaStaat = false;
+            let ctaTimer = null;
+            const toonCta = (aan) => {
+                if (aan === ctaStaat) return;
+                ctaStaat = aan;
+                clearTimeout(ctaTimer);
+                if (aan) {
+                    zweefCta.classList.add('rond');
+                    ctaTimer = setTimeout(() => zweefCta.classList.add('aan'), 420);
+                } else {
+                    zweefCta.classList.remove('aan');
+                    ctaTimer = setTimeout(() => zweefCta.classList.remove('rond'), 420);
+                }
+            };
+            /* Niet op de hero en niet op het slot: daar staat het formulier zelf al */
+            const zetCta = () => toonCta(hero.getBoundingClientRect().bottom < window.innerHeight * .35 && slot.getBoundingClientRect().top > window.innerHeight * .6);
+            bijScroll(zetCta);
+            zetCta();
+
+            if (stilstaan) return;
+            const klem = (v) => Math.min(1, Math.max(0, v));
+
+            /* Leestekst: elke letter in een eigen span (woorden bij elkaar, zodat ze netjes afbreken),
+               en de letters lichten één voor één op naarmate je door het vlak scrolt */
+            const tekst = document.querySelector('#leesTekst');
+
+            const splits = (el) => {
+                [...el.childNodes].forEach((node) => {
+                    if (node.nodeType === Node.ELEMENT_NODE) { splits(node); return; }
+                    if (node.nodeType !== Node.TEXT_NODE) return;
+                    const stuk = document.createDocumentFragment();
+                    node.textContent.split(/(\s+)/).forEach((deel) => {
+                        if (! deel) return;
+                        if (/^\s+$/.test(deel)) { stuk.appendChild(document.createTextNode(' ')); return; }
+                        const woord = document.createElement('span');
+                        woord.className = 'w';
+                        [...deel].forEach((letter) => {
+                            const l = document.createElement('span');
+                            l.className = 'l';
+                            l.textContent = letter;
+                            woord.appendChild(l);
+                        });
+                        stuk.appendChild(woord);
+                    });
+                    node.replaceWith(stuk);
                 });
-            });
-            stippen.forEach((stip, i) => stip.addEventListener('click', () => { kies(i); herstart(); }));
+            };
+            splits(tekst);
 
-            const kader = document.querySelector('#carrousel');
-            kader.addEventListener('mouseenter', stop);
-            kader.addEventListener('mouseleave', start);
-            zet();
-            start();
-        }
+            const letters = [...tekst.querySelectorAll('.l')];
+            const vlak = tekst.closest('.lees-vlak');
+            const fotos = [...vlak.querySelectorAll('.lees-fotos .photo')];
+            const venster = 6;
+            let vorige = -1;
+            const zet = () => {
+                const r = vlak.getBoundingClientRect();
+                const vh = window.innerHeight;
+                /* 0 zodra de bovenkant van het vlak op 65% van het scherm staat, 1 als de onderkant onderin staat */
+                const p = klem((vh * .65 - r.top) / (r.height - vh * .35));
+                if (p === vorige) return;
+                vorige = p;
+                const front = p * (letters.length + venster);
+                letters.forEach((l, i) => {
+                    const o = klem((front - i) / venster);
+                    l.style.opacity = (.16 + .84 * o).toFixed(3);
+                });
+                /* De foto's schuiven elk in eigen tempo: diepte in px, van +helft naar -helft */
+                fotos.forEach((f) => f.style.setProperty('--y', ((.5 - p) * f.dataset.diepte).toFixed(1) + 'px'));
+            };
 
-        /* Templates: op grotere schermen wordt het verticale scrollen een horizontale rit
-           langs de vier stijlen. Op mobiel en zonder beweging blijft het een swipe met snappunten. */
-        const templatesRij = document.querySelector('#templatesRij');
-        if (bewegingOk && templatesRij && window.matchMedia('(min-width: 64rem)').matches) {
-            const rit = document.querySelector('#templatesRit');
-            rit.classList.remove('overflow-x-auto', 'snap-x', 'snap-mandatory');
-            rit.classList.add('overflow-hidden');
-            gsap.to(templatesRij, {
-                x: () => -(templatesRij.scrollWidth - window.innerWidth),
-                ease: 'none',
-                scrollTrigger: {
-                    trigger: '#templates',
-                    start: 'top top',
-                    end: () => '+=' + (templatesRij.scrollWidth - window.innerWidth),
-                    scrub: 1,
-                    pin: true,
-                    anticipatePin: 1,
-                    invalidateOnRefresh: true,
-                },
-            });
-        }
+            /* Het vel kleurt om: --t (achtergrond) en --tt (tekst) op <html> lopen van 0 naar 1 zodra het
+               donkere deel in beeld komt; --q loopt door het plakkende deel en laat de cijfers oplopen */
+            const donker = document.querySelector('.donker-vlak');
+            const cijfers = [...donker.querySelectorAll('.cijfer')];
+            const donkerFotos = [...donker.querySelectorAll('.donker-fotos .photo')];
+            const zetDonker = () => {
+                const r = donker.getBoundingClientRect();
+                const vh = window.innerHeight;
+                const ruw = klem((vh * .9 - r.top) / (vh * .6));
+                let t = klem(ruw * 1.5);                /* de achtergrond is op 2/3 al zwart */
+                let tt = klem((ruw - .3) / .5);         /* de tekst klapt daarna om naar wit */
+                /* Bij het slot gaat het weer terug: het vel eerst licht, de tekst klapt daarna om naar inkt */
+                const rs = slot.getBoundingClientRect();
+                /* Terug naar licht zodra de witte prijskaart in beeld schuift: begint als de bovenkant
+                   op 60% van het scherm staat, klaar als de kaart bovenaan staat */
+                const rk = prijsVlak.getBoundingClientRect();
+                const terug = klem((vh * .6 - rk.top) / (vh * .6));
+                t = Math.min(t, 1 - klem(terug * 1.5));
+                tt = Math.min(tt, 1 - klem((terug - .3) / .5));
+                slot.style.setProperty('--w', klem((vh * .8 - rs.top) / (vh * .45)).toFixed(3));
+                const q = klem((vh * .4 - r.top) / (r.height - vh * .3));
+                html.style.setProperty('--t', t.toFixed(3));
+                html.style.setProperty('--tt', tt.toFixed(3));
+                donker.style.setProperty('--q', q.toFixed(3));
+                donkerFotos.forEach((f) => f.style.setProperty('--y', ((.5 - q) * f.dataset.diepte).toFixed(1) + 'px'));
+                /* Elk cijfer begint op zijn eigen moment (data-vanaf) en telt in een stuk van de scroll op */
+                cijfers.forEach((cijfer) => {
+                    const u = klem((q - parseFloat(cijfer.dataset.vanaf)) / .28);
+                    cijfer.style.opacity = (.22 + .78 * u).toFixed(3);
+                    const el = cijfer.querySelector('[data-tel]');
+                    const dec = Number(el.dataset.dec || 0);
+                    el.textContent = (parseFloat(el.dataset.tel) * u).toLocaleString(taal, { minimumFractionDigits: dec, maximumFractionDigits: dec });
+                });
+            };
+
+            /* De linten schuiven zijwaarts mee met het scrollen: de bovenste naar links, de onderste naar rechts */
+            const keukens = document.querySelector('.keukens-vlak');
+            const linten = [...keukens.querySelectorAll('.lint-rij')];
+            const zetLinten = () => {
+                const r = keukens.getBoundingClientRect();
+                const vh = window.innerHeight;
+                const p = klem((vh - r.top) / (vh + r.height));
+                linten.forEach((lint, i) => {
+                    const x = i === 0 ? -p * 35 : -35 + p * 35;
+                    lint.style.transform = `translate3d(${x.toFixed(2)}%, 0, 0)`;
+                });
+            };
+
+            /* De kring: het scherm staat vast en terwijl je scrolt komen de kaartjes één voor één uit het
+               midden gevlogen en landen op hun plek (--s loopt van 0 naar 1 met een klein doorschieten,
+               --o is de doorzichtigheid). De tekst staat er meteen. */
+            const kringVlak = document.querySelector('.usps-vlak');
+            const kaartjes = [...kringVlak.querySelectorAll('.kaartje')];
+            const landen = (x) => 1 + 2.3 * Math.pow(x - 1, 3) + 1.3 * Math.pow(x - 1, 2);
+            const zetKring = () => {
+                const r = kringVlak.getBoundingClientRect();
+                const vh = window.innerHeight;
+                const q = klem(-r.top / (r.height - vh));
+                kaartjes.forEach((k, i) => {
+                    const x = klem((q - .02 - i * .06) / .5);
+                    k.style.setProperty('--s', landen(x).toFixed(3));
+                    k.style.setProperty('--o', klem(x * 1.6).toFixed(3));
+                });
+            };
+
+            /* Prijs en reviews: terwijl de kaart plakt gaan de vinkjes één voor één aan en komen de reviews één voor één binnen */
+            const vinkjes = [...prijsVlak.querySelectorAll('.vinkjes li')];
+            const reviews = [...prijsVlak.querySelectorAll('.review')];
+            const zetPrijs = () => {
+                const r = prijsVlak.getBoundingClientRect();
+                const vh = window.innerHeight;
+                const q = klem((vh * .65 - r.top) / (r.height - vh * .35));
+                vinkjes.forEach((li, i) => li.classList.toggle('aan', q >= .04 + i * .07));
+                reviews.forEach((el, i) => el.classList.toggle('aan', q >= .1 + i * .24));
+            };
+
+            const alles = () => { zet(); zetDonker(); zetLinten(); zetKring(); zetPrijs(); };
+            bijScroll(alles);
+            window.addEventListener('resize', alles);
+            alles();
+            if (smoother) requestAnimationFrame(alles);
+        })();
     </script>
 @endsection

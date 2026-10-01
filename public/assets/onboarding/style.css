@@ -1509,3 +1509,34 @@ html { overflow-x: clip; }
 #setupOverlay .step-kicker { margin-bottom: .5rem; }
 #setupOverlay .step-title { font-size: clamp(1.5rem, 2.6vw, 2rem); margin-bottom: .5rem; }
 #setupOverlay .step-sub { font-size: .95rem; margin-bottom: 1.5rem; }
+
+/* Vijf tabs plus de status: op smalle telefoons iets compacter, anders loopt de balk buiten beeld */
+@media (max-width: 26rem) {
+    .dash-tabbar { gap: .15rem; }
+    .tab-item { width: 2.8rem; height: 2.8rem; }
+    .tab-item .t-ico { font-size: 1.05rem; }
+    .tab-status { padding: 0 .6rem 0 .55rem; font-size: .8rem; }
+}
+
+/* ── Vensters: alleen verticaal scrollen ──────────────────────────
+   overflow-y:auto zet de horizontale as automatisch op auto. Samen met
+   .inp:focus (dat een veld 1% opschaalt) gaf dat een horizontale scrollbalk
+   zodra je een veld aanklikte. */
+.venster-scroll {
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Ruimte voor de rand van een gefocust veld: .inp:focus schaalt 1% op. Zonder deze
+       marge zou die rand tegen de clipping aanlopen en afgeknipt worden. */
+    padding-inline: 6px;
+    margin-inline: -6px;
+}
+#setupOverlay,
+#abonnementOverlay,
+#statusModal,
+#teamBevestig,
+#teamModal,
+#menuModal,
+#instModal,
+#introModal,
+#coachSlapendModal,
+#bevestigModal { overflow-x: hidden; }

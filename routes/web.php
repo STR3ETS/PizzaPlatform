@@ -38,6 +38,14 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
+// Taalkeuze voor de site: onthouden in de sessie, terug naar waar je was
+Route::get('/taal/{taal}', function (string $taal) {
+    abort_unless(in_array($taal, \App\Http\Middleware\ZetTaal::TALEN, true), 404);
+    session(['taal' => $taal]);
+
+    return redirect()->back(fallback: '/');
+})->name('taal');
+
 // De blog op de marketingsite, gevuld door de content-machine in het beheer
 Route::get('/blog', [\App\Http\Controllers\BlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{slug}', [\App\Http\Controllers\BlogController::class, 'show'])->name('blog.show');
@@ -61,6 +69,30 @@ Route::middleware('signed')->group(function () {
     Route::post('/verlenging/{user}', [\App\Http\Controllers\FeedbackController::class, 'verleng'])->name('feedback.verleng');
 });
 Route::redirect('/registreren', '/onboarding');
+
+// De stijlgids: het designsysteem waar het hele platform naartoe gaat (intern, niet indexeren)
+Route::view('/stijlgids', 'stijlgids')->name('stijlgids');
+
+// Stripe meldt hier betalingen en wijzigingen aan gekoppelde accounts
+Route::post('/stripe/webhook', \App\Http\Controllers\StripeWebhookController::class)->name('stripe.webhook');
+
+// Het teamscherm voor bezorgers en keukenhulp: eigen inlog, los van het dashboard
+Route::prefix('/bezorger')->group(function () {
+    Route::get('/login', [\App\Http\Controllers\BezorgerController::class, 'showLogin'])->name('bezorger.login');
+    Route::post('/login', [\App\Http\Controllers\BezorgerController::class, 'login'])->name('bezorger.login.attempt');
+    Route::get('/activeren/{token}', [\App\Http\Controllers\BezorgerController::class, 'showActiveren'])->name('bezorger.activeren');
+    Route::post('/activeren', [\App\Http\Controllers\BezorgerController::class, 'activeren'])->name('bezorger.activeren.opslaan');
+
+    Route::middleware('medewerker')->group(function () {
+        Route::get('/', [\App\Http\Controllers\BezorgerController::class, 'index'])->name('bezorger.index');
+        Route::get('/data', [\App\Http\Controllers\BezorgerController::class, 'data'])->name('bezorger.data');
+        Route::post('/bestellingen/{order}/oppakken', [\App\Http\Controllers\BezorgerController::class, 'oppakken'])->name('bezorger.oppakken');
+        Route::post('/bestellingen/{order}/vrijgeven', [\App\Http\Controllers\BezorgerController::class, 'vrijgeven'])->name('bezorger.vrijgeven');
+        Route::post('/bestellingen/{order}/bezorgd', [\App\Http\Controllers\BezorgerController::class, 'bezorgd'])->name('bezorger.bezorgd');
+        Route::post('/bestellingen/{order}/keuken', [\App\Http\Controllers\BezorgerController::class, 'keukenStap'])->name('bezorger.keuken');
+        Route::post('/uitloggen', [\App\Http\Controllers\BezorgerController::class, 'logout'])->name('bezorger.logout');
+    });
+});
 
 // Speeltuinen: dezelfde code als de echte bestelpagina, gevuld met de demo-pizzeria.
 // /template1 dwingt Presto af, /template2 dwingt Notte af, ongeacht het thema van de demo.
@@ -207,7 +239,7 @@ Route::middleware('auth')->group(function () {
         }
 
         return view('dashboard.index');
-    })->whereIn('paneel', ['overzicht', 'bestellingen', 'menukaart', 'webshop', 'instellingen'])->name('dashboard');
+    })->whereIn('paneel', ['overzicht', 'bestellingen', 'menukaart', 'team', 'webshop', 'instellingen'])->name('dashboard');
 
     // Abonnement via Stripe Checkout (test-mode); zonder Stripe-config activeert het direct
     Route::post('/abonnement/starten', [\App\Http\Controllers\AbonnementController::class, 'starten'])->name('abonnement.starten');
@@ -282,6 +314,19 @@ Route::middleware('auth')->group(function () {
         return response()->json(['ok' => true]);
     })->name('bezorg.opslaan');
 
+    // Stripe Connect: de zaak koppelt zijn eigen account om betalingen te ontvangen
+    Route::get('/stripe/koppelen', [\App\Http\Controllers\StripeConnectController::class, 'start'])->name('stripe.connect.start');
+    Route::get('/stripe/terug', [\App\Http\Controllers\StripeConnectController::class, 'terug'])->name('stripe.connect.terug');
+    Route::post('/stripe/status', [\App\Http\Controllers\StripeConnectController::class, 'status'])->name('stripe.connect.status');
+    Route::get('/stripe/dashboard', [\App\Http\Controllers\StripeConnectController::class, 'stripeDashboard'])->name('stripe.connect.dashboard');
+
+    // Teamleden uitnodigen en beheren vanuit het dashboard
+    Route::get('/team', [\App\Http\Controllers\TeamController::class, 'index'])->name('team.index');
+    Route::post('/team', [\App\Http\Controllers\TeamController::class, 'store'])->name('team.store');
+    Route::post('/team/{medewerker}/opnieuw', [\App\Http\Controllers\TeamController::class, 'opnieuw'])->name('team.opnieuw');
+    Route::post('/team/{medewerker}/wissel', [\App\Http\Controllers\TeamController::class, 'wissel'])->name('team.wissel');
+    Route::delete('/team/{medewerker}', [\App\Http\Controllers\TeamController::class, 'destroy'])->name('team.destroy');
+
     Route::post('/menukaart', [MenuController::class, 'store'])->name('menu.store');
     Route::patch('/menukaart/{item}', [MenuController::class, 'update'])->name('menu.update');
     Route::delete('/menukaart/{item}', [MenuController::class, 'destroy'])->name('menu.delete');
@@ -297,6 +342,11 @@ Route::middleware('auth')->group(function () {
             'online' => ['required', 'boolean'],
             'mode' => ['required', 'in:bezorgen_afhalen,alleen_afhalen'],
         ]);
+
+        // Online zonder gekoppelde bankrekening kan niet: klanten zouden niet kunnen afrekenen
+        if ($data['online'] && \App\Support\StripeConnect::betalingenAan() && ! \App\Support\StripeConnect::kanOntvangen($request->user())) {
+            return response()->json(['message' => 'Koppel eerst je bankrekening via Instellingen, anders kunnen klanten niet betalen.'], 422);
+        }
         $request->user()->forceFill(['is_online' => $data['online'], 'order_mode' => $data['mode']])->save();
 
         return response()->json(['ok' => true]);
@@ -369,7 +419,7 @@ Route::middleware('auth')->group(function () {
 
         $order = \App\Models\Order::create([
             'user_id' => $request->user()->id,
-            'nummer' => ((int) $request->user()->orders()->max('nummer') ?: 411) + 1,
+            'nummer' => ((int) \App\Models\Order::inclusiefOnbetaald()->where('user_id', $request->user()->id)->max('nummer') ?: 411) + 1,
             'klant' => $klanten[array_rand($klanten)],
             'items' => $items,
             'totaal' => $totaal,

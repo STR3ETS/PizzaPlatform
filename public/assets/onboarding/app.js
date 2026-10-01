@@ -1,4 +1,4 @@
-/* ═══════════════ PizzaPlatform onboarding wizard ═══════════════ */
+/* ═══════════════ Shop & Eat onboarding wizard ═══════════════ */
 
 /* Eigen scope: dit script draait ook in het dashboard (venster "zaak afmaken"),
    naast dashboard.js dat dezelfde hulpnamen ($, $$, esc) gebruikt. */
@@ -61,6 +61,32 @@ const CATEGORY_SUGGESTIONS = [
         ],
     },
     {
+        key: 'snacks', emoji: '🍢', name: 'Snacks', presets: [
+            { emoji: '🌭', name: 'Frikandel', price: '2,50' },
+            { emoji: '🧆', name: 'Kroket', price: '2,50' },
+            { emoji: '🍗', name: 'Kipcorn', price: '3,00' },
+            { emoji: '🧀', name: 'Kaassoufflé', price: '2,75' },
+            { emoji: '🍢', name: 'Bamischijf', price: '2,75' },
+            { emoji: '🥠', name: 'Loempia', price: '3,50' },
+        ],
+    },
+    {
+        key: 'friet', emoji: '🍟', name: 'Friet', presets: [
+            { emoji: '🍟', name: 'Friet klein', price: '3,00' },
+            { emoji: '🍟', name: 'Friet groot', price: '4,00' },
+            { emoji: '🥫', name: 'Patat oorlog', price: '4,50' },
+            { emoji: '🥙', name: 'Kapsalon', price: '9,50' },
+        ],
+    },
+    {
+        key: 'broodjes', emoji: '🥖', name: 'Broodjes', presets: [
+            { emoji: '🥙', name: 'Broodje shoarma', price: '7,50' },
+            { emoji: '🍔', name: 'Hamburger', price: '6,50' },
+            { emoji: '🌭', name: 'Broodje frikandel', price: '4,00' },
+            { emoji: '🥖', name: 'Broodje kroket', price: '4,00' },
+        ],
+    },
+    {
         key: 'dranken', emoji: '🥤', name: 'Dranken', presets: [
             { emoji: '🥤', name: 'Cola', price: '2,50' },
             { emoji: '🍊', name: 'Fanta', price: '2,50' },
@@ -78,7 +104,7 @@ const CATEGORY_SUGGESTIONS = [
     },
 ];
 
-const PICKER_EMOJIS = ['🍕', '🧀', '🍄', '🌶️', '🥩', '🍗', '🥓', '🥙', '🐟', '🍤', '🦐', '🍣', '🥦', '🫑', '🍅', '🌿', '🥗', '🍍', '🫒', '🥟', '🍝', '🥖', '🥤', '🍊', '🧋', '☕', '🍺', '🍷', '🍰', '🍨', '🍩', '🍫', '⭐', '🔥', '👨‍🍳', '🧄'];
+const PICKER_EMOJIS = ['🍕', '🍟', '🌭', '🍔', '🧆', '🍢', '🥠', '🧀', '🍄', '🌶️', '🥩', '🍗', '🥓', '🥙', '🐟', '🍤', '🦐', '🍣', '🥦', '🫑', '🍅', '🌿', '🥗', '🍍', '🫒', '🥟', '🍝', '🥖', '🥤', '🍊', '🧋', '☕', '🍺', '🍷', '🍰', '🍨', '🍩', '🍫', '⭐', '🔥', '👨‍🍳', '🧄'];
 
 /* Alle kleurstijlen komen uit dezelfde bron als de templates (gehydrateerd door de server) */
 const KLEUREN = window.PP_KLEUREN || [{ hex: '#E63946', naam: 'Tomatenrood', stijl: 'warm', palet: { primair: '#E63946', primairDonker: '#B02A35', secundair: '#38151A', secundairLicht: '#54262C', witWarm: '#FFF6F5' } }];
@@ -429,7 +455,7 @@ function nudge(input) {
 function validate(step) {
     switch (step) {
         case 'name':
-            if (state.name.trim().length < 2) { setError('name', 'Vul eerst de naam van je pizzeria in.'); nudge($('#inpName')); return false; }
+            if (state.name.trim().length < 2) { setError('name', 'Vul eerst de naam van je zaak in.'); nudge($('#inpName')); return false; }
             setError('name'); return true;
         case 'person':
             if (state.person.trim().length < 2) { setError('person', 'Vul nog even je naam in.'); nudge($('#inpPerson')); return false; }
@@ -469,7 +495,7 @@ function validate(step) {
 
 function onEnterStep(id) {
     if (id === 'domain') {
-        $$('[data-slug]').forEach((el) => (el.textContent = slugify(state.name) || 'jouwpizzeria'));
+        $$('[data-slug]').forEach((el) => (el.textContent = slugify(state.name) || 'jouwzaak'));
         runDomainCheck();
     }
     if (id === 'style') { pvCart = {}; pvActiveCat = null; pvMode = 'bezorgen'; renderThemes(); renderColors(); renderLogoUI(); renderPreview(); obPagina = 'menu'; updateObPreview(); }
@@ -811,7 +837,7 @@ function pvDataset() {
     const hasMenu = state.menu.length > 0;
     const cats = hasMenu
         ? state.categories.filter((c) => state.menu.some((m) => m.cat === c.id))
-        : [{ id: 'demo', emoji: '🍕', name: "Pizza's" }];
+        : [{ id: 'demo', emoji: '🍕', name: 'Populair' }];
     const items = hasMenu
         ? state.menu.map((m, gi) => ({ ...m, key: 'm' + gi, catId: m.cat }))
         : PV_DEMO.map((m, i) => ({ ...m, key: 'd' + i, catId: 'demo' }));
@@ -1068,7 +1094,7 @@ function renderSummary() {
     const address = [state.street, [state.zip, state.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
     const orderUrl = state.domainMode === 'own' && state.ownDomain
         ? `bestellen.${cleanDomain(state.ownDomain)}`
-        : `${slugify(state.name) || 'jouwpizzeria'}.mijnpizzeria.nl`;
+        : `${slugify(state.name) || 'jouwzaak'}.mijnpizzeria.nl`;
     const colorName = KLEUREN.find((k) => k.hex === state.color)?.naam || 'Eigen kleur';
     const theme = currentTheme();
     const usedCats = state.categories.filter((c) => state.menu.some((m) => m.cat === c.id));
@@ -1077,7 +1103,7 @@ function renderSummary() {
         : 'Maken we later samen af';
 
     const rows = [
-        { label: 'Pizzeria',      value: esc(state.name), step: 'name' },
+        { label: 'Zaak',          value: esc(state.name), step: 'name' },
         { label: 'Contact',       value: `${esc(state.person)}${state.phone ? ', ' + esc(state.phone) : ''}`, step: 'person' },
         { label: 'E-mail',        value: esc(state.email), step: 'contact' },
         ...(IS_AUTH ? [] : [{ label: 'Wachtwoord', value: pw ? '••••••••' : 'Nog niet gekozen', step: 'wachtwoord' }]),
@@ -1171,6 +1197,9 @@ function bindInput(id, key, extra) {
 
 function init() {
     const hadProgress = restore();
+    /* Vanaf de site: ?naam=… vult de naam van de zaak alvast in, alleen bij een verse start */
+    const naamParam = new URLSearchParams(location.search).get('naam');
+    if (naamParam && !hadProgress && !window.PP_MODAL) state.name = naamParam.trim().slice(0, 50);
 
     bindInput('#inpName', 'name');
     bindInput('#inpPerson', 'person');

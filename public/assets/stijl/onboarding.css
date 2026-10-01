@@ -1,0 +1,133 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Shop & Eat: de onboarding-wizard op designsysteem 3.0
+
+   Laadvolgorde: onboarding/style.css → stijl/systeem.css → stijl/dashboard.css
+   → dit bestand. dashboard.css levert de brug voor .inp, .lbl, .btn-primary,
+   .mode-switch, .keuze-chip, .chip, .empty-box en de vensterregels; hier staan
+   alleen de onderdelen die alleen de wizard kent (app.js rendert ze met deze
+   klassenamen, dus de namen blijven, de opmaak is die van het systeem).
+   Geldt voor /onboarding én voor het venster "je zaak afmaken" in het dashboard.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Schil van de losse pagina ─────────────────────────────────────── */
+
+/* De kaart staat midden op het scherm. Een vaste minimumhoogte houdt het kader op zijn plek
+   tussen korte en lange stappen; de stap zelf centreert binnen de kaart. */
+.wizard-pagina { min-height: 100dvh; display: grid; place-items: center; padding: var(--gap); }
+.wizard-vlak { width: min(100%, 1120px); padding: 0; overflow: hidden; display: flex; flex-direction: column; min-height: min(680px, calc(100dvh - 2 * var(--gap))); }
+.wizard-kop { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 28px 18px; }
+.wizard-lijn { height: 3px; background: var(--line); }
+.wizard-lijn .progress-bar { height: 100%; background: var(--accent); border-radius: 0 999px 999px 0; }
+.wizard-lijn .progress-bar::after { display: none; }
+.wizard-lijf { flex: 1; padding: clamp(28px, 4vw, 48px) clamp(20px, 4vw, 48px); display: flex; align-items: center; justify-content: center; }
+
+/* Kop van een stap */
+.stap-titel { font-size: clamp(26px, 3vw, 36px); font-weight: 300; letter-spacing: -.02em; line-height: 1.12; margin-top: 6px; }
+.stap-sub { margin: 10px auto 26px; max-width: 46ch; }
+.stap-knoppen { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin-top: 30px; }
+.wizard .inp { font-size: 17px; padding: .85rem 1.1rem; }
+
+/* Keuzekaart uit het systeem, met de state die app.js zet en leesbare groottes */
+.keuze.selected { border-color: var(--ink); background: var(--soft); box-shadow: inset 0 0 0 1px var(--ink); }
+.keuze > span:not(.rol-icoon):not(.tag) { font-size: 14px; color: var(--ink); }
+.keuze > span > span { font-size: 12.5px; color: var(--ink2); }
+
+/* ── Voortgang in het venster: een segment per stap ─────────────────── */
+
+body .stap-segment { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+body .stap-segment .s-lijn { height: 5px; border-radius: 999px; background: var(--line); transition: background .25s; }
+body .stap-segment .s-tekst { font-size: 11px; font-weight: 400; color: var(--ink3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body .stap-segment.klaar .s-lijn, body .stap-segment.actief .s-lijn { background: var(--accent); }
+body .stap-segment.klaar .s-tekst { color: var(--ink2); }
+body .stap-segment.klaar .s-tekst i { color: var(--accent); margin-right: 2px; }
+body .stap-segment.actief .s-tekst { color: var(--ink); font-weight: 500; }
+
+/* ── Wachtwoord ────────────────────────────────────────────────────── */
+
+body .pw-oog { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--ink3); background: none; opacity: 1; }
+body .pw-oog:hover { color: var(--ink); background: var(--soft); }
+body .pw-eis { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 400; color: var(--ink3); }
+body .pw-eis .pw-dot { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); display: grid; place-items: center; font-size: 9px; color: var(--ink3); transition: background .2s, color .2s; }
+body .pw-eis.aan { color: var(--ink); }
+body .pw-eis.aan .pw-dot { background: var(--green); border-color: var(--green); color: #1b1714; transform: none; }
+
+/* ── Dagen en tijden ───────────────────────────────────────────────── */
+
+body .day-chip { background: var(--card); border: 1px solid var(--line); color: var(--ink2); border-radius: var(--r-pill); font-weight: 500; font-size: 14px; padding: 0 18px; min-height: 42px; box-shadow: none; transition: background .2s, color .2s, border-color .2s, transform .2s; }
+body .day-chip:hover { transform: translateY(-1px); background: var(--soft); color: var(--ink); }
+body .day-chip.on { background: var(--omgekeerd); border-color: var(--omgekeerd); color: var(--omgekeerd-ink); }
+body .day-time-row { background: var(--soft); border: 0; border-radius: var(--r-klein); padding: 8px 10px; }
+body .day-time-row .d-label { font-weight: 500; font-size: 14px; color: var(--ink); }
+body .day-time-row .sep { color: var(--ink3); font-weight: 400; font-size: 13px; }
+
+/* ── Menukaart: categorieën, suggesties, regels ────────────────────── */
+
+body .cat-chip { background: var(--card); border: 1px solid var(--line); color: var(--ink2); border-radius: var(--r-pill); font-weight: 500; font-size: 13px; padding: 0 14px; min-height: 36px; box-shadow: none; }
+body .cat-chip:hover { transform: none; background: var(--soft); color: var(--ink); border-color: var(--line); }
+body .cat-chip.active { background: var(--omgekeerd); border-color: var(--omgekeerd); color: var(--omgekeerd-ink); }
+body .cat-chip .cat-del { color: inherit; opacity: .55; }
+body .cat-chip .cat-del:hover { opacity: 1; color: inherit; }
+body .cat-chip.suggest { background: transparent; border-style: dashed; color: var(--ink3); }
+body .cat-chip.suggest:hover { border-color: var(--ink3); color: var(--ink); background: transparent; }
+body .cat-inp { border: 1px solid var(--ink); border-radius: var(--r-pill); padding: 0 14px; min-height: 36px; font-size: 13px; font-weight: 400; background: var(--card); color: var(--ink); }
+body .preset-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-klein); padding: 14px 10px; box-shadow: none; text-align: center; transition: border-color .2s, background .2s, transform .2s; }
+body .preset-card:hover { transform: translateY(-2px); border-color: var(--ink3); }
+body .preset-card .p-name { font-weight: 500; font-size: 13.5px; color: var(--ink); }
+body .preset-card .p-price { font-weight: 400; font-size: 12px; color: var(--ink3); }
+body .preset-card.added { background: var(--soft); border-color: var(--line); }
+body .preset-card.added::after { background: var(--omgekeerd); color: var(--omgekeerd-ink); border: 0; box-shadow: none; }
+body .menu-row { background: var(--soft); border: 0; border-radius: var(--r-klein); padding: 8px 10px; box-shadow: none; }
+body .menu-row .m-icon { border: 1px solid var(--line); border-radius: var(--r-mini); background: var(--card); }
+body .menu-row .m-icon:hover { transform: none; border-color: var(--ink3); }
+body .menu-row .m-name { font-weight: 500; font-size: 14px; color: var(--ink); }
+body .menu-row input { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-mini); font-weight: 400; color: var(--ink); }
+body .menu-row input:focus { border-color: var(--ink); }
+body .menu-row .m-del { color: var(--ink3); }
+body .menu-row .m-del:hover { color: var(--ink); transform: none; }
+body .emoji-opt { border: 1px solid var(--line); border-radius: var(--r-mini); background: var(--card); }
+body .emoji-opt:hover { background: var(--soft); border-color: var(--ink3); transform: none; }
+body .btn-photo { background: var(--omgekeerd); color: var(--omgekeerd-ink); border-radius: var(--r-pill); font-weight: 500; box-shadow: none; }
+body .btn-photo:hover { background: color-mix(in srgb, var(--omgekeerd) 86%, var(--page)); }
+
+/* ── Huisstijl: templates, kleuren, logo ───────────────────────────── */
+
+body .theme-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-klein); padding: 8px; box-shadow: none; text-align: left; transition: border-color .2s, box-shadow .2s; }
+body .theme-card:hover { transform: none; border-color: var(--ink3); }
+body .theme-card.selected { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); background: var(--card); }
+body .theme-card.selected::after { display: none; }
+body .t-tile { border-radius: var(--r-mini); overflow: hidden; border: 0; }
+body .t-name { display: block; font-weight: 500; font-size: 13.5px; color: var(--ink); margin-top: 8px; padding: 0 4px; }
+body .t-desc { display: block; font-weight: 400; font-size: 12px; color: var(--ink2); padding: 0 4px 2px; }
+body .swatch { border-radius: 12px; border: 0; box-shadow: none; }
+body .swatch:hover { transform: scale(1.06); }
+body .swatch.selected { transform: none; outline: 2px solid var(--ink); outline-offset: 3px; }
+body .logo-drop { background: var(--soft); border: 1px dashed var(--line); border-radius: var(--r-blok); color: var(--ink); font-weight: 500; font-size: 14px; padding: 24px; box-shadow: none; }
+body .logo-drop:hover { border-color: var(--ink3); color: var(--ink); background: var(--soft); }
+
+/* ── Overzicht ─────────────────────────────────────────────────────── */
+
+body .sum-row { background: var(--soft); border: 0; border-radius: var(--r-klein); padding: 12px 16px; display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; box-shadow: none; }
+body .sum-row:hover { background: var(--line); }
+body .sum-label { font-weight: 400; font-size: 11px; letter-spacing: 0; text-transform: none; color: var(--ink3); width: 7rem; flex-shrink: 0; }
+body .sum-value { font-weight: 400; font-size: 14px; color: var(--ink); }
+body .sum-edit { font-size: 12px; font-weight: 500; color: var(--ink2); opacity: 1; }
+
+/* ── Toast ─────────────────────────────────────────────────────────── */
+
+body #toast { background: var(--omgekeerd); color: var(--omgekeerd-ink); box-shadow: none; font-weight: 500; }
+
+/* ── Mobiel ────────────────────────────────────────────────────────── */
+
+/* style.css trekt de knoppenrij op mobiel uit de kaart (position: fixed onderin,
+   Terug onder Volgende). Op het systeem blijven de knoppen gewoon in de stap:
+   gestapeld en op volle breedte, met Volgende bovenaan. */
+@media (max-width: 47.99rem) {
+    .wizard .step .stap-knoppen { position: static; flex-direction: column-reverse; gap: 10px; margin-top: 26px; }
+    .wizard .step .stap-knoppen .btn { width: 100%; }
+    .wizard .step { padding-bottom: 0; }
+    body #resetLink { bottom: 1rem; }
+    /* Ruimte onder de kaart zodat de vaste pil "Opnieuw beginnen" nooit over de knoppen valt */
+    .wizard-pagina { padding-bottom: calc(var(--gap) + 56px); }
+    .wizard-vlak { min-height: calc(100dvh - 2 * var(--gap) - 56px); }
+    .wizard-kop { padding: 18px 20px 14px; }
+}

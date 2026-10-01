@@ -190,6 +190,8 @@
         const T1_BEZORG = @json($bezorg);
         const T1_BASIS = @json($basis);
         const OPSLAG = @json('t1_' . $slug);
+        /* Je bent hier omdat de bestelling rond is: het mandje kan leeg */
+        localStorage.removeItem(`${OPSLAG}_mand`);
         const FOTOS = @json($fotos ?? []);
         const PALET = @json($palet);
         const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

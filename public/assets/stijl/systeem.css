@@ -1,0 +1,523 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Shop & Eat designsysteem 3.0
+   Overgenomen uit shop-and-eat.html en uitgebreid voor het hele platform.
+
+   Deze stylesheet vervangt assets/onboarding/style.css. Op een pagina die
+   nog halverwege de overgang zit mogen ze naast elkaar staan, mits in deze
+   volgorde: eerst style.css, dan systeem.css, dan de paginalaag met de brug
+   (zie assets/stijl/dashboard.css). De enige klasse die beide kennen is
+   .rail-item; die wint hier, en de paginalaag maakt het verschil af.
+
+   Opbouw:
+     1. Tokens          kleuren, maten, radii (licht en donker)
+     2. Basis           reset en standaardgedrag
+     3. Layout          pagina, kaartvlakken, koppen
+     4. Typografie      schaal, lead, small, tag
+     5. Knoppen
+     6. Vlakken         kaarten, zachte vlakken, donkere vlakken, foto's
+     7. Formulier       velden, labels, keuzes
+     8. Gegevens        cijfers, stappen, tabs, lijstregels, status
+     9. App             rail, tabbalk, venster (afgeleid, niet uit de bron)
+    10. Beweging
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Tokens ──────────────────────────────────────────────────────── */
+
+:root {
+    /* Vlakken, van buiten naar binnen: pagina → kaart → zacht vlak.
+       Een warm vel, geen grijs: het gaat om eten. De trap heeft echte stappen,
+       anders vloeit alles in elkaar over. */
+    --page: #f6f2ec;
+    --card: #ffffff;
+    --soft: #f4eee6;
+
+    /* Tekst, van sterk naar zwak, licht warm meegetint */
+    --ink: #1b1714;
+    --ink2: #5e5650;
+    --ink3: #8b837b;
+
+    --line: #e7dfd5;
+    --dark: #141414;      /* echt donker, ongeacht het thema: een vlak over een foto, een videospeler */
+    --green: #8ee08f;     /* alleen voor status: live, betaald, gelukt */
+
+    /* De hoofdkleur "Tomaat" (gekozen 30 september 2026): koraalrood met warm
+       geel als tweede kleur. De hoofdkleur neemt alles wat actie of aandacht is:
+       knoppen, actieve navigatie, grafieken, de begroeting. De tweede kleur is
+       voor één blok per scherm dat mag opvallen zonder actie te zijn. */
+    --accent: #e8432e;
+    --accent-ink: #ffffff;
+    --accent-2: #f5b82e;
+    --accent-2-ink: #1b1714;
+
+    /* Het omgekeerde vlak: het tegenovergestelde van de pagina. Sinds de
+       kleurkeuze is dat de hoofdkleur, in beide thema's. Hoofdknoppen, actieve
+       navigatie en volle tags gebruiken dit paar. Een zaak die zelf een kleur
+       koos, ziet in het dashboard die kleur hier staan. */
+    --omgekeerd: var(--accent);
+    --omgekeerd-ink: var(--accent-ink);
+
+    /* Ritme */
+    --gap: 12px;
+
+    /* Rondingen */
+    --r-pill: 999px;
+    --r-vlak: 28px;       /* grote kaartvlakken (slides) */
+    --r-kaart: 22px;      /* kaarten binnen een vlak */
+    --r-blok: 18px;       /* blokken en foto's */
+    --r-klein: 14px;      /* kleine blokjes, tabs */
+    --r-mini: 12px;       /* chips in een blok, kleine foto's */
+
+    /* Beweging: één curve voor alles */
+    --soepel: cubic-bezier(.2, .7, .2, 1);
+
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Donker volgt het systeem, tenzij de pagina expliciet licht of donker staat */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        /* Grafiet in plaats van zwart: kaarten blijven zichtbaar als kaarten
+           en de lichte knoppen schreeuwen niet (variant C, 30 september 2026) */
+        --page: #1c1c1c;
+        --card: #282828;
+        --soft: #333333;
+        --ink: #e8e8e8;
+        --ink2: #a3a3a3;
+        --ink3: #828282;
+        --line: #3f3f3f;
+        --dark: #050505;
+        /* In donker een tikje lichter rood, anders zakt het weg in het grafiet */
+        --accent: #f0553f;
+        --accent-2: #f5b82e;
+        --accent-2-ink: #1b1714;
+    }
+}
+:root[data-theme="dark"] {
+    --page: #1c1c1c;
+    --card: #282828;
+    --soft: #333333;
+    --ink: #e8e8e8;
+    --ink2: #a3a3a3;
+    --ink3: #828282;
+    --line: #3f3f3f;
+    --dark: #050505;
+    --accent: #f0553f;
+    --accent-2: #f5b82e;
+    --accent-2-ink: #1b1714;
+}
+
+/* ── 2. Basis ───────────────────────────────────────────────────────── */
+
+/* In een cascade-laag, en dat is geen sier: Tailwind v4 zet zijn utilities in
+   @layer utilities, en een regel buiten elke laag wint daar altijd van. Zou
+   `p { margin: 0 }` hier los staan, dan doet een `mb-4` op een alinea niets.
+   Een laag met de naam "base" komt in Tailwinds volgorde vóór utilities. */
+@layer base {
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; background: var(--page); }
+
+    body {
+        margin: 0;
+        background: var(--page);
+        color: var(--ink);
+        font-family: 'Figtree', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        font-size: 15px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, p, ul, ol, figure { margin: 0; }
+    ul, ol { padding: 0; list-style: none; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    button { border: 0; background: none; cursor: pointer; padding: 0; }
+    img, svg { display: block; max-width: 100%; }
+
+    :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 6px; }
+}
+
+/* ── 3. Layout ──────────────────────────────────────────────────────── */
+
+/* De pagina is een grijs vel met witte vlakken erop, altijd 12px ertussen */
+.page {
+    padding: var(--gap);
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+}
+
+.vlak {
+    background: var(--card);
+    border-radius: var(--r-vlak);
+    padding: clamp(26px, 4.2vh, 56px) clamp(24px, 4vw, 60px);
+    position: relative;
+}
+
+.vlak.donker { background: var(--omgekeerd); color: var(--omgekeerd-ink); }
+.vlak.tweede { background: var(--accent-2); color: var(--accent-2-ink); }
+.vlak.tweede .lead, .vlak.tweede .mini, .vlak.tweede .small { color: color-mix(in srgb, var(--accent-2-ink) 78%, transparent); }
+.vlak.zacht { background: var(--soft); }
+
+/* Kop van een vlak: titel links, actie rechts */
+.head {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 24px;
+    margin-bottom: clamp(18px, 3.5vh, 36px);
+}
+.head .tag { margin-bottom: 12px; }
+@media (max-width: 900px) {
+    .head { flex-direction: column; align-items: flex-start; gap: 12px; }
+}
+
+.midden { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
+
+/* ── 4. Typografie ──────────────────────────────────────────────────── */
+
+/* Koppen zijn licht (300) en strak gespatieerd; een <b> erin maakt één woord zwaar.
+   Ook in de basislaag, zodat een utility als text-xl op een kop gewoon wint. */
+@layer base {
+    h1, .h1 {
+        font-size: clamp(38px, min(5.6vw, 8.5vh), 72px);
+        font-weight: 300;
+        line-height: 1.02;
+        letter-spacing: -.03em;
+    }
+    h2, .h2 {
+        font-size: clamp(26px, min(3.2vw, 5.2vh), 42px);
+        font-weight: 300;
+        line-height: 1.12;
+        letter-spacing: -.02em;
+    }
+    h3, .h3 {
+        font-size: clamp(20px, min(2.1vw, 3.6vh), 27px);
+        font-weight: 300;
+        line-height: 1.35;
+        letter-spacing: -.01em;
+    }
+    h1 b, h2 b, h3 b, .lead b { font-weight: 500; }
+}
+
+.lead { font-size: 15px; color: var(--ink2); max-width: 50ch; }
+.small { font-size: 13px; color: var(--ink3); }
+.mini { font-size: 12px; color: var(--ink2); }
+
+/* Label boven een blok: klein, licht, rustig */
+.label { font-size: 11px; color: var(--ink3); }
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 14px;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--ink2);
+    background: var(--card);
+}
+.tag.vol { background: var(--omgekeerd); border-color: var(--omgekeerd); color: var(--omgekeerd-ink); }
+.tag.ok { background: color-mix(in srgb, var(--green) 22%, transparent); border-color: color-mix(in srgb, var(--green) 55%, transparent); color: var(--ink); }
+
+/* ── 5. Knoppen ─────────────────────────────────────────────────────── */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 46px;
+    padding: 0 22px;
+    border-radius: var(--r-pill);
+    font-size: 14px;
+    font-weight: 500;
+    transition: transform .2s, background .2s, color .2s, border-color .2s;
+    white-space: nowrap;
+}
+.btn:hover { transform: translateY(-1px); }
+
+.btn.dark { background: var(--omgekeerd); color: var(--omgekeerd-ink); }
+.btn.dark:hover { background: color-mix(in srgb, var(--omgekeerd) 86%, var(--page)); }
+.btn.line { border: 1px solid var(--line); color: var(--ink); }
+.btn.line:hover { background: var(--soft); }
+.btn.wh { background: var(--card); color: var(--ink); }
+.btn.wh:hover { background: var(--soft); }
+.btn.glass {
+    background: rgba(255, 255, 255, .14);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .28);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+.btn.glass:hover { background: rgba(255, 255, 255, .24); }
+
+.btn.klein { min-height: 38px; font-size: 13px; padding: 0 18px; }
+.btn.breed { width: 100%; }
+.btn[disabled], .btn.uit { opacity: .45; pointer-events: none; }
+
+/* Het pijltje of plusje achter een knoplabel */
+/* Pijl of chevron in een knop: altijd een icoon, nooit een tekstteken */
+.ar { font-size: 13px; line-height: 1; }
+.ar.fa-chevron-right { font-size: 11px; }
+
+/* ── 6. Vlakken: kaarten en foto's ──────────────────────────────────── */
+
+.kaart {
+    background: var(--soft);
+    border-radius: var(--r-blok);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: transform .35s var(--soepel), background .3s, color .3s;
+}
+.kaart.hover:hover { transform: translateY(-6px); }
+.kaart.omgekeerd { background: var(--omgekeerd); color: var(--omgekeerd-ink); }
+.kaart.omgekeerd p, .kaart.omgekeerd .mini { color: color-mix(in srgb, var(--omgekeerd-ink) 70%, transparent); }
+.kaart.omkeerbaar:hover { background: var(--omgekeerd); color: var(--omgekeerd-ink); transform: translateY(-3px); }
+.kaart.omkeerbaar:hover p, .kaart.omkeerbaar:hover .mini { color: color-mix(in srgb, var(--omgekeerd-ink) 70%, transparent); }
+
+/* Een foto met een kleurvlak eronder, zodat er nooit een gat valt bij laden */
+.photo {
+    position: relative;
+    border-radius: var(--r-blok);
+    overflow: hidden;
+    background: #2b1d18;
+    isolation: isolate;
+}
+.photo::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--ph, radial-gradient(70% 60% at 30% 70%, #c2622a 0%, #6a2e1a 40%, #1d1411 100%));
+}
+.photo img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: var(--pos, center);
+    opacity: 0;
+    transition: opacity .8s, transform .9s var(--soepel);
+    z-index: 1;
+}
+.photo img.ok { opacity: 1; }
+.photo img.fail { display: none; }
+.photo.zoom:hover img { transform: scale(1.04); }
+
+/* Tekst over een foto: donker verloop van onderaf */
+.photo.tekst { display: flex; flex-direction: column; justify-content: flex-end; padding: 24px; color: #fff; }
+.photo.tekst::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 35%, rgba(0, 0, 0, .8) 100%);
+}
+.photo.tekst > :not(img) { position: relative; z-index: 2; }
+
+/* ── 7. Formulier ───────────────────────────────────────────────────── */
+
+/* Velden zijn een lijn, geen doos: rustiger en past bij de lichte koppen */
+.fld { display: flex; flex-direction: column; gap: 2px; }
+.fld label { font-size: 11px; color: var(--ink3); }
+.fld input, .fld select, .fld textarea {
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 6px 0 8px;
+    color: var(--ink);
+    min-height: 36px;
+    width: 100%;
+    transition: border-color .2s;
+}
+.fld input:focus, .fld select:focus, .fld textarea:focus { outline: 0; border-bottom-color: var(--ink); }
+.fld input::placeholder, .fld textarea::placeholder { color: var(--ink3); }
+.fld .fout { font-size: 12px; color: #b3261e; min-height: 1.1em; }
+
+/* Op een donkere of glazen ondergrond */
+.op-donker .fld label { color: rgba(255, 255, 255, .65); }
+.op-donker .fld input { border-bottom-color: rgba(255, 255, 255, .3); color: #fff; }
+.op-donker .fld input::placeholder, .op-donker .fld textarea::placeholder { color: rgba(255, 255, 255, .6); }
+.op-donker .fld input:focus { border-bottom-color: #fff; }
+
+/* Glazen paneel op een foto */
+.glas {
+    padding: 22px 24px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, .12);
+    border: 1px solid rgba(255, 255, 255, .22);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    backdrop-filter: blur(18px) saturate(160%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Keuzekaart: een klikbaar blok in plaats van een radio */
+.keuze {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    text-align: left;
+    padding: 14px 16px;
+    border-radius: var(--r-klein);
+    border: 1px solid var(--line);
+    background: var(--card);
+    transition: border-color .2s, background .2s;
+}
+.keuze:hover { background: var(--soft); }
+.keuze.aan { border-color: var(--ink); background: var(--soft); }
+.keuze b { font-weight: 500; }
+.keuze span { color: var(--ink2); font-size: 12.5px; }
+
+/* ── 8. Gegevens ────────────────────────────────────────────────────── */
+
+/* Eén groot cijfer met een korte uitleg eronder */
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat .n { font-size: clamp(30px, min(3.2vw, 5vh), 44px); font-weight: 300; line-height: 1; letter-spacing: -.03em; }
+.stat .c { font-size: 13px; color: var(--ink2); max-width: 24ch; }
+
+/* Genummerde stap */
+.stap {
+    background: var(--soft);
+    border-radius: var(--r-blok);
+    padding: 20px 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    transition: background .3s, color .3s, transform .3s;
+}
+.stap .h { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 15px; font-weight: 500; }
+.stap .h span { font-size: 12px; font-weight: 400; color: var(--ink3); }
+.stap p { font-size: 12.5px; color: var(--ink2); line-height: 1.5; }
+.stap.aan, .stap:hover { background: var(--omgekeerd); color: var(--omgekeerd-ink); transform: translateY(-3px); }
+.stap.aan p, .stap:hover p { color: color-mix(in srgb, var(--omgekeerd-ink) 70%, transparent); }
+.stap.aan .h span, .stap:hover .h span { color: color-mix(in srgb, var(--omgekeerd-ink) 50%, transparent); }
+
+/* Verticale tabs met een voortgangsbalkje */
+.tab {
+    text-align: left;
+    padding: 12px 16px;
+    border-radius: var(--r-klein);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    transition: background .3s;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+}
+.tab b { font-weight: 500; font-size: 15px; }
+.tab span { font-size: 12.5px; color: var(--ink2); }
+.tab:hover, .tab.aan { background: var(--soft); }
+.tab .bar { position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--ink); }
+
+/* Icoonpunt: rondje dat omkeert bij hover */
+.punt { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; font-size: 12.5px; color: var(--ink2); }
+.punt i { width: 42px; height: 42px; border-radius: 50%; background: var(--soft); display: grid; place-items: center; color: var(--ink); font-style: normal; transition: transform .3s, background .3s, color .3s; }
+.punt:hover i { transform: translateY(-3px); background: var(--omgekeerd); color: var(--omgekeerd-ink); }
+.punt b { font-weight: 500; color: var(--ink); font-size: 13.5px; }
+
+/* Lijstregel: de werkpaardvorm in het dashboard */
+.regel {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    border-radius: var(--r-klein);
+    background: var(--soft);
+}
+.regel .op { flex: 1; min-width: 0; }
+.regel b { font-weight: 500; }
+
+/* Status: een bolletje met een woord */
+.status { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink2); }
+.status i { width: 8px; height: 8px; border-radius: 50%; background: var(--ink3); display: block; }
+.status.live i { background: var(--green); }
+.status.uit i { background: var(--ink3); }
+
+/* Browserbalkje boven een schermafbeelding */
+.scherm { background: var(--soft); border-radius: var(--r-kaart); padding: 12px; }
+.scherm .url { font-size: 12px; color: var(--ink3); padding: 2px 10px 10px; display: flex; gap: 8px; align-items: center; }
+.scherm .url i { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: block; }
+
+/* Doorlopende tekstband */
+.band { overflow: hidden; border-bottom: 1px solid var(--line); padding-bottom: clamp(18px, 3vh, 30px); }
+.band .rij { display: flex; width: max-content; animation: band 40s linear infinite; white-space: nowrap; font-size: 14px; color: var(--ink2); }
+.band .rij span { padding: 0 24px; }
+.band .rij span::before { content: "/"; margin-right: 12px; color: var(--ink3); }
+@keyframes band { to { transform: translateX(-50%); } }
+
+/* ── 9. App-onderdelen (afgeleid, niet uit de bron) ─────────────────── */
+
+/* Navigatie als pillen, zoals de hoofdnav van de bron */
+.pillnav { display: inline-flex; gap: 4px; padding: 6px; border-radius: var(--r-pill); background: var(--soft); }
+.pillnav a, .pillnav button { padding: 8px 14px; border-radius: var(--r-pill); font-size: 13px; font-weight: 500; color: var(--ink2); }
+.pillnav a:hover, .pillnav button:hover { background: var(--card); color: var(--ink); }
+.pillnav a.aan, .pillnav button.aan { background: var(--omgekeerd); color: var(--omgekeerd-ink); }
+
+/* Zijnavigatie in het dashboard */
+.rail-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: var(--r-klein);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink2);
+    transition: background .2s, color .2s;
+}
+.rail-item:hover { background: var(--soft); color: var(--ink); }
+.rail-item.aan { background: var(--omgekeerd); color: var(--omgekeerd-ink); }
+
+/* Venster boven de pagina */
+.venster-laag { position: fixed; inset: 0; z-index: 120; background: rgba(0, 0, 0, .45); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); display: grid; place-items: center; padding: var(--gap); overflow-y: auto; }
+.venster { background: var(--card); border-radius: var(--r-vlak); width: min(100%, 560px); padding: 28px; display: flex; flex-direction: column; gap: 16px; }
+
+/* Het woordmerk Shop & Eat: een schijf met een stip erin, zoals in shop-and-eat.html.
+   Op een licht vlak donker met een lichte stip; met .licht op een omgekeerd vlak. */
+
+.merk { display: inline-flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 500; letter-spacing: -.01em; color: var(--ink); }
+.merk i { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); display: grid; place-items: center; flex-shrink: 0; }
+.merk i::after { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--card); }
+/* Op een echt donker vlak (video, afsluiter): de schijf wit, de stip donker. Nooit de hoofdkleur in het merk. */
+.merk.licht { color: #fff; }
+.merk.licht i { background: #fff; }
+.merk.licht i::after { background: #1b1714; }
+.merk.klein { font-size: 15px; gap: 8px; }
+.merk.klein i { width: 24px; height: 24px; }
+.merk.klein i::after { width: 9px; height: 9px; }
+
+/* Tekstknop: een link die iets doet, geen pil */
+.link-knop { font-size: 13px; font-weight: 500; color: var(--ink2); text-decoration: underline; text-underline-offset: 3px; transition: color .2s; }
+.link-knop:hover { color: var(--ink); }
+
+/* ── 10. Beweging ───────────────────────────────────────────────────── */
+
+.in { animation: op .9s var(--soepel) both; }
+.in.d1 { animation-delay: .12s; }
+.in.d2 { animation-delay: .24s; }
+.in.d3 { animation-delay: .36s; }
+@keyframes op { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+/* Onthullen bij scrollen: .js op <html>, .toon op het blok dat in beeld komt */
+.js .rv { opacity: 0; transform: translateY(22px); transition: opacity .8s var(--soepel), transform .8s var(--soepel); transition-delay: var(--d, 0s); }
+.js .toon .rv, .js .rv.toon { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; scroll-snap-type: none; }
+    .in, .band .rij { animation: none !important; }
+    .js .rv { opacity: 1; transform: none; transition: none; }
+    * { transition-duration: .01ms !important; }
+}

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Feedback;
 use App\Models\Klant;
+use App\Models\Medewerker;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -20,6 +21,7 @@ use Illuminate\Support\Str;
  * - Demo-beheer: demo-beheer@mijnpizzeria.nl / Demo1234! (staat in DatabaseSeeder)
  * - Showcase (bestelpagina /bestellen/pizzeriasole): demo@pizzeria.nl / Demo1234!
  * - Alle andere zaken: <slug>@demo.mijnpizzeria.nl / Demo1234!
+ * - Teamscherm (/bezorger), bezorgers van het demo-account: youssef@fiorella.demo en lisa@fiorella.demo / Demo1234!
  */
 class PizzeriaSeeder extends Seeder
 {
@@ -144,6 +146,15 @@ class PizzeriaSeeder extends Seeder
             };
         }
 
+        // De showcase krijgt ook een bezorger; die zaak laten we het vaakst zien
+        $showcase = User::where('email', 'demo@pizzeria.nl')->first();
+        if ($showcase) {
+            $this->teamVoor($showcase, [
+                ['Sam Hendriks', 'sam@sole.demo', 'bezorger', true],
+                ['Ilias Yilmaz', 'ilias@sole.demo', 'bezorger', true],
+            ]);
+        }
+
         $this->demoAccount();
         $this->feedbackVullen();
     }
@@ -203,6 +214,58 @@ class PizzeriaSeeder extends Seeder
 
         $this->menuVoor($user, volledig: true);
         $this->bestellingenVoor($user, 120, vandaag: true);
+        $this->teamVoor($user, [
+            ['Youssef El Amrani', 'youssef@fiorella.demo', 'bezorger', true],
+            ['Lisa Bergsma', 'lisa@fiorella.demo', 'bezorger', true],
+            ['Marco Rossi', 'marco@fiorella.demo', 'keuken', true],
+            ['Tim de Groot', 'tim@fiorella.demo', 'bezorger', false],   // nog niet geactiveerd
+        ]);
+    }
+
+    /**
+     * Teamleden van een zaak. Wie \$actief is heeft zijn uitnodiging al geaccepteerd
+     * en kan inloggen op /bezorger; de rest staat nog op uitnodiging.
+     * Bezorgde ritten van vandaag zetten we op naam, zodat de historie klopt.
+     */
+    private function teamVoor(User $user, array $leden): void
+    {
+        $bezorgers = [];
+        foreach ($leden as [$naam, $email, $rol, $geactiveerd]) {
+            $medewerker = Medewerker::create([
+                'user_id' => $user->id,
+                'naam' => $naam,
+                'email' => $email,
+                'telefoon' => '06 ' . rand(10, 59) . ' ' . rand(100, 999) . ' ' . rand(100, 999),
+                'wachtwoord' => $geactiveerd ? $this->wachtwoord : null,
+                'rol' => $rol,
+                'actief' => true,
+                'uitnodiging_token' => $geactiveerd ? null : Str::random(64),
+                'uitgenodigd_op' => now()->subDays($geactiveerd ? rand(20, 90) : 2),
+                'laatst_actief_op' => $geactiveerd ? now()->subMinutes(rand(5, 240)) : null,
+            ]);
+            if ($geactiveerd && $rol === 'bezorger') {
+                $bezorgers[] = $medewerker;
+            }
+        }
+        if ($bezorgers === []) {
+            return;
+        }
+
+        // De bezorgde ritten van vandaag verdelen over de bezorgers
+        $user->orders()
+            ->where('type', 'bezorgen')->where('status', 'bezorgd')->whereDate('created_at', today())
+            ->get()
+            ->each(function (Order $order) use ($bezorgers) {
+                $bezorger = $bezorgers[array_rand($bezorgers)];
+                $order->forceFill([
+                    'bezorger_id' => $bezorger->id,
+                    'bezorgd_om' => $order->created_at->copy()->addMinutes(rand(25, 45)),
+                ])->save();
+            });
+
+        // En eentje die nu onderweg is, zodat het teamscherm meteen iets te doen heeft
+        $user->orders()->where('type', 'bezorgen')->where('status', 'onderweg')->first()
+            ?->forceFill(['bezorger_id' => $bezorgers[0]->id])->save();
     }
 
     /** Menukaart: de showcase krijgt de volle kaart, de rest een compacte */

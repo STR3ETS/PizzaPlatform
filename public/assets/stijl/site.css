@@ -1,0 +1,391 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Shop & Eat: de marketingsite op designsysteem 3.0
+
+   Laadvolgorde: stijl/systeem.css → dit bestand. Het systeem levert de
+   vlakken, koppen, tags, knoppen, foto's en de beweging; hier staan de
+   onderdelen van de site zelf. Opbouw, klassennamen en maten volgen
+   public/shop-and-eat.html, de bron van het systeem. De homepagina is
+   alleen de hero: de video met het schaduwverloop, de navigatie erin en
+   het startformulier. De blog heeft de vaste kop en de donkere afsluiter.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Schil ─────────────────────────────────────────────────────────── */
+
+.page { min-height: 100dvh; }
+.slide { display: flex; flex-direction: column; justify-content: center; position: relative; padding: clamp(26px, 4.2vh, 56px) clamp(24px, 4vw, 60px); }
+
+/* ── Kop op de overige pagina's (blog): plakt bovenaan, schuift weg bij scrollen ── */
+
+.site-kop {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: calc(-1 * var(--gap)) calc(-1 * var(--gap)) 0;
+    padding: calc(var(--gap) + 2px) calc(var(--gap) + 10px) 10px;
+    background: color-mix(in srgb, var(--page) 88%, transparent);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    transition: transform .35s var(--soepel);
+}
+.site-kop.weg { transform: translateY(-100%); }
+.site-kop .pillnav { background: var(--card); }
+.site-kop .rechts { display: flex; align-items: center; gap: 8px; }
+.site-kop .menu-knop { display: none; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line); place-items: center; background: var(--card); }
+@media (max-width: 980px) {
+    .site-kop .pillnav, .site-kop .rechts .btn.line { display: none; }
+    .site-kop .menu-knop { display: grid; }
+}
+
+/* Mobiel menu: een kaart onder de kop */
+.site-menu { display: none; position: absolute; left: var(--gap); right: var(--gap); top: 100%; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-kaart); padding: 10px; flex-direction: column; gap: 2px; }
+.site-menu.open { display: flex; }
+.site-menu a { padding: 12px 14px; border-radius: var(--r-klein); font-weight: 500; }
+.site-menu a:hover { background: var(--soft); }
+.site-menu .btn { margin-top: 6px; }
+
+/* ── Hero: video met schaduwverloop, de navigatie erin, tekst links en het formulier rechts ── */
+
+.hero { padding: 22px 28px 36px; background: #1d1411; color: #fff; justify-content: space-between; overflow: hidden; min-height: calc(100dvh - 2 * var(--gap)); }
+.hero .bgv { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.hero .shade { position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(0, 0, 0, .42) 0%, rgba(0, 0, 0, .08) 28%, rgba(0, 0, 0, .12) 55%, rgba(0, 0, 0, .78) 100%); }
+.hero > * { position: relative; z-index: 2; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.top-r { display: flex; align-items: center; gap: 10px; }
+
+/* Taalkeuze: een kleine glazen pil met NL en EN */
+.taal { display: inline-flex; gap: 2px; padding: 4px; border-radius: var(--r-pill); background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .28); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.taal a { padding: 7px 11px; border-radius: var(--r-pill); font-size: 12px; font-weight: 500; letter-spacing: .02em; color: rgba(255, 255, 255, .78); transition: background .2s, color .2s; }
+.taal a:hover { color: #fff; }
+.taal a.aan { background: #fff; color: #141414; }
+.hero .pillnav { position: absolute; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, .92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.hero .pillnav a { color: #141414; }
+.hero .pillnav a:hover { background: #f0f0f0; }
+.hero .pillnav a.aan { background: #141414; color: #fff; }
+.hero-b { display: grid; grid-template-columns: 1.2fr .8fr; gap: 40px; align-items: end; }
+.hero h1 { max-width: 14ch; }
+.hero-t { display: flex; flex-direction: column; gap: 20px; padding-bottom: 6px; align-items: flex-start; }
+.hero-t p { font-size: 15px; color: rgba(255, 255, 255, .85); max-width: 44ch; }
+.hero-t .rij { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* Het glazen formulier: de eerste stap van de wizard, hier alvast */
+.form { justify-self: end; width: min(100%, 380px); padding: 22px 24px; border-radius: 20px; background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .22); -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%); display: flex; flex-direction: column; gap: 12px; }
+.form .fh { display: flex; gap: 8px; flex-wrap: wrap; font-size: 11px; color: rgba(255, 255, 255, .7); }
+.form .fh span { padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, .14); }
+.form h3 { font-size: 19px; font-weight: 400; line-height: 1.25; }
+.form p { font-size: 13px; color: rgba(255, 255, 255, .75); }
+.form .btn { margin-top: 4px; }
+.form .feiten { display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: 12px; color: rgba(255, 255, 255, .65); }
+.form .feiten span::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); margin-right: 7px; vertical-align: middle; }
+
+@media (max-width: 980px) {
+    .hero .pillnav { display: none; }
+    .hero-b { grid-template-columns: 1fr; gap: 28px; }
+    .form { justify-self: stretch; }
+    .hero { padding: 18px 20px 28px; gap: 48px; }
+}
+
+/* ── Afsluiter en voet van de overige pagina's: donker vlak met een stippenpatroon ── */
+
+.end { background: var(--dark); color: #fff; justify-content: space-between; gap: clamp(28px, 6vh, 64px); padding: 24px 28px 22px; overflow: hidden; }
+.end::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, rgba(255, 255, 255, .13) 1.2px, transparent 1.4px) 0 0 / 22px 22px;
+    -webkit-mask: radial-gradient(55% 60% at 50% 55%, #000 10%, transparent 100%);
+    mask: radial-gradient(55% 60% at 50% 55%, #000 10%, transparent 100%);
+}
+.end > * { position: relative; }
+.end nav { display: flex; gap: 22px; font-size: 13px; color: rgba(255, 255, 255, .7); }
+.end nav a:hover { color: #fff; }
+.end .mid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 32px; align-items: end; }
+.end .mid h2 { color: #fff; max-width: 16ch; font-size: clamp(30px, min(4vw, 7vh), 58px); }
+.end .mid p { color: rgba(255, 255, 255, .7); max-width: 46ch; margin-top: 14px; }
+.end .rij { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.end .btn.line { color: #fff; border-color: rgba(255, 255, 255, .3); }
+.end .btn.line:hover { background: rgba(255, 255, 255, .1); }
+.end .bot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px 24px; font-size: 12px; color: rgba(255, 255, 255, .55); border-top: 1px solid rgba(255, 255, 255, .12); padding-top: 18px; }
+.end .bot div { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+.end .betaal { display: flex; gap: 12px; font-size: 22px; color: rgba(255, 255, 255, .6); }
+@media (max-width: 760px) {
+    .end nav { display: none; }
+    .end .mid { grid-template-columns: 1fr; }
+    .end .rij { justify-content: flex-start; }
+}
+
+/* ── Leestekst onder de hero: één grote zin die per letter oplicht terwijl je scrolt ── */
+
+/* Het vlak is hoger dan het scherm; de zin plakt zolang je erdoorheen scrolt */
+.lees-vlak { min-height: 170dvh; padding: 0 clamp(24px, 4vw, 60px); }
+.lees { position: sticky; top: 0; min-height: 100dvh; display: grid; grid-template-columns: 1.1fr .9fr; gap: clamp(28px, 4vw, 64px); align-items: center; }
+.lees-l { display: flex; flex-direction: column; align-items: flex-start; gap: 22px; }
+.lees-tekst { font-size: clamp(28px, min(4vw, 7vh), 60px); font-weight: 300; line-height: 1.18; letter-spacing: -.02em; max-width: 24ch; }
+.lees-tekst b { font-weight: 500; }
+.lees-tekst .w { display: inline-block; white-space: nowrap; }
+.lees-tekst .l { opacity: .16; }
+
+/* Drie foto's rechts: verschillend van maat, een tikje gedraaid en over elkaar heen; --y komt uit het script */
+.lees-fotos { position: relative; width: 100%; aspect-ratio: 1 / 1; max-height: 76dvh; }
+.lees-fotos .photo { position: absolute; border-radius: var(--r-blok); transform: rotate(var(--rot)) translateY(var(--y, 0px)); will-change: transform; }
+.lees-fotos .f1 { left: 0; top: 4%; width: 58%; aspect-ratio: 4 / 5; --rot: -4deg; z-index: 1; --pos: center 22%; }
+.lees-fotos .f2 { right: 0; top: 0; width: 46%; aspect-ratio: 1 / 1; --rot: 3deg; z-index: 2; }
+.lees-fotos .f3 { left: 30%; bottom: 0; width: 46%; aspect-ratio: 4 / 3; --rot: -2deg; z-index: 3; --pos: 60% center; }
+@media (max-width: 900px) {
+    .lees-vlak { min-height: 140dvh; }
+    .lees { grid-template-columns: 1fr; align-items: start; align-content: center; gap: 28px; }
+    .lees-fotos { aspect-ratio: 4 / 3; max-height: 42dvh; }
+    .lees-fotos .f1 { width: 52%; }
+    .lees-fotos .f2 { width: 42%; }
+    .lees-fotos .f3 { left: 38%; width: 40%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .lees-vlak { min-height: 0; padding: clamp(40px, 7vh, 88px) clamp(24px, 4vw, 60px); }
+    .lees { position: static; min-height: 0; }
+    .lees-tekst .l { opacity: 1; }
+}
+
+/* ── Het vel kleurt om: --t (achtergrond) en --tt (tekst) op <html> komen uit het script van de homepagina ── */
+
+html { background: color-mix(in srgb, var(--page) calc((1 - var(--t, 0)) * 100%), #0f0d0c); }
+body { background: transparent; }
+
+/* Het donkere deel: geen vlak, de inhoud staat op het vel zelf en kleurt mee van inkt naar wit.
+   Net zo rustig als de leestekst erboven: een kop, een zin, vier cijfers. */
+.donker-vlak { min-height: 180dvh; padding: 0 clamp(24px, 4vw, 60px); color: color-mix(in srgb, var(--ink) calc((1 - var(--tt, 0)) * 100%), #fff); --lijn: color-mix(in srgb, var(--line) calc((1 - var(--tt, 0)) * 100%), rgba(255, 255, 255, .16)); --tekst2: color-mix(in srgb, var(--ink2) calc((1 - var(--tt, 0)) * 100%), rgba(255, 255, 255, .68)); }
+.donker { position: sticky; top: 0; min-height: 100dvh; display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(32px, 6vw, 96px); align-items: center; }
+.donker-l { display: flex; flex-direction: column; gap: 22px; align-items: flex-start; }
+.donker h2 { font-size: clamp(32px, min(4.2vw, 7vh), 62px); max-width: 13ch; }
+.donker .lead { font-size: 16px; max-width: 42ch; color: var(--tekst2); }
+.donker .tag { background: transparent; color: inherit; border-color: var(--lijn); }
+.donker .btn.wh { background: #fff; color: #1b1714; }
+
+/* Vier cijfers in een rustig raster; opacity en de getallen komen uit het script */
+.cijfers { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 5vh, 56px) clamp(24px, 3vw, 48px); }
+.cijfer { display: flex; flex-direction: column; gap: 10px; padding-top: 18px; border-top: 1px solid var(--lijn); opacity: .22; }
+.cijfer .n { font-size: clamp(44px, min(5vw, 9vh), 84px); font-weight: 300; line-height: 1; letter-spacing: -.03em; white-space: nowrap; }
+.cijfer .c { font-size: 14px; color: var(--tekst2); max-width: 22ch; }
+
+@media (max-width: 900px) {
+    .donker-vlak { min-height: 0; }
+    .donker { position: static; min-height: 0; padding: 40px 0 56px; grid-template-columns: 1fr; align-items: start; gap: 40px; }
+    .cijfers { gap: 28px 20px; }
+    .cijfer .n { font-size: clamp(36px, 11vw, 56px); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .donker-vlak { min-height: 0; padding: clamp(40px, 7vh, 88px) clamp(24px, 4vw, 60px); }
+    .donker { position: static; min-height: 0; }
+    .cijfer { opacity: 1; }
+}
+
+/* Links in het donkere deel: twee foto's over elkaar, anders dan de collage erboven (staand groot, liggend klein) */
+.donker-fotos { position: relative; width: 100%; aspect-ratio: 1 / 1; max-height: 78dvh; }
+.donker-fotos .photo { position: absolute; border-radius: var(--r-blok); transform: rotate(var(--rot)) translateY(var(--y, 0px)); will-change: transform; }
+.donker-fotos .g1 { left: 4%; top: 0; width: 56%; aspect-ratio: 3 / 4; --rot: 2deg; z-index: 1; --pos: center 40%; }
+.donker-fotos .g2 { right: 0; bottom: 4%; width: 60%; aspect-ratio: 4 / 3; --rot: -3deg; z-index: 2; border: 1px solid rgba(255, 255, 255, .12); }
+@media (max-width: 900px) {
+    .donker-fotos { aspect-ratio: 4 / 3; max-height: 44dvh; }
+    .donker-fotos .g1 { width: 50%; }
+    .donker-fotos .g2 { width: 54%; }
+}
+
+/* Smal scherm: het merk breekt niet af en Inloggen wordt een rond icoontje naast de taalpil */
+.hero .merk { white-space: nowrap; }
+.inlog .icoon { display: none; }
+@media (max-width: 600px) {
+    .inlog .tekst { display: none; }
+    .inlog .icoon { display: block; font-size: 14px; }
+    .inlog { width: 40px; min-height: 40px; padding: 0; }
+    .taal a { padding: 6px 9px; font-size: 11px; }
+    .top-r { gap: 8px; }
+}
+
+/* ── Zwevende knoppen onderin: komen als een ronde schijf (pizza) het beeld in gedraaid, groeien dan uit tot de pil ── */
+
+.zweef-cta {
+    --w: 320px;
+    position: fixed;
+    left: 50%;
+    bottom: 18px;
+    z-index: 70;
+    width: 54px;
+    height: 54px;
+    border-radius: var(--r-pill);
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    transform: translate(-50%, 0) scale(0) rotate(-150deg);
+    opacity: 0;
+    transition: transform .5s cubic-bezier(.34, 1.5, .64, 1), opacity .3s, width .45s var(--soepel), background .45s, border-color .45s;
+}
+/* De schijf: een rand als korst en de stip van het merk in het midden */
+.zweef-cta::before { content: ""; position: absolute; inset: 5px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--accent-ink) 55%, transparent); transition: opacity .25s; }
+.zweef-cta::after { content: ""; position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; border-radius: 50%; background: var(--accent-ink); transform: translate(-50%, -50%); transition: opacity .25s; }
+.zweef-cta.rond { transform: translate(-50%, 0) scale(1) rotate(0deg); opacity: 1; }
+.zweef-cta.aan {
+    width: var(--w);
+    background: color-mix(in srgb, var(--card) calc((1 - var(--tt, 0)) * 100%), rgba(255, 255, 255, .1));
+    border-color: color-mix(in srgb, var(--line) calc((1 - var(--tt, 0)) * 100%), rgba(255, 255, 255, .18));
+    animation: zweef-pil 3.2s ease-in-out .6s infinite alternate;
+}
+.zweef-cta.aan::before, .zweef-cta.aan::after { opacity: 0; }
+@keyframes zweef-pil { from { translate: 0 0; } to { translate: 0 -7px; } }
+.zweef-cta:hover { animation-play-state: paused; }
+/* De knoppen staan vast in het midden en worden door de groeiende pil onthuld */
+.zweef-cta .knoppen { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; gap: 6px; white-space: nowrap; opacity: 0; transition: opacity .25s; }
+.zweef-cta.aan .knoppen { opacity: 1; transition-delay: .18s; }
+.zweef-cta .btn { min-height: 42px; padding: 0 20px; font-size: 13.5px; }
+.zweef-cta .btn.line { color: color-mix(in srgb, var(--ink) calc((1 - var(--tt, 0)) * 100%), #fff); border-color: color-mix(in srgb, var(--line) calc((1 - var(--tt, 0)) * 100%), rgba(255, 255, 255, .3)); }
+.zweef-cta .btn.line:hover { background: color-mix(in srgb, var(--soft) calc((1 - var(--tt, 0)) * 100%), rgba(255, 255, 255, .12)); }
+@media (prefers-reduced-motion: reduce) { .zweef-cta, .zweef-cta::before, .zweef-cta::after, .zweef-cta .knoppen { transition: none; animation: none; } }
+@media (max-width: 900px) {
+    .zweef-cta { bottom: 12px; }
+    .zweef-cta.aan { width: calc(100% - 2 * var(--gap) - 16px); }
+    .zweef-cta .knoppen { left: 6px; right: 6px; transform: translateY(-50%); }
+    .zweef-cta .btn { flex: 1; padding: 0 14px; }
+    /* ruimte onder het laatste deel, zodat de knoppen niets afdekken */
+    .donker { padding-bottom: 96px; }
+}
+
+/* ── Voor elke keuken: twee linten die zijwaarts meeschuiven met het scrollen (het vel is hier al donker) ── */
+
+.keukens-vlak { padding: clamp(56px, 10vh, 120px) 0 clamp(96px, 16vh, 180px); overflow: hidden; color: color-mix(in srgb, var(--ink) calc((1 - var(--tt, 0)) * 100%), #fff); --tekst2: color-mix(in srgb, var(--ink2) calc((1 - var(--tt, 0)) * 100%), rgba(255, 255, 255, .68)); --lijn: color-mix(in srgb, var(--line) calc((1 - var(--tt, 0)) * 100%), rgba(255, 255, 255, .16)); }
+.keukens-kop { display: flex; justify-content: space-between; align-items: end; gap: 24px 48px; flex-wrap: wrap; padding: 0 clamp(24px, 4vw, 60px); margin-bottom: clamp(36px, 7vh, 72px); }
+.keukens-kop h2 { font-size: clamp(30px, min(3.8vw, 6.5vh), 56px); max-width: 16ch; margin-top: 12px; }
+.keukens-kop .lead { font-size: 15px; max-width: 46ch; color: var(--tekst2); }
+.keukens-kop .tag { background: transparent; color: inherit; border-color: var(--lijn); }
+
+.lint { padding: clamp(10px, 2vh, 18px) 0; border-top: 1px solid var(--lijn); }
+.lint:last-child { border-bottom: 1px solid var(--lijn); }
+.lint-rij { display: flex; align-items: center; gap: clamp(28px, 3.5vw, 56px); width: max-content; will-change: transform; }
+.lint .woord { font-size: clamp(30px, min(4vw, 7vh), 60px); font-weight: 300; letter-spacing: -.02em; line-height: 1; white-space: nowrap; }
+.lint .rond { width: clamp(44px, 5vw, 68px); height: clamp(44px, 5vw, 68px); border-radius: 50%; flex-shrink: 0; }
+@media (max-width: 900px) {
+    .keukens-vlak { padding-bottom: 140px; }
+}
+
+/* ── Slot: het vel wordt weer licht, de kop veegt in beeld, het formulier op een witte kaart, een kleine voet ── */
+
+.slot-vlak { padding: clamp(72px, 14vh, 160px) clamp(24px, 4vw, 60px) clamp(20px, 3vh, 28px); color: color-mix(in srgb, var(--ink) calc((1 - var(--tt, 0)) * 100%), #fff); --tekst2: color-mix(in srgb, var(--ink2) calc((1 - var(--tt, 0)) * 100%), rgba(255, 255, 255, .68)); --lijn: color-mix(in srgb, var(--line) calc((1 - var(--tt, 0)) * 100%), rgba(255, 255, 255, .16)); }
+.slot { display: grid; grid-template-columns: 1.1fr .9fr; gap: clamp(32px, 6vw, 96px); align-items: center; }
+.slot-l { display: flex; flex-direction: column; gap: 22px; align-items: flex-start; }
+.slot-l h2 { font-size: clamp(34px, min(4.4vw, 7.5vh), 66px); max-width: 13ch; }
+.slot-l .lead { font-size: 16px; max-width: 44ch; color: var(--tekst2); }
+.slot-l .tag { background: transparent; color: inherit; border-color: var(--lijn); }
+/* De kop veegt van links naar rechts in beeld; --w komt uit het script */
+.veeg { clip-path: inset(0 calc((1 - var(--w, 0)) * 100%) 0 0); }
+
+/* Het formulier op een witte kaart, in de kleuren van het lichte systeem */
+.slot-form { display: flex; flex-direction: column; gap: 16px; padding: clamp(24px, 3vw, 36px); color: var(--ink); }
+.slot-form .fh { display: flex; gap: 6px; flex-wrap: wrap; }
+.slot-form .fh .tag { min-height: 26px; padding: 0 11px; font-size: 11px; }
+.slot-form h3 { font-size: 22px; font-weight: 400; line-height: 1.25; }
+.slot-form .small { color: var(--ink3); }
+
+@media (max-width: 900px) {
+    .slot { grid-template-columns: 1fr; gap: 36px; }
+    .slot-vlak { padding-top: 64px; padding-bottom: 100px; }
+    .slot-voet { grid-template-columns: 1fr 1fr; }
+    .slot-voet .voet-merk { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) { .veeg { clip-path: none; } }
+
+/* ── Alles erin: de tekst in het midden, acht kaartjes in een kring eromheen (op het donkere vel) ── */
+
+.usps-vlak { min-height: 240dvh; padding: 0 clamp(24px, 4vw, 60px); color: color-mix(in srgb, var(--ink) calc((1 - var(--tt, 0)) * 100%), #fff); --tekst2: color-mix(in srgb, var(--ink2) calc((1 - var(--tt, 0)) * 100%), rgba(255, 255, 255, .68)); --lijn: color-mix(in srgb, var(--line) calc((1 - var(--tt, 0)) * 100%), rgba(255, 255, 255, .16)); --zacht: color-mix(in srgb, var(--soft) calc((1 - var(--tt, 0)) * 100%), rgba(255, 255, 255, .07)); }
+
+/* Het scherm staat vast zolang je door het deel scrolt; de kring staat iets boven het midden, onder de zwevende knoppen uit */
+.kring-podium { position: sticky; top: 0; height: 100dvh; display: flex; align-items: center; justify-content: center; padding-bottom: 64px; }
+/* Het podium: een liggende rechthoek, de tekst precies in het midden */
+.kring { position: relative; width: min(100%, 1240px); aspect-ratio: 16 / 10; max-height: 78dvh; margin: 0 auto; }
+.kring-tekst { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 34%; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; }
+.kring-tekst h2 { font-size: clamp(28px, min(3.2vw, 5.6vh), 46px); }
+.kring-tekst .lead { font-size: 15px; max-width: 36ch; color: var(--tekst2); }
+.kring-tekst .tag { background: transparent; color: inherit; border-color: var(--lijn); }
+
+/* De kaartjes: op hun plek in procenten, gedraaid, zwevend, en --y uit het script voor het meeschuiven */
+.kaartje { --s: 1; --o: 1; position: absolute; left: calc(50% + (var(--x) - 50%) * var(--s)); top: calc(50% + (var(--y0) - 50%) * var(--s)); opacity: var(--o); width: 22%; border-radius: 18px; padding: 14px 16px; background: var(--zacht); border: 1px solid var(--lijn); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); transform: translate(-50%, -50%) rotate(calc(var(--rot, 0deg) + (1 - var(--s)) * -35deg)) scale(calc(.15 + .85 * var(--s))); will-change: transform, opacity; }
+.kaartje::after { content: ""; position: absolute; inset: 0; border-radius: inherit; animation: zweven 7s ease-in-out infinite alternate; animation-delay: var(--wacht, 0s); pointer-events: none; }
+.kaartje > * { position: relative; animation: zweven 7s ease-in-out infinite alternate; animation-delay: var(--wacht, 0s); }
+@keyframes zweven { from { translate: 0 -5px; } to { translate: 0 5px; } }
+.kaartje.usp { display: flex; gap: 12px; align-items: flex-start; }
+.kaartje.usp > i { width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; font-size: 13px; background: var(--accent); color: var(--accent-ink); }
+.kaartje.usp b { display: block; font-weight: 500; font-size: 14.5px; line-height: 1.25; }
+.kaartje.usp span { display: block; font-size: 12.5px; line-height: 1.45; color: var(--tekst2); margin-top: 3px; }
+
+/* Smal: de kring wordt een lijst, de tekst erboven */
+@media (max-width: 900px) {
+    .usps-vlak { min-height: 0; padding: clamp(56px, 10vh, 120px) clamp(24px, 4vw, 60px); }
+    .kring-podium { position: static; height: auto; padding: 0; display: block; }
+    .kring { aspect-ratio: auto; max-height: none; display: flex; flex-direction: column; gap: 14px; }
+    .kring-tekst { position: static; transform: none; width: 100%; margin-bottom: 20px; }
+    .kaartje, .kaartje.review { position: static; width: 100%; transform: none; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .kaartje::after, .kaartje > * { animation: none; } .usps-vlak { min-height: 0; padding: clamp(56px, 10vh, 120px) clamp(24px, 4vw, 60px); } .kring-podium { position: static; height: auto; } }
+
+/* ── GSAP ScrollSmoother (homepagina, breed scherm): de inhoud wordt verschoven, dus geen sticky en geen
+   eigen smooth scroll-behavior; de vastgezette delen pint ScrollTrigger ── */
+html.smooth-aan { scroll-behavior: auto; }
+html.smooth-aan .lees, html.smooth-aan .donker, html.smooth-aan .kring-podium, html.smooth-aan .prijs { position: relative; top: auto; }
+
+/* ── Prijs en reviews: witte kaart die plakt (zoals de leestekst); de vinkjes gaan aan, de reviews komen binnen ── */
+
+.prijs-vlak { min-height: 170dvh; padding: 0 clamp(24px, 4vw, 60px); }
+.prijs { position: sticky; top: 0; min-height: 100dvh; display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(28px, 5vw, 80px); align-items: center; }
+.prijs-l { display: flex; flex-direction: column; gap: 18px; align-items: flex-start; }
+.prijs-l h2 { font-size: clamp(32px, min(4vw, 6.6vh), 58px); max-width: 13ch; }
+.bedrag { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.bedrag .n { font-size: clamp(44px, min(5vw, 8vh), 72px); font-weight: 300; letter-spacing: -.03em; line-height: 1; }
+.bedrag .c { font-size: 15px; color: var(--ink2); }
+.vinkjes { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 20px; font-size: 14px; color: var(--ink3); width: 100%; }
+.vinkjes li { display: flex; align-items: center; gap: 10px; transition: color .3s; }
+.vinkjes li i { width: 20px; height: 20px; border-radius: 50%; background: var(--soft); color: var(--ink3); display: grid; place-items: center; font-size: 9px; font-style: normal; flex-shrink: 0; transition: background .3s, color .3s; }
+.vinkjes li.aan { color: var(--ink2); }
+.vinkjes li.aan i { background: color-mix(in srgb, var(--green) 40%, transparent); color: var(--ink); }
+.reviews { display: flex; flex-direction: column; gap: 14px; }
+.review { margin: 0; display: flex; flex-direction: column; gap: 10px; padding: 20px 22px; border-radius: 20px; background: var(--soft); width: min(100%, 440px); opacity: 0; transform: rotate(var(--rot, 0deg)) translateY(28px); transition: opacity .55s var(--soepel), transform .55s var(--soepel); }
+.review.aan { opacity: 1; transform: rotate(var(--rot, 0deg)); }
+.review:nth-child(2) { align-self: flex-end; }
+.review:nth-child(3) { margin-left: 24px; }
+.review .sterren { display: flex; gap: 3px; font-size: 11px; color: var(--accent); }
+.review blockquote { margin: 0; font-size: 15.5px; line-height: 1.45; }
+.review figcaption { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12.5px; color: var(--ink2); }
+.review figcaption b { font-weight: 500; color: var(--ink); }
+.review figcaption .tag { min-height: 22px; padding: 0 9px; font-size: 10.5px; margin-left: auto; }
+@media (max-width: 900px) {
+    .prijs-vlak { min-height: 0; padding: clamp(40px, 7vh, 88px) clamp(24px, 4vw, 60px); }
+    .prijs { position: static; min-height: 0; grid-template-columns: 1fr; gap: 32px; }
+    .vinkjes { grid-template-columns: 1fr; color: var(--ink2); }
+    .vinkjes li i { background: color-mix(in srgb, var(--green) 40%, transparent); color: var(--ink); }
+    .review, .review:nth-child(2), .review:nth-child(3) { align-self: stretch; width: 100%; margin-left: 0; opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .prijs-vlak { min-height: 0; } .prijs { position: static; min-height: 0; }
+    .review { opacity: 1; transform: none; } .vinkjes { color: var(--ink2); }
+}
+
+/* ── De voet onder het slot: merk en belofte, drie kolommen, onderin het jaar ── */
+
+.slot-voet { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.2fr; gap: 32px 40px; margin-top: clamp(56px, 10vh, 120px); padding-top: 32px; border-top: 1px solid var(--lijn); font-size: 13.5px; color: var(--tekst2); }
+.voet-merk { display: flex; flex-direction: column; gap: 16px; align-items: flex-start; }
+.voet-merk p { max-width: 36ch; line-height: 1.55; }
+.voet-kolom { display: flex; flex-direction: column; gap: 9px; align-items: flex-start; }
+.voet-kolom .label { margin-bottom: 4px; }
+.voet-kolom a { transition: color .2s; }
+.voet-kolom a:hover { color: var(--ink); }
+.voet-kolom p { line-height: 1.55; max-width: 32ch; }
+.voet-kolom .betaal { display: inline-flex; gap: 10px; font-size: 22px; color: var(--ink2); }
+.voet-kolom .status { font-size: 13px; }
+/* Taalkeuze op het lichte vel */
+.taal.licht { background: var(--soft); border-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.taal.licht a { color: var(--ink2); }
+.taal.licht a:hover { color: var(--ink); }
+.taal.licht a.aan { background: var(--omgekeerd); color: var(--omgekeerd-ink); }
+.voet-onder { grid-column: 1 / -1; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 24px; padding-top: 18px; border-top: 1px solid var(--lijn); font-size: 12.5px; }
+@media (max-width: 600px) {
+    .slot-voet { grid-template-columns: 1fr; }
+}

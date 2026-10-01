@@ -5,6 +5,28 @@ const $$ = (sel) => [...document.querySelectorAll(sel)];
 const DATA = window.PP_DATA || {};
 const esc = (str) => String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+/* Tekst naar het klembord. navigator.clipboard bestaat alleen op https (en localhost);
+   op een gewone http-omgeving zoals pizzaplatform.test valt dit terug op het oude
+   execCommand via een onzichtbaar tekstveld. Geeft true als het gelukt is. */
+async function kopieer(tekst) {
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(tekst);
+            return true;
+        }
+    } catch { /* dan de terugvaloptie hieronder */ }
+    const ta = document.createElement('textarea');
+    ta.value = tekst;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
+    document.body.appendChild(ta);
+    ta.select();
+    let gelukt = false;
+    try { gelukt = document.execCommand('copy'); } catch { gelukt = false; }
+    ta.remove();
+    return gelukt;
+}
+
 /* ── Begroeting op basis van het moment van de dag ────────────── */
 
 (function dagregel() {
@@ -101,7 +123,8 @@ $$('[data-teller]').forEach((el) => {
         ? DATA.dayTimes[dagKey]
         : { open: DATA.open || '16:00', close: DATA.close || '21:30' };
 
-    /* Slots per half uur binnen de openingstijden */
+    /* Alle 24 uren van de dag. Binnen de openingstijden een schatting, daarbuiten
+       een laag blokje met een maantje, zodat je in één blik ziet wanneer je dicht bent. */
     const parseT = (s, fb) => {
         const [h, m] = String(s).split(':').map(Number);
         return (isNaN(h) ? fb : h) + ((m || 0) >= 30 ? 0.5 : 0);
@@ -109,9 +132,8 @@ $$('[data-teller]').forEach((el) => {
     let van = parseT(tijd.open, 16);
     let tot = parseT(tijd.close, 21.5);
     if (tot <= van) { van = 16; tot = 21.5; }
-
-    const slots = [];
-    for (let t = van; t < tot; t += 0.5) slots.push(t);
+    /* Een uurblok telt als open zodra er in dat uur besteld kan worden (21:30 sluiten: het blok van 21 is open) */
+    const isOpen = (u) => u >= Math.floor(van) && u < Math.ceil(tot);
 
     /* Typisch patroon: dinerpiek rond 18:00, kleine lunchpiek rond 12:30 */
     const schatting = (t) => {
@@ -120,19 +142,28 @@ $$('[data-teller]').forEach((el) => {
         return Math.max(12, Math.round(100 * Math.max(diner, lunch)));
     };
 
-    const fmt = (t) => `${Math.floor(t)}:${t % 1 ? '30' : '00'}`;
-    const waarden = slots.map((t) => ({ uur: t, pct: echteDrukte ? Math.round(echteDrukte[t] || 0) : schatting(t) }));
-    const max = Math.max(...waarden.map((w) => w.pct), 1);
-    const nu = new Date();
-    const nuSlot = nu.getHours() + (nu.getMinutes() >= 30 ? 0.5 : 0);
+    const fmt = (u) => `${u}:00`;
+    const waarden = Array.from({ length: 24 }, (_, u) => ({
+        uur: u,
+        open: isOpen(u),
+        pct: isOpen(u) ? (echteDrukte ? Math.round(echteDrukte[u] || 0) : schatting(u)) : 0,
+    }));
+    const max = Math.max(...waarden.filter((w) => w.open).map((w) => w.pct), 1);
+    const nuUur = new Date().getHours();
 
     chart.innerHTML = waarden.map((w) => {
+        const isNu = openVandaag && w.uur === nuUur;
+        /* Om de drie uur een label; het "nu"-pilletje krijgt er altijd een */
+        const uurLabel = isNu || w.uur % 3 === 0 ? String(w.uur) : '';
+        if (!w.open) {
+            return `<div class="drukte-kolom dicht ${isNu ? 'nu' : ''}" title="${fmt(w.uur)} gesloten">
+                <div class="d-balkvak"><i class="fa-solid fa-moon d-dicht" aria-hidden="true"></i><div class="drukte-bar dicht" data-hoogte="4"></div></div>
+                <span class="d-uur">${uurLabel}</span>
+            </div>`;
+        }
         const rel = w.pct / max;
         const klasse = rel > 0.75 ? 'hoog' : rel > 0.4 ? 'middel' : 'laag';
         const label = rel > 0.75 ? 'druk' : rel > 0.4 ? 'gemiddeld' : 'rustig';
-        const isNu = openVandaag && w.uur === nuSlot;
-        /* Tijdlijn toont alleen hele uren; het "nu"-pilletje krijgt wel de exacte tijd */
-        const uurLabel = w.uur % 1 ? (isNu ? fmt(w.uur) : '') : String(Math.floor(w.uur));
         return `<div class="drukte-kolom ${isNu ? 'nu' : ''}" title="${fmt(w.uur)} wordt ${label}">
             <div class="d-balkvak"><div class="drukte-bar ${klasse}" data-hoogte="${Math.round(rel * 100)}"></div></div>
             <span class="d-uur">${uurLabel}</span>
@@ -143,7 +174,7 @@ $$('[data-teller]').forEach((el) => {
         $$('#drukteChart .drukte-bar').forEach((bar) => { bar.style.height = Math.max(6, bar.dataset.hoogte) + '%'; });
     }));
 
-    const piek = waarden.reduce((a, b) => (b.pct > a.pct ? b : a));
+    const piek = waarden.filter((w) => w.open).reduce((a, b) => (b.pct > a.pct ? b : a));
     $('#drukteBadge').textContent = openVandaag ? 'Vandaag' : 'Gemiddeld';
     $('#drukteSub').textContent = openVandaag
         ? `Verwachte piek rond ${fmt(piek.uur)}`
@@ -211,8 +242,8 @@ const CHECKS = [
                 const tijd = (DATA.hoursMode === 'perday' && DATA.dayTimes && DATA.dayTimes[d])
                     ? DATA.dayTimes[d]
                     : { open: DATA.open || '16:00', close: DATA.close || '21:30' };
-                return `<div class="flex justify-between gap-3">
-                    <span class="text-cacao/45">${DAGNAMEN[d]}</span>
+                return `<div class="kv">
+                    <span>${DAGNAMEN[d]}</span>
                     <span>${DATA.days[d] ? `${tijd.open} - ${tijd.close}` : 'Gesloten'}</span>
                 </div>`;
             }).join('');
@@ -247,12 +278,14 @@ const ICONEN = {
 /* De interne statuswaarden blijven gelijk, alleen de labels verschillen:
    Betaald -> Bevestigd (met tijdsindicatie) -> Wordt bereid -> In de oven -> Onderweg -> Bezorgd */
 const STATUS_INFO = {
-    nieuw:        { label: 'Betaald',      icoon: ICONEN.nieuw,        chip: 'background:var(--color-gold); color:var(--color-cacao)', actie: 'Bevestigen',   volgende: 'geaccepteerd' },
-    geaccepteerd: { label: 'Bevestigd',    icoon: ICONEN.geaccepteerd, chip: 'background:#2563EB; color:#fff',                         actie: 'Wordt bereid', volgende: 'bereiden' },
-    bereiden:     { label: 'Wordt bereid', icoon: ICONEN.bereiden,     chip: 'background:#F97316; color:#fff',                         actie: 'In de oven',   volgende: 'oven' },
-    oven:         { label: 'In de oven',   icoon: ICONEN.oven,         chip: 'background:var(--color-tomato); color:#fff',             actie: 'Onderweg',     volgende: 'onderweg' },
-    onderweg:     { label: 'Onderweg',     icoon: ICONEN.onderweg,     chip: 'background:var(--color-basil); color:#fff',              actie: 'Bezorgd',      volgende: 'bezorgd' },
-    bezorgd:      { label: 'Bezorgd',      icoon: ICONEN.bezorgd,      chip: 'background:var(--color-cacao); color:#fff',              actie: null,           volgende: null },
+    /* Elke stap heeft een eigen kleur (tokens --s-* in assets/stijl/dashboard.css),
+       los van de hoofdkleur van de zaak: in de keuken scan je zo waar alles staat. */
+    nieuw:        { label: 'Betaald',      icoon: ICONEN.nieuw,        chip: 'background:var(--s-nieuw); color:var(--s-nieuw-ink)', actie: 'Bevestigen',   volgende: 'geaccepteerd' },
+    geaccepteerd: { label: 'Bevestigd',    icoon: ICONEN.geaccepteerd, chip: 'background:var(--s-bevestigd); color:var(--s-bevestigd-ink)', actie: 'Wordt bereid', volgende: 'bereiden' },
+    bereiden:     { label: 'Wordt bereid', icoon: ICONEN.bereiden,     chip: 'background:var(--s-bereiden); color:var(--s-bereiden-ink)', actie: 'In de oven',   volgende: 'oven' },
+    oven:         { label: 'In de oven',   icoon: ICONEN.oven,         chip: 'background:var(--s-oven); color:var(--s-oven-ink)',    actie: 'Onderweg',     volgende: 'onderweg' },
+    onderweg:     { label: 'Onderweg',     icoon: ICONEN.onderweg,     chip: 'background:var(--s-onderweg); color:var(--s-onderweg-ink)',    actie: 'Bezorgd',      volgende: 'bezorgd' },
+    bezorgd:      { label: 'Bezorgd',      icoon: ICONEN.bezorgd,      chip: 'background:var(--s-klaar); color:var(--s-klaar-ink)',    actie: null,           volgende: null },
 };
 
 /* Afhalen kent geen bezorgtraject: de laatste stappen heten en ogen anders */
@@ -263,8 +296,8 @@ const ICONEN_AFHALEN = {
 const STATUS_INFO_AFHALEN = {
     ...STATUS_INFO,
     oven:     { ...STATUS_INFO.oven, actie: 'Af te halen' },
-    onderweg: { label: 'Af te halen', icoon: ICONEN_AFHALEN.onderweg, chip: 'background:var(--color-basil); color:#fff', actie: 'Afgehaald', volgende: 'bezorgd' },
-    bezorgd:  { label: 'Afgehaald', icoon: ICONEN.bezorgd, chip: 'background:var(--color-cacao); color:#fff', actie: null, volgende: null },
+    onderweg: { label: 'Af te halen', icoon: ICONEN_AFHALEN.onderweg, chip: 'background:var(--s-onderweg); color:var(--s-onderweg-ink)', actie: 'Afgehaald', volgende: 'bezorgd' },
+    bezorgd:  { label: 'Afgehaald', icoon: ICONEN.bezorgd, chip: 'background:var(--s-klaar); color:var(--s-klaar-ink)', actie: null, volgende: null },
 };
 
 const iconenVoor = (o) => (o.type === 'afhalen' ? ICONEN_AFHALEN : ICONEN);
@@ -298,23 +331,24 @@ function typeChip(o) {
     const label = o.type === 'afhalen'
         ? '<i class="fa-solid fa-box-open" aria-hidden="true"></i> Afhalen'
         : '<i class="fa-solid fa-moped" aria-hidden="true"></i> Bezorgen';
-    return `<span class="text-[11px] font-body font-extrabold rounded-full px-2 py-0.5" style="background:var(--color-crema-dark)">${label}</span>`;
+    return `<span class="chip-st" style="background:var(--line); color:var(--ink)">${label}</span>`;
 }
 
-/* Compacte rij voor het overzicht */
+/* Compacte rij voor het overzicht, opgebouwd uit .regel, .chip-st en .btn uit het systeem.
+   De klassen order-card en order-actie blijven: daar hangen de klik- en bijwerkfuncties aan. */
 function orderRij(o) {
     const info = infoVoor(o);
     if (!info || !info.actie) return '';
-    return `<div class="order-card flex flex-col sm:flex-row sm:items-center gap-2 rounded-2xl px-3.5 py-2.5" data-id="${o.id}" style="background:var(--color-crema)">
-        <div class="flex-1 min-w-0">
-            <p class="font-display text-base">#${o.nummer} voor ${esc(o.klant)}
-                <span class="text-[11px] font-body font-extrabold rounded-full px-2 py-0.5 ml-1 align-middle" style="${info.chip}">${info.label}</span>
-                <span class="ml-1 align-middle inline-block">${typeChip(o)}</span></p>
-            <p class="text-xs font-extrabold text-cacao/50 truncate">${(o.items || []).map((i) => i.aantal + '× ' + esc(i.naam)).join(', ')}</p>
+    return `<div class="order-card regel bestel-regel" data-id="${o.id}">
+        <div class="op">
+            <p class="text-[15px] leading-snug"><span>#${o.nummer} voor <b>${esc(o.klant)}</b></span>
+                <span class="chip-st" style="${info.chip}">${info.label}</span>
+                ${typeChip(o)}${o.bezorger ? `<span class="chip-st" style="background:var(--omgekeerd); color:var(--omgekeerd-ink)">${esc(o.bezorger.naam)}</span>` : ''}</p>
+            <p class="mini truncate">${(o.items || []).map((i) => i.aantal + '× ' + esc(i.naam)).join(', ')}</p>
         </div>
-        <div class="flex items-center gap-2.5 shrink-0">
-            <span class="font-display">${euro(o.totaal)}</span>
-            <button type="button" class="order-actie btn-primary !text-sm !px-4 !py-2" data-order="${o.id}" data-volgende="${info.volgende}">${info.actie}</button>
+        <div class="flex items-center gap-3 shrink-0">
+            <span class="text-[15px] tabular-nums">${euro(o.totaal)}</span>
+            <button type="button" class="order-actie btn dark klein cursor-pointer" data-order="${o.id}" data-volgende="${info.volgende}">${info.actie}</button>
         </div>
     </div>`;
 }
@@ -324,13 +358,13 @@ function orderKaart(o) {
     const info = infoVoor(o);
     const idx = STATUSSEN.indexOf(o.status);
     const klaar = o.status === 'bezorgd';
-    /* De huidige status is behaald (vinkje); de stap erna is waar de pizzeria mee bezig is (laad-rondje) */
+    /* De huidige status is behaald (vinkje); de stap erna is waar de zaak mee bezig is (laad-rondje) */
     const tijdlijn = STATUSSEN.map((s, i) => {
         const si = infoVoor(o, s);
         let st = '';
         let inhoud = si.icoon;   // toekomstige stap: grijs status-icoon
         if (i <= idx || klaar) {
-            st = 'geweest';      // behaald: groen met vinkje
+            st = 'geweest';      // behaald: omgekeerd vlak met vinkje
             inhoud = '<i class="fa-solid fa-check" aria-hidden="true"></i>';
         } else if (i === idx + 1) {
             st = 'nu';           // hiermee bezig: laad-rondje
@@ -342,104 +376,95 @@ function orderKaart(o) {
         </div>`;
     }).join('');
     const etaChip = o.eta_minuten && o.status !== 'bezorgd'
-        ? `<span class="text-[11px] font-body font-extrabold rounded-full px-2 py-0.5" style="background:var(--color-crema-dark)"><i class="fa-solid fa-clock" aria-hidden="true"></i> ± ${o.eta_minuten} min</span>`
+        ? `<span class="chip-st" style="background:var(--line); color:var(--ink)"><i class="fa-solid fa-clock" aria-hidden="true"></i> ± ${o.eta_minuten} min</span>`
         : '';
-    /* Spaarpunten: wat deze klant spaart of inwisselt, zichtbaar voor de pizzeria */
+    /* Wie de rit heeft opgepakt; teamleden zetten dit vanaf hun eigen scherm */
+    const bezorgerChip = o.bezorger
+        ? `<span class="chip-st" style="background:var(--omgekeerd); color:var(--omgekeerd-ink)"><i class="fa-solid fa-moped" aria-hidden="true"></i> ${esc(o.bezorger.naam)}</span>`
+        : '';
+
+    /* Spaarpunten: wat deze klant spaart of inwisselt, zichtbaar voor de zaak */
     const puntenDelen = [];
     if (o.punten > 0) puntenDelen.push(`+${o.punten} gespaard`);
     if (o.punten_gebruikt > 0) puntenDelen.push(`${o.punten_gebruikt} ingewisseld`);
     const puntenChip = puntenDelen.length
-        ? `<span class="text-[11px] font-body font-extrabold rounded-full px-2 py-0.5" style="background:var(--color-crema-dark)"><i class="fa-solid fa-star" style="color:var(--color-gold)" aria-hidden="true"></i> ${puntenDelen.join(', ')}</span>`
+        ? `<span class="chip-st" style="background:var(--line); color:var(--ink)"><i class="fa-solid fa-star" aria-hidden="true"></i> ${puntenDelen.join(', ')}</span>`
         : '';
 
     /* Bij accepteren eerst een tijdsschatting kiezen */
     const kiezer = etaOpen === o.id && o.status === 'nieuw' ? `
         <div class="eta-kiezer">
-            <p class="font-extrabold text-sm text-cacao/60 mb-2.5 text-center">${o.type === 'afhalen' ? 'Over hoe lang kan het ongeveer afgehaald worden?' : 'Hoe lang gaat dit ongeveer duren?'}</p>
+            <p class="small text-center mb-3">${o.type === 'afhalen' ? 'Over hoe lang kan het ongeveer afgehaald worden?' : 'Hoe lang gaat dit ongeveer duren?'}</p>
             <div class="grid grid-cols-4 gap-2 mb-3">
-                ${[15, 30, 45, 60].map((m) => `<button type="button" class="eta-snel" data-eta-snel="${m}" data-order="${o.id}">${m} min</button>`).join('')}
+                ${[15, 30, 45, 60].map((m) => `<button type="button" class="eta-snel cursor-pointer" data-eta-snel="${m}" data-order="${o.id}">${m} min</button>`).join('')}
             </div>
             <div class="flex items-center justify-center gap-4 mb-3">
-                <button type="button" class="eta-stap" data-eta-min aria-label="15 minuten minder">−</button>
-                <span class="font-display text-2xl w-28 text-center">${etaWaarde} min</span>
-                <button type="button" class="eta-stap" data-eta-plus aria-label="15 minuten meer">+</button>
+                <button type="button" class="eta-stap cursor-pointer" data-eta-min aria-label="15 minuten minder">−</button>
+                <span class="eta-waarde">${etaWaarde} min</span>
+                <button type="button" class="eta-stap cursor-pointer" data-eta-plus aria-label="15 minuten meer">+</button>
             </div>
-            <button type="button" class="btn-primary w-full !text-lg !py-3" data-eta-bevestig data-order="${o.id}">Bevestigen, ± ${etaWaarde} min</button>
-            <div class="text-center"><button type="button" class="skip-link !mt-2" data-eta-sluit>annuleren</button></div>
+            <button type="button" class="btn dark breed cursor-pointer" data-eta-bevestig data-order="${o.id}">Bevestigen, ± ${etaWaarde} min</button>
+            <div class="text-center mt-2"><button type="button" class="link-knop cursor-pointer" data-eta-sluit>annuleren</button></div>
         </div>` : '';
 
-    /* Wijzigingen per gerecht: extra's in groen, weglatingen in rood */
+    /* Wijzigingen per gerecht: extra's met een plus, weglatingen doorgestreept */
     const optieRegel = (op) => {
         const zonder = op.type === 'zonder';
-        return `<p class="order-optie text-xs font-extrabold ${zonder ? 'text-tomato' : 'text-basil'}">
-            <i class="fa-solid ${zonder ? 'fa-minus' : 'fa-plus'} !text-[10px] w-3" aria-hidden="true"></i>${esc(op.naam)}${op.prijs ? ` <span class="text-cacao/40">${euro(op.prijs)}</span>` : ''}
+        return `<p class="order-optie ${zonder ? 'zonder' : 'met'}">
+            <i class="fa-solid ${zonder ? 'fa-minus' : 'fa-plus'} w-3 text-[9px]" aria-hidden="true"></i>${esc(op.naam)}${op.prijs ? ` <span style="color:var(--ink3)">${euro(op.prijs)}</span>` : ''}
         </p>`;
     };
     const itemRegels = (o.items || []).map((i) => {
         const regelTotaal = (i.prijs + (i.opties || []).reduce((som, op) => som + (op.prijs || 0), 0)) * (i.aantal || 1);
-        return `<div class="order-item flex items-start gap-2.5 text-sm font-extrabold">
-            <span class="shrink-0 w-8 text-center rounded-lg py-0.5 text-xs" style="background:var(--color-crema-dark)">${i.aantal || 1}×</span>
+        return `<div class="order-item flex items-start gap-3 text-[13.5px]">
+            <span class="aantal">${i.aantal || 1}×</span>
             <div class="flex-1 min-w-0">
-                <p class="truncate">${esc(i.naam)}</p>
+                <p class="truncate font-medium">${esc(i.naam)}</p>
                 ${(i.opties || []).map(optieRegel).join('')}
             </div>
-            <span class="shrink-0 text-cacao/55">${euro(regelTotaal)}</span>
+            <span class="shrink-0 tabular-nums" style="color:var(--ink2)">${euro(regelTotaal)}</span>
         </div>`;
     }).join('');
     const adres = o.type === 'bezorgen' && o.adres
-        ? `<p class="order-adres text-sm font-extrabold mt-2.5 flex items-center gap-2"><i class="fa-solid fa-location-dot text-tomato" aria-hidden="true"></i>${esc(o.adres)}</p>`
+        ? `<p class="order-adres text-[13.5px] mt-3 flex items-center gap-2"><i class="fa-solid fa-location-dot text-[12px]" style="color:var(--ink3)" aria-hidden="true"></i>${esc(o.adres)}</p>`
         : '';
     const opmerking = o.opmerking
-        ? `<div class="order-opmerking mt-2.5 rounded-xl px-3 py-2 text-sm font-extrabold flex items-start gap-2" style="background:color-mix(in srgb, var(--color-gold) 16%, #fff)">
-            <i class="fa-solid fa-comment-dots mt-0.5" style="color:var(--color-gold)" aria-hidden="true"></i>
-            <span class="min-w-0">${esc(o.opmerking)}</span>
+        ? `<div class="order-opmerking regel mt-3" style="align-items:flex-start">
+            <i class="fa-solid fa-comment-dots mt-1 text-[12px]" style="color:var(--ink3)" aria-hidden="true"></i>
+            <span class="op text-[13.5px]">${esc(o.opmerking)}</span>
         </div>`
         : '';
 
-    return `<div class="order-kaart dash-card !p-4 sm:!p-5 order-card ${o.status === 'bezorgd' ? 'opacity-60' : ''}" data-id="${o.id}">
-        <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <p class="font-display text-2xl">#${o.nummer}</p>
-            <p class="font-extrabold text-lg flex-1 min-w-0 truncate">${esc(o.klant)}</p>
-            ${etaChip}
-            ${puntenChip}
-            ${typeChip(o)}
-            <p class="font-display text-2xl">${euro(o.totaal)}</p>
+    return `<div class="order-kaart vlak app order-card ${klaar ? 'klaar' : ''}" data-id="${o.id}">
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <p class="kop shrink-0">#${o.nummer} <b>${esc(o.klant)}</b></p>
+            <div class="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">${etaChip}${bezorgerChip}${puntenChip}${typeChip(o)}</div>
+            <p class="kop tabular-nums shrink-0">${euro(o.totaal)}</p>
         </div>
-        <div class="mt-2.5 space-y-1.5">${itemRegels}</div>
+        <div class="mt-4 flex flex-col gap-2">${itemRegels}</div>
         ${adres}
         ${opmerking}
-        <p class="text-xs font-extrabold text-cacao/40 mt-2 mb-3">${tijdGeleden(o.created_at)}</p>
+        <p class="small mt-3 mb-4">${tijdGeleden(o.created_at)}</p>
         <div class="status-tijdlijn">${tijdlijn}</div>
         ${kiezer}
-        ${info.volgende && !kiezer ? `<button type="button" class="order-actie btn-primary w-full !text-lg !py-3.5 !flex items-center justify-center gap-2.5" data-order="${o.id}" data-volgende="${info.volgende}">
-            ${info.label}
-            <i class="fa-solid fa-arrow-right !text-base" aria-hidden="true"></i>
-            ${infoVoor(o, info.volgende).label}
+        ${info.volgende && !kiezer ? `<button type="button" class="order-actie btn dark breed cursor-pointer" data-order="${o.id}" data-volgende="${info.volgende}">
+            ${info.label} <i class="ar fa-solid fa-arrow-right" aria-hidden="true"></i> ${infoVoor(o, info.volgende).label}
         </button>` : ''}
     </div>`;
 }
 
-const TAB_KLEUREN = {
-    alles: ['var(--color-cacao)', '#fff'],
-    nieuw: ['var(--color-gold)', 'var(--color-cacao)'],
-    geaccepteerd: ['#2563EB', '#fff'],
-    bereiden: ['#F97316', '#fff'],
-    oven: ['var(--color-tomato)', '#fff'],
-    onderweg: ['var(--color-basil)', '#fff'],
-    bezorgd: ['var(--color-cacao)', '#fff'],
-};
-
+/* Filtertabs boven de lijst: pillen, de actieve is het omgekeerde vlak */
 function orderTabs() {
     const el = $('#orderTabs');
     if (!el) return;
     /* In de lijst staan bezorgingen en afhalers door elkaar, dus de laatste twee tabs heten neutraal */
     const labels = { alles: 'Alles', nieuw: 'Betaald', geaccepteerd: 'Bevestigd', bereiden: 'Wordt bereid', oven: 'In de oven', onderweg: 'Onderweg / klaar', bezorgd: 'Afgerond' };
+    /* Het stipje in de tab heeft de kleur van die stap */
+    const STIP = { nieuw: 'nieuw', geaccepteerd: 'bevestigd', bereiden: 'bereiden', oven: 'oven', onderweg: 'onderweg', bezorgd: 'klaar' };
     el.innerHTML = Object.keys(labels).map((f) => {
-        const actief = orderFilter === f;
         const aantal = f === 'alles' ? ORDERS.length : ORDERS.filter((o) => o.status === f).length;
-        const [kleur, tekst] = TAB_KLEUREN[f];
-        return `<button type="button" class="order-tab" data-filter="${f}"
-            style="${actief ? `background:${kleur}; border-color:${kleur}; color:${tekst};` : ''}">${labels[f]} <span class="opacity-60">${aantal}</span></button>`;
+        const stip = STIP[f] ? `<i class="tab-stip" style="background:var(--s-${STIP[f]})" aria-hidden="true"></i>` : '';
+        return `<button type="button" class="tab-pil cursor-pointer ${orderFilter === f ? 'aan' : ''}" data-filter="${f}">${stip}${labels[f]} <span class="n">${aantal}</span></button>`;
     }).join('');
 }
 
@@ -728,7 +753,7 @@ $('#statusModalBevestig')?.addEventListener('click', () => {
 });
 $('#statusModalAnnuleer')?.addEventListener('click', () => statusModal.classList.add('hidden'));
 statusModal?.addEventListener('click', (e) => {
-    if (!e.target.closest('.animate-pop')) statusModal.classList.add('hidden');
+    if (!e.target.closest('.venster, .animate-pop')) statusModal.classList.add('hidden');
 });
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') statusModal?.classList.add('hidden');
@@ -773,18 +798,8 @@ renderStatus();
     }
 
     $('#copyLink')?.addEventListener('click', async () => {
-        try {
-            await navigator.clipboard.writeText(link);
-        } catch {
-            const ta = document.createElement('textarea');
-            ta.value = link;
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            ta.remove();
-        }
         const btn = $('#copyLink');
-        btn.textContent = 'Gekopieerd';
+        btn.textContent = (await kopieer(link)) ? 'Gekopieerd' : 'Kopiëren lukte niet';
         setTimeout(() => { btn.textContent = 'Kopieer link'; }, 1600);
     });
 })();
@@ -915,33 +930,36 @@ function renderMenuCats() {
     if (!el) return;
     const cats = menuCategorieen();
     el.innerHTML = cats.length < 2 ? '' : ['alles', ...cats].map((c) =>
-        `<button type="button" class="order-tab" data-menucat="${esc(c)}"
-            style="${menuCatFilter === c ? 'background:var(--color-cacao); border-color:var(--color-cacao); color:#fff;' : ''}">${c === 'alles' ? 'Alles' : esc(c)}</button>`).join('');
+        `<button type="button" class="tab-pil cursor-pointer ${menuCatFilter === c ? 'aan' : ''}" data-menucat="${esc(c)}">${c === 'alles' ? 'Alles' : esc(c)}</button>`).join('');
 }
 
 function menuKaart(m) {
     const ing = m.ingredienten || [];
     const allerg = m.allergenen;
     const allergHtml = (allerg === null || allerg === undefined)
-        ? '<span class="warn-chip leeg"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Allergenen nog niet ingevuld</span>'
+        ? '<span class="tag" style="gap:6px"><i class="fa-solid fa-circle-info text-[11px]" aria-hidden="true"></i> Allergenen nog niet ingevuld</span>'
         : (allerg.length
-            ? allerg.map((a) => `<span class="warn-chip"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> ${cap(a)}</span>`).join('')
-            : '<span class="warn-chip ok"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Geen allergenen</span>');
+            ? allerg.map((a) => `<span class="tag" style="gap:6px"><i class="fa-solid fa-triangle-exclamation text-[11px]" aria-hidden="true"></i> ${cap(a)}</span>`).join('')
+            : '<span class="tag ok" style="gap:6px"><i class="fa-solid fa-circle-check text-[11px]" aria-hidden="true"></i> Geen allergenen</span>');
     const groepen = m.opties || [];
-    return `<div class="menu-card dash-card !p-4 ${m.actief ? '' : 'uit'}" data-menu-id="${m.id}">
-        <div class="flex items-start gap-3">
-            ${m.foto ? `<img src="${m.foto}" alt="" class="w-12 h-12 rounded-xl object-cover border-2 border-white shadow shrink-0">` : ''}
+    return `<div class="menu-card vlak app ${m.actief ? '' : 'uit'}" data-menu-id="${m.id}">
+        ${(m.fotoUrl || m.foto) ? `<div class="menu-foto-vak"><img src="${m.fotoUrl || m.foto}" alt="" class="menu-foto-groot" loading="lazy">${m.foto ? '' : '<span class="foto-label">Voorbeeldfoto</span>'}</div>` : ''}
+        <div class="flex items-start gap-3.5">
+            ${m.foto ? '' : ''}
             <div class="flex-1 min-w-0">
-                <p class="font-display text-xl truncate">${!m.foto && m.icoon ? esc(m.icoon) + ' ' : ''}${esc(m.naam)}</p>
-                <p class="text-xs font-extrabold text-cacao/45">${esc(m.categorie)}</p>
+                <p class="kop truncate">${!m.foto && m.icoon ? esc(m.icoon) + ' ' : ''}${esc(m.naam)}</p>
+                <p class="mini">${esc(m.categorie)}</p>
             </div>
-            <p class="font-display text-xl shrink-0">${euro(m.prijs)}</p>
-            <button type="button" class="keuze-chip shrink-0 ${m.actief ? 'aan' : ''}" data-menu-actief="${m.id}" title="${m.actief ? 'Klanten zien dit gerecht' : 'Verborgen voor klanten'}">${m.actief ? 'Actief' : 'Uit'}</button>
+            <p class="kop tabular-nums shrink-0">${euro(m.prijs)}</p>
         </div>
-        ${m.beschrijving ? `<p class="text-sm font-extrabold text-cacao/55 mt-1.5">${esc(m.beschrijving)}</p>` : ''}
-        ${ing.length ? `<p class="text-xs font-extrabold text-cacao/50 mt-2">${ing.map(esc).join(', ')}</p>` : ''}
-        <div class="flex flex-wrap gap-1.5 mt-2.5">${allergHtml}</div>
-        ${groepen.length ? `<p class="text-xs font-extrabold text-cacao/45 mt-2"><i class="fa-solid fa-sliders" aria-hidden="true"></i> Opties: ${groepen.map((g) => esc(g.naam)).join(', ')}</p>` : ''}
+        ${m.beschrijving ? `<p class="text-[13.5px] mt-3" style="color:var(--ink2)">${esc(m.beschrijving)}</p>` : ''}
+        ${ing.length ? `<p class="mini mt-2">${ing.map(esc).join(', ')}</p>` : ''}
+        <div class="flex flex-wrap gap-1.5 mt-4">${allergHtml}</div>
+        ${groepen.length ? `<p class="mini mt-3"><i class="fa-solid fa-sliders text-[11px]" aria-hidden="true"></i> Opties: ${groepen.map((g) => esc(g.naam)).join(', ')}</p>` : ''}
+        <div class="flex items-center justify-between gap-3 mt-5 pt-4" style="border-top:1px solid var(--line)">
+            <span class="status ${m.actief ? 'live' : 'uit'}"><i></i>${m.actief ? 'Zichtbaar voor klanten' : 'Verborgen voor klanten'}</span>
+            <button type="button" class="btn line klein cursor-pointer" data-menu-actief="${m.id}">${m.actief ? 'Verbergen' : 'Tonen'}</button>
+        </div>
     </div>`;
 }
 
@@ -997,7 +1015,7 @@ function openMenuEditor(item = null) {
         nieuweCat: false,
     } : {
         id: null, naam: '', prijs: '',
-        categorie: menuCatFilter !== 'alles' ? menuCatFilter : (menuCategorieen()[0] || "Pizza's"),
+        categorie: menuCatFilter !== 'alles' ? menuCatFilter : (menuCategorieen()[0] || 'Gerechten'),
         beschrijving: '', foto: null, ingredienten: [], allergenen: [], geenAllergenen: false, opties: [], actief: true, nieuweCat: false,
     };
     const verwijder = $('#menuVerwijder');
@@ -1037,7 +1055,7 @@ const M_INFO = {
     beschrijving: { kicker: 'Beschrijving', titel: 'Wil je er iets bij vertellen?', sub: 'Een korte omschrijving maakt het extra smakelijk. Mag ook leeg blijven.', mascot: 'showing-pizza-order', bubble: 'Verse basilicum? Benoem het gerust.', kant: 'left' },
     foto:         { kicker: 'De foto', titel: () => `Heb je een foto van ${naamNu()}?`, sub: 'Gerechten met een foto worden vaker besteld. Mag ook zonder.', mascot: 'pizza-in-oven', bubble: 'Mensen eten met hun ogen.', kant: 'right' },
     ingredienten: { kicker: 'Ingrediënten', titel: 'Welke ingrediënten zitten erop?', sub: 'Klanten kunnen deze weglaten bij het bestellen, en gasten met een allergie zien precies wat erin zit.', mascot: 'sprinkling-cheese', bubble: 'Klanten zien precies wat erop zit.', kant: 'right' },
-    allergenen:   { kicker: 'Allergenen', titel: 'Welke allergenen zitten erin?', sub: 'Tik aan wat erin zit en controleer het altijd zelf. Een pizzabodem bevat gluten.', mascot: 'kneading-dough', bubble: 'Dit moet kloppen voor je gasten.', kant: 'left' },
+    allergenen:   { kicker: 'Allergenen', titel: 'Welke allergenen zitten erin?', sub: 'Tik aan wat erin zit en controleer het altijd zelf. Een bodem of broodje bevat bijna altijd gluten.', mascot: 'kneading-dough', bubble: 'Dit moet kloppen voor je gasten.', kant: 'left' },
     opties:       { kicker: 'Opties', titel: 'Welke opties geef je de klant?', sub: 'Een saus, extra ingrediënten of een drankje erbij. Goed voor je omzet.', mascot: 'running-with-pizza', bubble: 'Goed voor je gemiddelde bestelling.', kant: 'right' },
     overzicht:    { kicker: 'Overzicht', titel: () => (bewerkt.id ? 'Dit is je gerecht' : 'Klaar om op de kaart te zetten?'), sub: 'Loop alles nog even na, wijzigen kan altijd.', mascot: 'waving-hello', bubble: 'Die staat straks mooi op de kaart.', kant: 'right' },
 };
@@ -1094,24 +1112,24 @@ function terugMStap() {
 
 function renderMOverzicht() {
     const rij = (label, waarde, stap) => `
-        <div class="flex items-center gap-3 rounded-2xl px-4 py-3" style="background:var(--color-crema)">
-            <div class="flex-1 min-w-0">
-                <p class="text-[11px] font-extrabold uppercase tracking-wide text-cacao/45">${label}</p>
-                <p class="text-sm font-extrabold break-words">${waarde}</p>
+        <div class="regel">
+            <div class="op">
+                <p class="label">${label}</p>
+                <p class="text-[13.5px] break-words">${waarde}</p>
             </div>
-            <button type="button" class="skip-link !mt-0 shrink-0" data-m-ga="${stap}">wijzig</button>
+            <button type="button" class="link-knop shrink-0 cursor-pointer" data-m-ga="${stap}">wijzig</button>
         </div>`;
-    const leeg = '<span class="text-cacao/40">Geen</span>';
+    const leeg = '<span style="color:var(--ink3)">Geen</span>';
     const allerg = bewerkt.geenAllergenen
         ? 'Geen allergenen'
-        : (bewerkt.allergenen.length ? bewerkt.allergenen.map(cap).join(', ') : '<span class="text-cacao/40">Nog niet ingevuld</span>');
+        : (bewerkt.allergenen.length ? bewerkt.allergenen.map(cap).join(', ') : '<span style="color:var(--ink3)">Nog niet ingevuld</span>');
     const groepen = bewerkt.opties.filter((g) => g.naam.trim() && g.keuzes.some((k) => k.naam.trim()));
     $('#mOverzicht').innerHTML =
         rij('Naam', esc($('#mNaam').value.trim()), 'naam')
         + rij('Prijs', euro(naarCenten($('#mPrijs').value) ?? 0), 'prijs')
         + rij('Categorie', esc((bewerkt.nieuweCat && $('#mCatNieuw')?.value.trim()) || bewerkt.categorie || 'Menu'), 'categorie')
         + rij('Beschrijving', esc($('#mBeschrijving').value.trim()) || leeg, 'beschrijving')
-        + rij('Foto', bewerkt.foto ? `<img src="${bewerkt.foto}" alt="" class="w-11 h-11 rounded-xl object-cover border-2 border-white shadow">` : leeg, 'foto')
+        + rij('Foto', bewerkt.foto ? `<img src="${bewerkt.foto}" alt="" class="w-11 h-11 object-cover" style="border-radius:var(--r-mini)">` : leeg, 'foto')
         + rij('Ingrediënten', bewerkt.ingredienten.length ? bewerkt.ingredienten.map(esc).join(', ') : leeg, 'ingredienten')
         + rij('Allergenen', allerg, 'allergenen')
         + rij('Opties', groepen.length ? groepen.map((g) => `${esc(g.naam)} (${g.keuzes.filter((k) => k.naam.trim()).length})`).join(', ') : leeg, 'opties');
@@ -1196,7 +1214,7 @@ function renderOptieGroepen() {
                         <button type="button" class="chip-x shrink-0" data-m-k-del="${gi}-${ki}" aria-label="Keuze verwijderen"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                     </div>`).join('')}
             </div>
-            <button type="button" class="skip-link !mt-2 !text-xs" data-m-k-add="${gi}">+ keuze toevoegen</button>
+            <button type="button" class="link-knop" data-m-k-add="${gi}">+ keuze toevoegen</button>
         </div>`).join('');
     renderOptieTemplates();
 }
@@ -1415,28 +1433,22 @@ function renderBezorgTiers() {
     const el = $('#bezorgTiers');
     if (!el) return;
     el.innerHTML = bezorgTiers.map((t, i) => `
-        <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full shrink-0" style="background:${BEZORG_KLEUREN[i % BEZORG_KLEUREN.length]}"></span>
-            <span class="text-sm font-extrabold text-cacao/45 shrink-0">tot</span>
-            <input class="m-inp !py-1.5 !w-14 text-center" value="${esc(t.km)}" inputmode="decimal" data-b-km="${i}" aria-label="Afstand in kilometers">
-            <span class="text-sm font-extrabold text-cacao/45 shrink-0">km</span>
-            <div class="relative flex-1 min-w-0">
-                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-extrabold text-cacao/40">€</span>
-                <input class="m-inp !py-1.5 !pl-7" value="${esc(t.kosten)}" placeholder="0,00" inputmode="decimal" data-b-kosten="${i}" aria-label="Bezorgkosten">
-            </div>
-            <div class="relative flex-1 min-w-0" title="Minimaal bestelbedrag voor deze straal">
-                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-extrabold text-cacao/40">min €</span>
-                <input class="m-inp !py-1.5 !pl-12" value="${esc(t.min)}" placeholder="0,00" inputmode="decimal" data-b-min="${i}" aria-label="Minimaal bestelbedrag">
-            </div>
-            <button type="button" class="chip-x shrink-0" data-b-del="${i}" aria-label="Straal verwijderen"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+        <div class="tier-rij">
+            <span class="tier-bol" style="background:${BEZORG_KLEUREN[i % BEZORG_KLEUREN.length]}"></span>
+            <span class="small">tot</span>
+            <input class="veld smal text-center" value="${esc(t.km)}" inputmode="decimal" data-b-km="${i}" aria-label="Afstand in kilometers">
+            <span class="small">km</span>
+            <label class="veld-prefix flex-1 min-w-0"><span>€</span><input class="veld" value="${esc(t.kosten)}" placeholder="0,00" inputmode="decimal" data-b-kosten="${i}" aria-label="Bezorgkosten"></label>
+            <label class="veld-prefix flex-1 min-w-0" title="Minimaal bestelbedrag voor deze straal"><span>min €</span><input class="veld" value="${esc(t.min)}" placeholder="0,00" inputmode="decimal" data-b-min="${i}" aria-label="Minimaal bestelbedrag"></label>
+            <button type="button" class="icoon-knop cursor-pointer" data-b-del="${i}" aria-label="Straal verwijderen"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         </div>`).join('');
 }
 
-/* Eigen pizza-pin in plaats van de standaard blauwe punaise */
-function pizzaPin() {
+/* Eigen pin in plaats van de standaard blauwe punaise */
+function zaakPin() {
     return L.divIcon({
         className: 'bezorg-pin',
-        html: '<div class="bezorg-pin-bol"><span><i class="fa-solid fa-pizza-slice" aria-hidden="true"></i></span></div>',
+        html: '<div class="bezorg-pin-bol"><span><i class="fa-solid fa-utensils" aria-hidden="true"></i></span></div>',
         iconSize: [44, 44],
         iconAnchor: [22, 40],
     });
@@ -1446,7 +1458,7 @@ function tekenBezorgCirkels() {
     if (!bezorgMap || bezorgLat === null || bezorgLng === null) return;
     bezorgCirkels.forEach((c) => c.remove());
     bezorgCirkels = [];
-    if (!bezorgMarker) bezorgMarker = L.marker([bezorgLat, bezorgLng], { icon: pizzaPin() }).addTo(bezorgMap);
+    if (!bezorgMarker) bezorgMarker = L.marker([bezorgLat, bezorgLng], { icon: zaakPin() }).addTo(bezorgMap);
     else bezorgMarker.setLatLng([bezorgLat, bezorgLng]);
     /* Grootste ring eerst tekenen, zodat de kleinere bovenop liggen */
     bezorgTiers
@@ -1551,12 +1563,11 @@ function renderStijlThemas() {
     const grid = $('#iThemaGrid');
     if (!grid || !window.PP_TILES) return;
     grid.innerHTML = STIJL_THEMAS.map((t) => `
-        <button type="button" data-i-thema="${t.id}"
-            class="text-left rounded-2xl border-2 overflow-hidden cursor-pointer transition-colors bg-white ${instThema === t.id ? 'border-basil' : 'border-crema-dark hover:border-basil/50'}">
-            <span class="block p-1.5 pb-0"><span class="block aspect-video">${window.PP_TILES[t.id](instKleur)}</span></span>
-            <span class="block px-3 py-2">
-                <span class="block text-sm font-extrabold text-cacao">${t.emoji} ${t.naam}</span>
-                <span class="block text-xs font-bold text-cacao/50">${t.desc}</span>
+        <button type="button" data-i-thema="${t.id}" class="thema-tegel cursor-pointer ${instThema === t.id ? 'aan' : ''}">
+            <span class="block aspect-video overflow-hidden" style="border-radius:var(--r-mini)">${window.PP_TILES[t.id](instKleur)}</span>
+            <span class="block mt-2.5 px-1">
+                <span class="block text-[13.5px] font-medium">${t.naam}</span>
+                <span class="block mini">${t.desc}</span>
             </span>
         </button>`).join('');
 }
@@ -1591,12 +1602,12 @@ function renderKleurKiezer() {
     const grid = $('#iKleurGrid');
     if (!grid) return;
     $('#iKleurTabs').innerHTML = STIJL_TABS.map(([id, label]) =>
-        `<button type="button" data-i-kleurtab="${id}" class="keuze-chip !py-1.5 !px-3 !text-xs ${instKleurTab === id ? 'aan' : ''}">${label}</button>`).join('');
+        `<button type="button" data-i-kleurtab="${id}" class="tab-pil klein cursor-pointer ${instKleurTab === id ? 'aan' : ''}">${label}</button>`).join('');
     const lijst = STIJL_KLEUREN.filter((k) => instKleurTab === 'alle' || k.stijl === instKleurTab);
     grid.innerHTML = lijst.map((k) => `
         <button type="button" data-i-kleur="${k.hex}" title="${esc(k.naam)}" aria-label="${esc(k.naam)}"
-            class="w-10 h-10 rounded-xl grid place-items-center text-white font-extrabold shadow-sm cursor-pointer shrink-0"
-            style="background:${k.palet.primair}; ${k.hex === instKleur ? 'outline:3px solid var(--color-basil); outline-offset:2px;' : ''}">${k.hex === instKleur ? '<i class="fa-solid fa-check" aria-hidden="true"></i>' : ''}</button>`).join('');
+            class="kleur-vlek cursor-pointer ${k.hex === instKleur ? 'aan' : ''}"
+            style="background:${k.palet.primair}">${k.hex === instKleur ? '<i class="fa-solid fa-check" aria-hidden="true"></i>' : ''}</button>`).join('');
     const gekozen = STIJL_KLEUREN.find((k) => k.hex === instKleur);
     $('#iKleurNaam').textContent = gekozen ? `Gekozen: ${gekozen.naam}` : '';
 }
@@ -1649,12 +1660,12 @@ const INST_SECTIES = {
                                 <button type="button" data-i-pagina="status" class="keuze-chip !py-1 !px-3 !text-xs">Status</button>
                             </div>
                         </div>
-                        <div class="relative flex-1 min-h-0 w-full overflow-hidden rounded-2xl border-2 border-crema-dark bg-white aspect-video lg:aspect-auto">
+                        <div class="relative flex-1 min-h-0 w-full overflow-hidden aspect-video lg:aspect-auto" style="border-radius:var(--r-blok); background:#fff; box-shadow:inset 0 0 0 1px var(--line)">
                             <iframe id="iStijlPreview" title="Voorbeeld van je bestelpagina" style="width:200%;height:200%;transform:scale(.5);transform-origin:top left;border:0"></iframe>
-                            <div id="iStijlLaad" class="absolute inset-0 grid place-items-center bg-white/75" style="display:none">
+                            <div id="iStijlLaad" class="absolute inset-0 grid place-items-center" style="display:none; background:rgba(255,255,255,.75); color:#141414">
                                 <div class="text-center">
-                                    <i class="fa-solid fa-pizza-slice fa-spin text-3xl text-cacao/60" aria-hidden="true"></i>
-                                    <p class="mt-2 text-sm font-extrabold text-cacao/60">Voorbeeld laden…</p>
+                                    <i class="fa-solid fa-circle-notch fa-spin text-3xl" aria-hidden="true"></i>
+                                    <p class="mt-2 text-sm">Voorbeeld laden…</p>
                                 </div>
                             </div>
                         </div>
@@ -1670,11 +1681,11 @@ const INST_SECTIES = {
                 <div>
                     <p class="m-label">Jouw logo</p>
                     <div class="flex items-center gap-3">
-                        <div id="iLogoVak" class="w-14 h-14 rounded-xl border-2 border-crema-dark bg-crema grid place-items-center overflow-hidden shrink-0">
-                            ${instLogo ? `<img id="iLogoPreview" src="${instLogo}" class="w-full h-full object-cover" alt="">` : '<span class="text-xl text-cacao/30"><i class="fa-solid fa-pizza-slice" aria-hidden="true"></i></span>'}
+                        <div id="iLogoVak" class="w-14 h-14 grid place-items-center overflow-hidden shrink-0" style="border-radius:var(--r-mini); background:var(--soft); box-shadow:inset 0 0 0 1px var(--line)">
+                            ${instLogo ? `<img id="iLogoPreview" src="${instLogo}" class="w-full h-full object-cover" alt="">` : '<span class="text-xl text-cacao/30"><i class="fa-solid fa-store" aria-hidden="true"></i></span>'}
                         </div>
                         <button type="button" data-i-logo-kies class="keuze-chip">${instLogo ? 'Ander logo kiezen' : 'Logo uploaden'}</button>
-                        <button type="button" data-i-logo-weg class="skip-link !mt-0 ${instLogo ? '' : 'hidden'}">Verwijderen</button>
+                        <button type="button" data-i-logo-weg class="link-knop ${instLogo ? '' : 'hidden'}">Verwijderen</button>
                         <input id="iLogoInp" type="file" accept="image/*" class="hidden">
                     </div>
                 </div>`;
@@ -1710,7 +1721,7 @@ const INST_SECTIES = {
     },
     tijden: {
         kicker: 'Openingstijden', titel: 'Wanneer ben je open?', sub: 'Tik op een dag om hem open of dicht te zetten.',
-        mascot: 'pizza-in-oven', bubble: 'De oven staat al aan.', kant: 'right',
+        mascot: 'pizza-in-oven', bubble: 'Je klanten zien dit meteen.', kant: 'right',
         velden: () => Object.keys(DAGNAMEN_VOL).map((d) => {
             const aan = !!(DATA.days || {})[d];
             const t = (DATA.hoursMode === 'perday' && DATA.dayTimes && DATA.dayTimes[d])
@@ -1835,7 +1846,7 @@ $('#instVelden')?.addEventListener('click', (e) => {
     if (e.target.closest('[data-i-logo-kies]')) return $('#iLogoInp').click();
     if (e.target.closest('[data-i-logo-weg]')) {
         instLogo = null;
-        $('#iLogoVak').innerHTML = '<span class="text-xl text-cacao/30"><i class="fa-solid fa-pizza-slice" aria-hidden="true"></i></span>';
+        $('#iLogoVak').innerHTML = '<span class="text-xl text-cacao/30"><i class="fa-solid fa-store" aria-hidden="true"></i></span>';
         $('#instVelden [data-i-logo-kies]').textContent = 'Logo uploaden';
         $('#instVelden [data-i-logo-weg]').classList.add('hidden');
         return;
@@ -1894,12 +1905,12 @@ $('#instVelden')?.addEventListener('change', async (e) => {
 
 /* ── Bestelpagina-paneel: link, kopieerknop, live voorbeeld en status ── */
 
-/* Pizza Coach: slapende klanten bekijken en de combo-upsell aan of uit zetten */
+/* Coach: slapende klanten bekijken en de combo-upsell aan of uit zetten */
 (function coach() {
     $('#coachSlapendKnop')?.addEventListener('click', () => $('#coachSlapendModal').classList.remove('hidden'));
     $('#coachSlapendSluit')?.addEventListener('click', () => $('#coachSlapendModal').classList.add('hidden'));
     $('#coachSlapendModal')?.addEventListener('click', (e) => {
-        if (!e.target.closest('.animate-pop')) $('#coachSlapendModal').classList.add('hidden');
+        if (!e.target.closest('.venster, .animate-pop')) $('#coachSlapendModal').classList.add('hidden');
     });
 
     const zetPin = async (waarde) => {
@@ -1921,8 +1932,7 @@ $('#instVelden')?.addEventListener('change', async (e) => {
     linkTekst.textContent = link;
     $('#paginaOpen').href = link;
     $('#paginaKopieer').addEventListener('click', async () => {
-        try { await navigator.clipboard.writeText(link); } catch { /* stil */ }
-        $('#paginaKopieer').textContent = 'Gekopieerd';
+        $('#paginaKopieer').textContent = (await kopieer(link)) ? 'Gekopieerd' : 'Kopiëren lukte niet';
         setTimeout(() => { $('#paginaKopieer').textContent = 'Kopieer link'; }, 1600);
     });
 
@@ -1964,6 +1974,26 @@ if (typeof window.PP_ABO_FOUT === 'string' && window.PP_ABO_FOUT) dashToast(wind
 
 
 /* ── Topbalk: de klok tikt per kwart minuut ─────────────────────── */
+/* ── Licht of donker: de knop in de topbalk, keuze onthouden in de browser ── */
+
+const themaKnop = $('#themaKnop');
+if (themaKnop) {
+    /* Het icoon toont waar je naartoe wisselt: in donker een zon, in licht een maan */
+    const themaIcoon = () => {
+        const donker = document.documentElement.dataset.theme !== 'light';
+        themaKnop.innerHTML = `<i class="fa-solid ${donker ? 'fa-sun' : 'fa-moon'}" aria-hidden="true"></i>`;
+        themaKnop.title = donker ? 'Wissel naar licht' : 'Wissel naar donker';
+        themaKnop.setAttribute('aria-label', themaKnop.title);
+    };
+    themaKnop.addEventListener('click', () => {
+        const naar = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+        document.documentElement.dataset.theme = naar;
+        try { localStorage.setItem('se-thema', naar); } catch { /* privémodus: dan alleen voor nu */ }
+        themaIcoon();
+    });
+    themaIcoon();
+}
+
 const topbalkKlok = $('#topbalkKlok');
 if (topbalkKlok) {
     const topbalkTik = () => {
@@ -1972,3 +2002,214 @@ if (topbalkKlok) {
     topbalkTik();
     setInterval(topbalkTik, 15000);
 }
+
+
+/* ── Stripe: meldingen en de blokkade op online gaan ──────────── */
+
+if (window.PP_STRIPE_MELDING) dashToast(window.PP_STRIPE_MELDING, 5200);
+if (window.PP_STRIPE_FOUT) dashToast(window.PP_STRIPE_FOUT, 5200);
+
+/* Zonder gekoppelde bankrekening kan een zaak geen bestellingen aannemen:
+   klanten zouden dan niet kunnen betalen. De server weigert het ook. */
+const stripeBlokkeert = window.PP_STRIPE_VERPLICHT === true && window.PP_STRIPE_KLAAR === false;
+if (stripeBlokkeert) {
+    const knop = $('#onlineToggle');
+    if (knop) {
+        knop.classList.add('opacity-40', 'cursor-not-allowed');
+        knop.title = 'Koppel eerst je bankrekening via Instellingen';
+    }
+}
+
+/* ── Je team: bezorgers en keukenhulp ─────────────────────────── */
+
+let TEAM = window.PP_TEAM || [];
+let teamRol = 'bezorger';
+let teamBezig = false;
+
+function teamRegel(m) {
+    const staat = !m.actief
+        ? { tekst: 'Staat uit', klasse: '' }
+        : m.uitgenodigd
+            ? { tekst: 'Uitnodiging verstuurd', klasse: '' }
+            : { tekst: 'Actief', klasse: 'ok' };
+    const icoon = m.rol === 'keuken' ? 'fa-fire-burner' : 'fa-moped';
+
+    return `<div class="regel team-regel ${m.actief ? '' : 'uit'}">
+        <span class="rol-icoon"><i class="fa-solid ${icoon}" aria-hidden="true"></i></span>
+        <div class="op">
+            <p class="text-[15px] leading-snug flex flex-wrap items-center gap-x-2 gap-y-1"><b>${esc(m.naam)}</b><span class="tag klein ${staat.klasse}">${staat.tekst}</span></p>
+            <p class="mini truncate">${m.rolLabel} &middot; ${esc(m.email)}</p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+            ${m.uitgenodigd ? `<button type="button" data-team-actie="opnieuw" data-team-id="${m.id}" class="btn line klein cursor-pointer">Opnieuw sturen</button>` : ''}
+            <button type="button" data-team-actie="wissel" data-team-id="${m.id}" class="btn line klein cursor-pointer">${m.actief ? 'Uitzetten' : 'Aanzetten'}</button>
+            <button type="button" data-team-actie="weg" data-team-id="${m.id}" class="icoon-knop cursor-pointer" aria-label="Teamlid verwijderen"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
+        </div>
+    </div>`;
+}
+
+function renderTeam() {
+    const lijst = $('#teamLijst');
+    if (!lijst) return;
+    lijst.innerHTML = TEAM.length
+        ? TEAM.map(teamRegel).join('')
+        : '<div class="empty-box">Nog geen teamleden. Nodig je eerste bezorger uit, dan kan die onderweg zelf afvinken.</div>';
+}
+
+/* Het uitnodigingsvenster */
+function openTeamModal() {
+    teamRol = 'bezorger';
+    $$('[data-teamrol]').forEach((k) => k.classList.toggle('aan', k.dataset.teamrol === 'bezorger'));
+    ['#teamNaam', '#teamEmail', '#teamTelefoon'].forEach((id) => { $(id).value = ''; });
+    $('#teamErr').textContent = '';
+    $('#teamModal').classList.remove('hidden');
+    setTimeout(() => $('#teamNaam').focus(), 60);
+}
+
+function sluitTeamModal() {
+    $('#teamModal').classList.add('hidden');
+}
+
+$('#teamNieuw')?.addEventListener('click', openTeamModal);
+$('#teamModalSluit')?.addEventListener('click', sluitTeamModal);
+$('#teamModal')?.addEventListener('click', (e) => {
+    if (e.target === $('#teamModal') || e.target === $('#teamModalMidden')) sluitTeamModal();
+});
+$$('[data-teamrol]').forEach((knop) => knop.addEventListener('click', () => {
+    teamRol = knop.dataset.teamrol;
+    $$('[data-teamrol]').forEach((k) => k.classList.toggle('aan', k === knop));
+}));
+
+$('#teamOpslaan')?.addEventListener('click', async () => {
+    if (teamBezig) return;
+    const knop = $('#teamOpslaan');
+    const fout = $('#teamErr');
+    fout.textContent = '';
+
+    const naam = $('#teamNaam').value.trim();
+    const email = $('#teamEmail').value.trim();
+    if (naam.length < 2) { fout.textContent = 'Vul de naam van je teamlid in.'; return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { fout.textContent = 'Dit e-mailadres ziet er nog niet goed uit.'; return; }
+
+    teamBezig = true;
+    knop.disabled = true;
+    knop.textContent = 'Versturen…';
+    try {
+        const res = await postJson('/team', { naam, email, telefoon: $('#teamTelefoon').value.trim(), rol: teamRol });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            fout.textContent = data.errors ? Object.values(data.errors)[0][0] : 'Dat lukte niet. Probeer het zo nog eens.';
+        } else {
+            TEAM = [...TEAM, data.medewerker].sort((a, b) => a.naam.localeCompare(b.naam));
+            renderTeam();
+            sluitTeamModal();
+            dashToast(data.verstuurd
+                ? `${data.medewerker.naam} heeft een uitnodiging in de mail`
+                : `${data.medewerker.naam} is toegevoegd, maar de mail kwam niet weg. Stuur de uitnodiging zo nog eens.`, 4200);
+        }
+    } catch {
+        fout.textContent = 'Geen verbinding. Check je internet en probeer opnieuw.';
+    }
+    teamBezig = false;
+    knop.disabled = false;
+    knop.textContent = 'Uitnodiging versturen';
+});
+
+/* Bevestigen zonder browser-popup, in de huisstijl */
+let teamBevestigActie = null;
+function vraagTeamBevestiging({ titel, tekst, knop, actie }) {
+    teamBevestigActie = actie;
+    $('#teamBevestigTitel').textContent = titel;
+    $('#teamBevestigTekst').textContent = tekst;
+    $('#teamBevestigJa').textContent = knop;
+    $('#teamBevestig').classList.remove('hidden');
+}
+$('#teamBevestigNee')?.addEventListener('click', () => {
+    $('#teamBevestig').classList.add('hidden');
+    teamBevestigActie = null;
+});
+$('#teamBevestigJa')?.addEventListener('click', async () => {
+    const actie = teamBevestigActie;
+    $('#teamBevestig').classList.add('hidden');
+    teamBevestigActie = null;
+    if (actie) await actie();
+});
+
+async function teamVerzoek(url, opties = {}) {
+    try {
+        const res = await fetch(url, {
+            method: opties.methode || 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            dashToast(data.message || 'Dat lukte niet, probeer het zo nog eens.', 3600);
+            return null;
+        }
+        return data;
+    } catch {
+        dashToast('Geen verbinding. Check je internet.', 3600);
+        return null;
+    }
+}
+
+$('#teamLijst')?.addEventListener('click', async (e) => {
+    const knop = e.target.closest('[data-team-actie]');
+    if (!knop) return;
+    const id = Number(knop.dataset.teamId);
+    const lid = TEAM.find((m) => m.id === id);
+    if (!lid) return;
+
+    if (knop.dataset.teamActie === 'opnieuw') {
+        const data = await teamVerzoek(`/team/${id}/opnieuw`);
+        if (data) dashToast(data.verstuurd ? `Nieuwe uitnodiging naar ${lid.naam} verstuurd` : 'De mail kwam niet weg, probeer het zo nog eens.', 4200);
+        return;
+    }
+
+    if (knop.dataset.teamActie === 'wissel') {
+        const uitzetten = lid.actief;
+        vraagTeamBevestiging({
+            titel: uitzetten ? `${lid.naam} uitzetten?` : `${lid.naam} weer aanzetten?`,
+            tekst: uitzetten
+                ? 'Hij kan dan niet meer inloggen op het teamscherm. Je kunt dit altijd weer aanzetten.'
+                : 'Hij kan straks weer inloggen en ritten oppakken.',
+            knop: uitzetten ? 'Ja, uitzetten' : 'Ja, aanzetten',
+            actie: async () => {
+                const data = await teamVerzoek(`/team/${id}/wissel`);
+                if (!data) return;
+                TEAM = TEAM.map((m) => (m.id === id ? data.medewerker : m));
+                renderTeam();
+                dashToast(data.medewerker.actief ? `${lid.naam} staat weer aan` : `${lid.naam} staat uit`);
+            },
+        });
+        return;
+    }
+
+    if (knop.dataset.teamActie === 'weg') {
+        vraagTeamBevestiging({
+            titel: `${lid.naam} weghalen?`,
+            tekst: 'Zijn account verdwijnt en hij kan niet meer inloggen. Bestellingen die hij bezorgd heeft blijven gewoon staan.',
+            knop: 'Ja, weghalen',
+            actie: async () => {
+                const data = await teamVerzoek(`/team/${id}`, { methode: 'DELETE' });
+                if (!data) return;
+                TEAM = TEAM.filter((m) => m.id !== id);
+                renderTeam();
+                dashToast(`${lid.naam} is uit je team gehaald`);
+            },
+        });
+    }
+});
+
+renderTeam();
+
+/* De link naar het teamscherm delen met je team: precies de link die op het scherm staat */
+$('#teamLinkKopie')?.addEventListener('click', async () => {
+    const knop = $('#teamLinkKopie');
+    const link = location.protocol + '//' + ($('#teamLink')?.textContent.trim() || location.host + '/bezorger/login');
+    knop.textContent = (await kopieer(link)) ? 'Gekopieerd' : 'Kopiëren lukte niet';
+    setTimeout(() => { knop.textContent = 'Link kopiëren'; }, 1600);
+});

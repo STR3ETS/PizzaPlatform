@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Klant;
 use App\Models\Order;
+use App\Support\StripeConnect;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -318,7 +319,7 @@ class BestelController extends Controller
 
         $order = Order::create([
             'user_id' => $user->id,
-            'nummer' => ((int) $user->orders()->max('nummer') ?: 411) + 1,
+            'nummer' => ((int) Order::inclusiefOnbetaald()->where('user_id', $user->id)->max('nummer') ?: 411) + 1,   // ook onbetaalde tellen mee, anders krijgen twee bestellingen hetzelfde nummer
             'klant' => $data['klant'],
             'items' => $orderItems,
             'totaal' => $totaal,
@@ -804,6 +805,19 @@ class BestelController extends Controller
 
     public function t1Bestelling(User $user, string $basis, ?string $token = null, ?string $forceer = null)
     {
+        // Net terug van Stripe: is de betaling rond? De webhook doet dit ook, maar die kan
+        // er net nog niet zijn. Blijft de bestelling onbetaald, dan terug naar het afrekenen.
+        if ($token !== null) {
+            $wacht = Order::inclusiefOnbetaald()->where('user_id', $user->id)->where('token', $token)
+                ->where('betaal_status', '!=', 'betaald')->first();
+            if ($wacht) {
+                $this->betalingControleren($user, $wacht);
+                if ($wacht->fresh()->betaal_status !== 'betaald') {
+                    return redirect($basis . '/afrekenen?afgebroken=1');
+                }
+            }
+        }
+
         $thema = $this->t1Thema($user, $forceer);
         $ob = $user->onboarding ?? [];
 
@@ -842,6 +856,26 @@ class BestelController extends Controller
             'telefoonZaak' => $ob['phone'] ?? null,
             'mailZaak' => $ob['email'] ?? $user->email,
         ]);
+    }
+
+    /** Bij Stripe navragen of er betaald is; zo ja, dan de bestelling afronden */
+    private function betalingControleren(User $user, Order $order): void
+    {
+        if (! $order->stripe_session_id || ! StripeConnect::beschikbaar() || ! $user->stripe_account_id) {
+            return;
+        }
+
+        try {
+            $sessie = StripeConnect::stil(fn () => StripeConnect::client()->checkout->sessions->retrieve(
+                $order->stripe_session_id, [], ['stripe_account' => $user->stripe_account_id]
+            ));
+            if (($sessie->payment_status ?? null) === 'paid') {
+                $order->forceFill(['stripe_payment_intent' => (string) ($sessie->payment_intent ?? '')])->save();
+                $this->betalingAfronden($order);
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     /** De bestelling terughalen op token, zodat de statuspagina ook zonder lokale opslag werkt */
@@ -1006,18 +1040,23 @@ class BestelController extends Controller
             if (! empty($data['telefoon'])) {
                 $bijwerken['telefoon'] = $data['telefoon'];
             }
-            if ($puntenVerdiend > 0 || $puntenGebruikt > 0) {
-                $bijwerken['punten'] = max(0, $klantAccount->punten - $puntenGebruikt + $puntenVerdiend);
-            }
+            // De punten zelf verrekenen we pas bij een geslaagde betaling (zie betalingAfronden)
             if ($bijwerken !== []) {
                 $klantAccount->update($bijwerken);
             }
         }
 
+        // Betaalt de klant online? Dat kan zodra het platform betalingen aan heeft staan
+        // en deze zaak aan Stripe gekoppeld is.
+        $betaalStap = StripeConnect::betalingenAan();
+        if ($betaalStap && ! StripeConnect::kanOntvangen($user)) {
+            return response()->json(['ok' => false, 'melding' => 'Deze zaak kan op dit moment geen online betalingen ontvangen. Probeer het later nog eens.'], 422);
+        }
+
         $order = Order::create([
             'user_id' => $user->id,
             'klant_id' => $klantAccount?->id,
-            'nummer' => ((int) $user->orders()->max('nummer') ?: 411) + 1,
+            'nummer' => ((int) Order::inclusiefOnbetaald()->where('user_id', $user->id)->max('nummer') ?: 411) + 1,   // ook onbetaalde tellen mee, anders krijgen twee bestellingen hetzelfde nummer
             'token' => (string) Str::uuid(),
             'klant' => $data['klant'],
             'items' => $orderItems,
@@ -1025,33 +1064,96 @@ class BestelController extends Controller
             'punten' => $puntenVerdiend,
             'punten_gebruikt' => $puntenGebruikt,
             'status' => 'nieuw',
+            'betaal_status' => 'open',   // pas 'betaald' als de betaling rond is (of direct, zonder betaalstap)
             'type' => $data['type'],
             'adres' => $data['type'] === 'bezorgen' ? ($data['adres'] ?? null) : null,
             'opmerking' => $opmerking !== '' ? $opmerking : null,
             'is_demo' => false,
         ]);
 
-        // Bevestiging naar de klant en een seintje naar de zaak. De demo-zaak
-        // (template-speeltuinen) slaan we over, en een mailstoring mag een
-        // bestelling nooit tegenhouden.
-        if ($user->email !== 'demo@pizzeria.nl') {
-            $statusLink = $request->getSchemeAndHttpHost()
-                . ($request->is('bestellen/*') ? '/bestellen/' . $user->slug : '')
-                . '/bestelling/' . $order->token;
-            try {
-                if ($klantAccount?->email) {
-                    \Illuminate\Support\Facades\Mail::to($klantAccount->email)->send(new \App\Mail\BestelBevestigingMail($order, $user, $statusLink));
-                }
-                \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\NieuweBestellingMail($order, $user));
-            } catch (\Throwable $e) {
-                report($e);
-            }
-        }
-
-        return response()->json([
+        $basis = $request->is('bestellen/*') ? '/bestellen/' . $user->slug : '';
+        $statusLink = $request->getSchemeAndHttpHost() . $basis . '/bestelling/' . $order->token;
+        $antwoord = [
             'ok' => true, 'nummer' => $order->nummer, 'token' => $order->token, 'totaal' => $totaal,
             'punten' => $puntenVerdiend, 'korting' => $korting,
-        ]);
+        ];
+
+        // Zonder betaalstap is de bestelling meteen rond, net als voorheen
+        if (! $betaalStap) {
+            $this->betalingAfronden($order, $statusLink);
+
+            return response()->json($antwoord);
+        }
+
+        // Met betaalstap rekent de klant af bij Stripe, rechtstreeks op het account van de zaak
+        try {
+            $sessie = StripeConnect::stil(fn () => StripeConnect::client()->checkout->sessions->create([
+                'mode' => 'payment',
+                'locale' => 'nl',
+                'customer_email' => $klantAccount?->email,
+                'line_items' => [[
+                    'price_data' => [
+                        'currency' => 'eur',
+                        'unit_amount' => $totaal,
+                        'product_data' => ['name' => ($user->onboarding['name'] ?? 'Je bestelling') . ', bestelling #' . $order->nummer],
+                    ],
+                    'quantity' => 1,
+                ]],
+                'payment_intent_data' => [
+                    'description' => 'Bestelling #' . $order->nummer,
+                    'metadata' => ['order_id' => (string) $order->id],
+                ],
+                'metadata' => ['order_id' => (string) $order->id, 'order_token' => $order->token],
+                'success_url' => $statusLink . '?betaald=1',
+                'cancel_url' => $request->getSchemeAndHttpHost() . $basis . '/afrekenen?afgebroken=1',
+                'expires_at' => now()->addMinutes(35)->timestamp,
+            ], ['stripe_account' => $user->stripe_account_id]));
+        } catch (\Throwable $e) {
+            report($e);
+            $order->forceFill(['betaal_status' => 'mislukt'])->save();
+
+            return response()->json(['ok' => false, 'melding' => 'We konden de betaling niet starten. Probeer het zo nog eens.'], 422);
+        }
+
+        $order->forceFill(['stripe_session_id' => $sessie->id])->save();
+        $antwoord['betaalUrl'] = $sessie->url;
+
+        return response()->json($antwoord);
+    }
+
+    /**
+     * De bestelling is betaald (of hoefde niet betaald te worden): spaarpunten verrekenen,
+     * de zaak inseinen en de klant zijn bevestiging sturen. Dit draait precies één keer per
+     * bestelling, ook als de webhook en de statuspagina er allebei langskomen.
+     */
+    public function betalingAfronden(Order $order, ?string $statusLink = null): void
+    {
+        if ($order->betaal_status === 'betaald') {
+            return;
+        }
+
+        $order->forceFill(['betaal_status' => 'betaald', 'betaald_om' => now()])->save();
+        $user = $order->user;
+
+        // Spaarpunten verrekenen op het klantaccount
+        $klant = $order->klant_id ? \App\Models\Klant::find($order->klant_id) : null;
+        if ($klant && ($order->punten > 0 || $order->punten_gebruikt > 0)) {
+            $klant->update(['punten' => max(0, $klant->punten - $order->punten_gebruikt + $order->punten)]);
+        }
+
+        // De demo-zaak (template-speeltuinen) mailt niet, en een mailstoring mag nooit blokkeren
+        if ($user->email === 'demo@pizzeria.nl') {
+            return;
+        }
+        $statusLink ??= rtrim(config('app.url'), '/') . '/bestellen/' . $user->slug . '/bestelling/' . $order->token;
+        try {
+            if ($klant?->email) {
+                \Illuminate\Support\Facades\Mail::to($klant->email)->send(new \App\Mail\BestelBevestigingMail($order, $user, $statusLink));
+            }
+            \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\NieuweBestellingMail($order, $user));
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     /* Slug-varianten voor de publieke routes */

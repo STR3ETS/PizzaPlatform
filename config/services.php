@@ -29,6 +29,10 @@ return [
     'stripe' => [
         'key' => env('STRIPE_KEY'),
         'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        // Betalen door klanten aanzetten zodra het Connect-platform bij Stripe rond is.
+        // Staat dit uit, dan komen bestellingen binnen zonder betaalstap (demo en tests).
+        'betalingen' => env('STRIPE_BETALINGEN', false),
     ],
 
     'resend' => [

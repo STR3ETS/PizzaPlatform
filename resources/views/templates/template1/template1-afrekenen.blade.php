@@ -482,6 +482,9 @@
                     punten: data.punten || 0,
                     totaal: subtotaal + bezorg + fooi - (data.korting || 0),
                 }));
+                /* Moet er betaald worden? Dan eerst naar de beveiligde betaalomgeving van Stripe.
+                   Het mandje blijft staan tot de betaling rond is. */
+                if (data.betaalUrl) { location.href = data.betaalUrl; return; }
                 localStorage.removeItem(`${OPSLAG}_mand`);
                 location.href = data.token ? `${T1_BASIS}/bestelling/${data.token}` : `${T1_BASIS}/bestelling`;
             } catch (fout) {
@@ -675,5 +678,16 @@
             werkBij();
         });
     </script>
+    <script>
+        /* Terug van een afgebroken betaling: de bestelling staat nog in je mandje */
+        if (new URLSearchParams(location.search).get('afgebroken')) {
+            const melding = document.querySelector('#afFout');
+            if (melding) {
+                melding.textContent = 'De betaling is niet afgerond. Je bestelling staat nog klaar, probeer het gerust opnieuw.';
+                melding.classList.remove('hidden');
+            }
+        }
+    </script>
+
 </body>
 </html>

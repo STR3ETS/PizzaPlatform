@@ -1,34 +1,31 @@
 @extends('layouts.gast')
 
-@section('title', 'Wachtwoord vergeten')
+@section('title', 'Wachtwoord vergeten | Shop & Eat')
+@section('foto', 'koken.jpg')
+@section('claim')Even kwijt? <b>Zo geregeld</b>.@endsection
+@section('claimsub', 'Je krijgt een link per mail om een nieuw wachtwoord te kiezen.')
 
 @section('content')
-    <div class="text-center mb-6">
-        <p class="step-kicker">Geen probleem</p>
-        <h1 class="step-title">Wachtwoord vergeten</h1>
-        <p class="step-sub !mb-0">Vul je e-mailadres in en we sturen je een link om een nieuw wachtwoord te kiezen.</p>
+    <div>
+        <p class="label">Geen probleem</p>
+        <h1 class="gast-kop">Wachtwoord vergeten</h1>
+        <p class="lead" style="margin-top:8px">Vul je e-mailadres in en we sturen je een link om een nieuw wachtwoord te kiezen.</p>
     </div>
 
     @if (session('status'))
-        <div class="mb-4 rounded-2xl border border-basil/30 bg-basil/10 text-basil font-semibold text-sm px-4 py-3">
-            {{ session('status') }}
-        </div>
+        <div class="kaart"><p class="status live"><i></i>{{ session('status') }}</p></div>
     @endif
 
-    <div class="bg-white rounded-2xl border border-crema-dark shadow-[0_1px_2px_rgb(36_23_18_/_.1)] p-6 sm:p-8">
-        <form method="POST" action="{{ route('password.email') }}" class="space-y-4">
-            @csrf
-            <div>
-                <label for="email" class="lbl">E-mailadres</label>
-                <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus
-                    autocomplete="email" placeholder="mario@pizzeriamario.nl" class="inp !text-base">
-                @error('email')<p class="err">{{ $message }}</p>@enderror
-            </div>
-            <button type="submit" class="btn-primary w-full !px-4">Stuur herstel-link</button>
-        </form>
-    </div>
+    <form method="POST" action="{{ route('password.email') }}" class="gast-velden">
+        @csrf
+        <div class="fld">
+            <label for="email">E-mailadres</label>
+            <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus
+                autocomplete="email" placeholder="jij@jouwzaak.nl">
+            @error('email')<p class="fout">{{ $message }}</p>@enderror
+        </div>
+        <button type="submit" class="btn dark breed">Stuur herstel-link</button>
+    </form>
 
-    <p class="text-center mt-5 text-sm font-semibold text-cacao/50">
-        Weet je je wachtwoord weer? <a href="{{ route('login') }}" class="text-tomato hover:underline">Naar inloggen</a>
-    </p>
+    <p class="small">Weet je je wachtwoord weer? <a href="{{ route('login') }}" class="link-knop">Naar inloggen</a></p>
 @endsection

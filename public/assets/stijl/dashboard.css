@@ -1,0 +1,596 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Shop & Eat: dashboard op designsysteem 3.0
+
+   Laadvolgorde op een dashboardpagina:
+     1. assets/onboarding/style.css   het oude systeem (panelen die nog wachten)
+     2. assets/stijl/systeem.css      de tokens en componenten van /stijlgids
+     3. dit bestand                   de app-onderdelen plus de brug naar oud
+
+   Het tweede deel ("Brug") vertaalt de oude klassen naar de nieuwe tokens,
+   zodat de panelen die nog niet zijn herbouwd in hetzelfde palet meelopen
+   in plaats van rood-op-ivoor te blijven. Zodra een paneel is omgezet mag
+   zijn regel hier weg.
+   ══════════════════════════════════════════════════════════════════════ */
+
+
+/* ── Schil: rail, tabbalk, topbalk ─────────────────────────────────── */
+
+.dash-rail {
+    position: fixed;
+    left: var(--gap); top: var(--gap); bottom: var(--gap);
+    width: 15rem;
+    background: var(--card);
+    border: 0;
+    border-radius: var(--r-vlak);
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    overflow: hidden;
+}
+.dash-rail nav { padding-inline: 10px; }
+
+/* De rail-basis staat in systeem.css; hier alleen wat het dashboard toevoegt */
+.rail-item { font-size: 13.5px; }
+.rail-item .r-ico { width: 1.15rem; text-align: center; font-size: .95rem; color: var(--ink3); transition: color .2s; }
+.rail-item:hover .r-ico, .rail-item.actief .r-ico { transform: none; color: inherit; }
+.rail-item.actief { background: var(--omgekeerd); color: var(--omgekeerd-ink); box-shadow: none; }
+.rail-item .n-soon {
+    margin-left: auto;
+    font-size: 11px; font-weight: 500; letter-spacing: 0; text-transform: none;
+    background: var(--omgekeerd); color: var(--omgekeerd-ink);
+    border-radius: var(--r-pill);
+    min-width: 20px; padding: 1px 7px; text-align: center;
+}
+.rail-item.actief .n-soon { background: color-mix(in srgb, var(--omgekeerd-ink) 22%, transparent); color: var(--omgekeerd-ink); }
+
+/* Statusknop bovenin de rail */
+.rail-status {
+    display: flex; align-items: center; gap: 10px;
+    margin: 0 10px 10px; padding: 10px 12px;
+    border-radius: var(--r-klein);
+    background: var(--soft);
+    text-align: left;
+    transition: background .2s;
+}
+.rail-status:hover { background: var(--line); }
+
+.dash-tabbar {
+    background: var(--omgekeerd);
+    border: 0;
+    border-radius: var(--r-pill);
+    box-shadow: none;
+    padding: 6px;
+    gap: 2px;
+    bottom: var(--gap);
+}
+.tab-item { width: 2.9rem; height: 2.9rem; color: color-mix(in srgb, var(--omgekeerd-ink) 55%, transparent); }
+.tab-item .t-ico { font-size: 1.05rem; }
+.tab-item.actief { background: var(--omgekeerd-ink); color: var(--omgekeerd); }
+.tab-status {
+    height: 2.9rem;
+    border-left: 1px solid color-mix(in srgb, var(--omgekeerd-ink) 16%, transparent);
+    color: color-mix(in srgb, var(--omgekeerd-ink) 75%, transparent);
+    font-size: .72rem; font-weight: 400;
+}
+.tab-status .ts-dot { width: .5rem; height: .5rem; background: color-mix(in srgb, var(--omgekeerd-ink) 45%, transparent); animation: none; box-shadow: none; }
+.tab-status.online .ts-dot { background: var(--green); animation: none; }
+
+/* Topbalk: één pil met de dingen die op elk paneel gelden */
+.topbalk {
+    position: sticky; top: var(--gap); z-index: 30;
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: 6px 22px;
+    min-height: 52px;
+    padding: 8px 20px;
+    border-radius: var(--r-pill);
+    background: var(--card);
+    font-size: 13px;
+}
+/* Geen display hier: de onderdelen zetten dat zelf met inline-flex of
+   hidden sm:inline-flex, en dat moet kunnen winnen van deze regel. */
+.topbalk .los { align-items: center; gap: 9px; color: var(--ink2); transition: color .2s; }
+.topbalk button.los:hover { color: var(--ink); }
+.topbalk .los i.fa-solid, .topbalk .los i.fa-regular { color: var(--ink3); font-size: .85rem; }
+
+/* ── Vlakken en ritme ──────────────────────────────────────────────── */
+
+/* De dashboardvariant van .vlak: dezelfde vorm, minder lucht, want hier
+   staan tien blokken op een scherm in plaats van één verhaal. */
+.vlak.app { padding: max(26px, 1.5vw) max(28px, 1.7vw); }
+@media (max-width: 40rem) { .vlak.app { padding: 22px 20px; } }
+
+/* Kop van een blok: kleiner dan h3, want er staan er tien op een scherm */
+.kop { font-size: 19px; font-weight: 300; letter-spacing: -.015em; line-height: 1.3; }
+.vlak.app .head { margin-bottom: 18px; align-items: center; gap: 14px; }
+.vlak.app .head.\!mb-0 { margin-bottom: 0; }
+/* Onder de knik stapelt .head; dan hoort alles weer links te staan */
+@media (max-width: 900px) { .vlak.app .head { align-items: flex-start; } }
+
+/* De begroeting: de enige echt grote regel op het scherm */
+.groet { font-size: clamp(28px, 3.4vw, 40px); font-weight: 300; letter-spacing: -.025em; line-height: 1.08; }
+.groet b { font-weight: 500; }
+
+/* Kop boven een groep blokken. Staat los op het grijze vel, met lucht erboven,
+   zodat de groepen elkaar niet raken. De eerste in een kolom hoeft niet zoveel. */
+.sectie-kop { display: flex; flex-direction: column; gap: 3px; padding: calc(var(--gap) * 2.5 + 8px) 6px 10px; }
+.sectie-kop:first-child { padding-top: 10px; }
+.sectie-kop h2 { font-size: 22px; font-weight: 300; letter-spacing: -.015em; line-height: 1.2; }
+.sectie-kop p { font-size: 13px; color: var(--ink3); }
+
+/* Druktebalken: op volle breedte worden ze anders blokken in plaats van een grafiek */
+.drukte-kolom { max-width: 52px; }
+#drukteChart, #omzetWeek { justify-content: space-between; }
+
+/* Kerncijfers: twee naast elkaar, vier op een breed scherm, met haarlijnen ertussen */
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 20px; }
+.stats .stat:nth-child(even) { border-left: 1px solid var(--line); padding-left: 20px; }
+@media (min-width: 96rem) {
+    .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .stats .stat:nth-child(n+2) { border-left: 1px solid var(--line); padding-left: 20px; }
+}
+
+/* Oud: label met een lijn erachter; blijft bestaan voor panelen die het nog gebruiken */
+.sectie { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
+.sectie .lijn { flex: 1; height: 1px; background: var(--line); }
+
+/* Haarlijn binnen een vlak. Draagt zijn eigen marge: deze regel staat buiten
+   een laag en wint dus van een utility als my-4, die zou niets doen. */
+.streep { height: 1px; background: var(--line); border: 0; margin: 16px 0; }
+
+/* Bestelregel in het overzicht: een .regel die onder 40rem stapelt */
+.bestel-regel { flex-direction: column; align-items: stretch; gap: 10px; }
+@media (min-width: 40rem) { .bestel-regel { flex-direction: row; align-items: center; gap: 14px; } }
+.bestel-regel .op p:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+
+/* Kleine statuschip in een regel: de compacte broer van .tag */
+.chip-st {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 9px;
+    border-radius: var(--r-pill);
+    font-size: 11px; font-weight: 500; line-height: 1.4;
+    white-space: nowrap;
+}
+
+/* ── Onderdelen van het overzicht ──────────────────────────────────── */
+
+/* Dagkolom in de openingstijden */
+.dag {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 1px;
+    padding: 10px 2px;
+    border-radius: var(--r-mini);
+    background: var(--soft);
+    font-size: 11px; color: var(--ink3);
+    text-align: center;
+}
+.dag b { font-weight: 500; color: var(--ink2); font-size: 11.5px; }
+/* In de smalle rechterkolom staan zeven dagen op zo'n 300px: iets kleiner zetten */
+@media (min-width: 80rem) { .dag { font-size: 10px; padding: 9px 1px; } .dag b { font-size: 10.5px; } }
+.dag.open b { color: var(--ink); }
+.dag.dicht { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.dag.vandaag { background: var(--omgekeerd); }
+.dag.vandaag b, .dag.vandaag span { color: var(--omgekeerd-ink); }
+
+/* Melding met één actie ernaast */
+.melding {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+    padding: 14px 18px;
+    border-radius: var(--r-klein);
+    background: var(--soft);
+    font-size: 13.5px;
+}
+.melding p { flex: 1; min-width: 14rem; color: var(--ink); }
+
+/* Regel in de coach: tekst links, knop rechts */
+.coach-regel { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 14px 0; font-size: 13.5px; }
+.coach-regel p { flex: 1; min-width: 14rem; }
+.coach-regel + .coach-regel { border-top: 1px solid var(--line); }
+
+/* Snelknop: blok dat omkeert als je eroverheen gaat.
+   Houdt de klasse .qa-btn erbij, want dashboard.js zet daarmee de snelknoppen
+   op slot zolang de zaak niet af is; de oude opmaak zetten we hier uit. */
+.snel {
+    display: flex; flex-direction: row; align-items: center; gap: 11px;
+    border: 0; box-shadow: none;
+    padding: 13px 15px;
+    border-radius: var(--r-klein);
+    background: var(--soft);
+    font-size: 13px; font-weight: 500; color: var(--ink);
+    text-align: left;
+    transition: background .25s var(--soepel), color .25s, transform .25s var(--soepel);
+}
+.snel i { color: var(--ink3); width: 1.1rem; text-align: center; transition: color .25s; }
+.snel:hover { background: var(--omgekeerd); color: var(--omgekeerd-ink); transform: translateY(-2px); }
+.snel:hover i { color: var(--omgekeerd-ink); }
+
+/* ── Beweging ──────────────────────────────────────────────────────── */
+
+.rise { animation: rise .7s var(--soepel) both; animation-delay: var(--d, 0s); }
+@keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.panel.actief { animation: panel-in .45s var(--soepel) both; }
+@keyframes panel-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ═══ Brug naar het oude systeem ════════════════════════════════════ */
+
+/* Tailwind-utilities winnen van klassen uit een stylesheet zodra de CDN zijn
+   stijlblok later inhaakt. Daarom staat er `body` voor: dat telt zwaarder,
+   ongeacht de volgorde. */
+
+body .font-display { font-family: 'Figtree', sans-serif; font-weight: 300; letter-spacing: -.02em; }
+body .font-extrabold, body .font-bold { font-weight: 600; }
+body .font-semibold { font-weight: 500; }
+
+/* Knoppen */
+body .btn-primary {
+    font-family: inherit; font-weight: 500; font-size: 14px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    min-height: 44px; padding: 0 22px;
+    color: var(--omgekeerd-ink); background: var(--omgekeerd);
+    border-radius: var(--r-pill);
+    box-shadow: none;
+    transition: background .2s, transform .2s;
+}
+body .btn-primary:hover { background: color-mix(in srgb, var(--omgekeerd) 86%, var(--page)); transform: translateY(-1px); }
+body .btn-primary:active { transform: none; }
+body .btn-grey { background: var(--card); color: var(--ink); border: 1px solid var(--line); box-shadow: none; }
+body .btn-grey:hover { background: var(--soft); }
+
+/* Labels, velden en lege staten */
+body .lbl { font-size: 11px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--ink3); margin: 0; }
+body .inp {
+    background: var(--card); color: var(--ink);
+    border: 1px solid var(--line); border-radius: var(--r-klein);
+    padding: .7rem 1rem; font-size: 15px; font-weight: 400;
+}
+body .inp::placeholder { color: var(--ink3); font-weight: 400; }
+body .inp:focus { border-color: var(--ink); transform: none; }
+body .m-inp, body .cat-inp, body .inp-time { background: var(--card); color: var(--ink); border-radius: var(--r-mini); border-color: var(--line); font-weight: 400; }
+body .m-inp:focus, body .cat-inp:focus, body .inp-time:focus { border-color: var(--ink); }
+body .empty-box { border: 0; background: var(--soft); border-radius: var(--r-klein); padding: 16px; font-weight: 400; color: var(--ink3); }
+body .skip-link { font-size: 13px; font-weight: 500; color: var(--ink2); }
+body .skip-link:hover { color: var(--ink); }
+body .err, body .m-fout { font-weight: 400; }
+
+/* Kaarten: wit vlak, geen rand, geen schaduw, geen zweefbeweging */
+body .dash-card {
+    background: var(--card);
+    border: 0; border-radius: var(--r-kaart);
+    padding: 22px 24px;
+    box-shadow: none;
+    transition: none;
+}
+body .dash-card:hover { transform: none; box-shadow: none; }
+
+/* Status en schakelaars */
+body .status-dot { width: .6rem; height: .6rem; background: var(--ink3); }
+body .status-dot.aan { background: var(--green); animation: pols 2.4s ease-out infinite; }
+@keyframes pols {
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 55%, transparent); }
+    70% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--green) 0%, transparent); }
+    100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 0%, transparent); }
+}
+#topbalkDot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--ink3); }
+#topbalkDot.bg-basil { background: var(--green); }
+body .mode-switch { background: var(--soft); border: 0; padding: 4px; gap: 2px; }
+body .mode-opt { font-size: 12.5px; font-weight: 500; color: var(--ink2); padding: .5rem .95rem; }
+body .mode-opt:hover { background: var(--card); color: var(--ink); }
+body .mode-opt.on { background: var(--omgekeerd); color: var(--omgekeerd-ink); }
+
+/* Voortgangsring en afvinklijst */
+.ring-track { stroke: var(--line); }
+.ring-bar { stroke: var(--accent); }
+body .check-item { border-radius: var(--r-klein); font-weight: 400; font-size: 13.5px; gap: 11px; padding: 11px 13px; }
+body .check-item:hover { background: var(--soft); transform: none; }
+body .check-item .c-dot { width: 1.25rem; height: 1.25rem; border-color: var(--line); font-size: .62rem; }
+body .check-item.af .c-dot { background: var(--omgekeerd); border-color: var(--omgekeerd); color: var(--omgekeerd-ink); }
+body .check-item.af { color: var(--ink3); }
+
+/* Staafjes: drukte en omzet */
+body .drukte-bar { border-radius: 4px 4px 2px 2px; }
+body .drukte-bar.laag { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+body .drukte-bar.middel { background: color-mix(in srgb, var(--accent) 55%, transparent); }
+body .drukte-bar.hoog { background: var(--accent); }
+body .drukte-kolom .d-uur { font-size: .52rem; font-weight: 400; color: var(--ink3); }
+body .drukte-kolom.nu .d-uur { background: var(--omgekeerd); color: var(--omgekeerd-ink); }
+
+/* Bestellingen */
+body .order-card { border-radius: var(--r-klein); }
+body .order-tab { font-weight: 500; font-size: 13px; min-height: 2.6rem; border-color: var(--line); border-radius: var(--r-pill); }
+body .stl-dot { border-color: var(--line); }
+body .stl-lbl { font-weight: 400; color: var(--ink3); }
+
+/* Chips */
+body .chip, body .keuze-chip, body .cat-chip, body .warn-chip { border-width: 1px; font-weight: 400; }
+body .keuze-chip.aan, body .cat-chip.active { background: var(--omgekeerd); border-color: var(--omgekeerd); color: var(--omgekeerd-ink); }
+
+/* Vensters die nog uit het oude systeem komen */
+body .step-kicker { letter-spacing: 0; text-transform: none; font-weight: 400; font-size: 12px; color: var(--ink3); }
+body .step-title { font-family: 'Figtree', sans-serif; font-weight: 300; letter-spacing: -.02em; }
+body .step-sub { font-weight: 400; color: var(--ink2); }
+
+/* ═══ Donker thema: de laatste harde witjes uit style.css ═══════════ */
+
+/* Deze onderdelen zetten in style.css nog letterlijk #fff als vlak. Dat kan
+   niet mee in donker, dus wijzen ze hier naar de tokens. Ook dit mag weg
+   zodra het bijbehorende paneel is herbouwd. */
+body .order-tab,
+body .stl-dot,
+body .eta-snel,
+body .eta-stap,
+body .m-inp,
+body .keuze-chip,
+body .cat-chip,
+body .theme-card,
+body .preset-card,
+body .choice-card,
+body .day-chip,
+body .emoji-opt,
+body .menu-row input,
+body #bezorgMap .leaflet-control-zoom a { background: var(--card); color: var(--ink); border-color: var(--line); }
+
+body .chip, body .eta-kiezer, body .logo-drop, body .warn-chip { background: var(--soft); border-color: var(--line); color: var(--ink); }
+body .warn-chip.ok { background: color-mix(in srgb, var(--green) 18%, transparent); border-color: color-mix(in srgb, var(--green) 45%, transparent); }
+body .day-chip.on { background: var(--omgekeerd); border-color: var(--omgekeerd); color: var(--omgekeerd-ink); }
+body .stl-stap.geweest .stl-dot { background: var(--omgekeerd); border-color: var(--omgekeerd); color: var(--omgekeerd-ink); }
+body .menu-row, body .sum-row:hover { background: var(--soft); }
+
+
+/* Vensters: het waas erachter is altijd zwart, ook in donker. Zonder deze
+   regel wordt bg-cacao/60 in donker juist een lichte sluier. */
+#instModal, #menuModal, #introModal, #coachSlapendModal, #statusModal,
+#teamModal, #teamBevestig, #bevestigModal, #abonnementOverlay, #setupOverlay { background: rgb(0 0 0 / .62); }
+
+/* De kaart van het bezorggebied: in donker de tegels omkeren in plaats van
+   de warme filter, anders staat er een fel wit vlak in het dashboard. */
+:root[data-theme="dark"] #bezorgMap .leaflet-tile-pane {
+    filter: invert(1) hue-rotate(180deg) saturate(.35) brightness(.85) contrast(.95);
+}
+
+/* De telefoonpreview laat de pagina van de klant zien; die heeft zijn eigen
+   kleuren en blijft licht, wat het thema van het dashboard ook is. */
+.phone-frame { color-scheme: light; background: #fff; color: #241712; }
+
+/* ── Druktegrafiek: gesloten uren ──────────────────────────────────── */
+
+/* Buiten de openingstijden staat er een heel laag blokje met een maantje erboven */
+.drukte-kolom .d-balkvak { position: relative; }
+.drukte-kolom .d-dicht {
+    position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%);
+    font-size: 8px; color: var(--ink3); opacity: .5;
+}
+body .drukte-bar.dicht { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+.drukte-kolom.dicht .d-uur { opacity: .6; }
+
+/* Themaknop in de topbalk: het icoon kleurt mee bij hover, net als de tekstknoppen */
+.topbalk button.los:hover i.fa-solid { color: var(--ink); }
+#themaKnop { min-width: 2rem; justify-content: center; }
+#themaKnop i.fa-solid { font-size: .95rem; }
+
+/* ── Ritme dat meegroeit met het scherm ────────────────────────────── */
+
+/* Op een laptop is 12px tussen de blokken precies goed; op een monitor van
+   2500px wordt het een dun streepje. Daarom groeit --gap mee, en daarmee
+   alles wat erop bouwt: de rail, de topbalk, de kolommen, de sectiekoppen.
+   --zone is de grotere afstand tussen twee gebieden: rail en content, en de
+   linker- en rechterkolom van het overzicht. */
+:root { --zone: calc(var(--gap) * 2); }
+@media (min-width: 96rem) { :root { --gap: 16px; } }
+@media (min-width: 120rem) { :root { --gap: 20px; } }
+
+/* De content naast de rail. Onder 64rem is er geen rail maar een tabbalk
+   onderin, vandaar de ruimte onderaan. */
+.dash-main { padding: var(--gap); padding-bottom: 7rem; }
+@media (min-width: 64rem) {
+    .dash-main { margin-left: calc(15rem + var(--gap)); padding: var(--gap) var(--gap) var(--gap) var(--zone); }
+}
+
+/* ═══ App-onderdelen voor de overige panelen ═══════════════════════ */
+
+/* Kop van een paneel: titel met een regel uitleg, en rechts de hoofdactie */
+.paneel-kop { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px 24px; padding: 6px 6px 8px; }
+.paneel-kop h2 { font-size: 26px; font-weight: 300; letter-spacing: -.02em; line-height: 1.15; }
+.paneel-kop p { font-size: 13.5px; color: var(--ink3); margin-top: 4px; max-width: 64ch; }
+
+/* Filtertabs: pillen, de actieve is het omgekeerde vlak */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab-pil {
+    display: inline-flex; align-items: center; gap: 7px;
+    min-height: 38px; padding: 0 16px;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--line);
+    background: var(--card);
+    font-size: 13px; font-weight: 500; color: var(--ink2);
+    transition: background .2s, color .2s, border-color .2s;
+}
+.tab-pil:hover { background: var(--soft); color: var(--ink); }
+.tab-pil .n { font-size: 12px; color: var(--ink3); }
+.tab-pil.aan { background: var(--omgekeerd); border-color: var(--omgekeerd); color: var(--omgekeerd-ink); }
+.tab-pil.aan .n { color: color-mix(in srgb, var(--omgekeerd-ink) 60%, transparent); }
+.tab-pil.klein { min-height: 32px; padding: 0 12px; font-size: 12px; }
+
+/* Sleutel-waarde regel in een instellingenblok */
+.kv { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 13.5px; }
+.kv:first-of-type { border-top: 0; padding-top: 0; }
+.kv > span:first-child { color: var(--ink3); flex-shrink: 0; }
+.kv > span:last-child { text-align: right; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+
+/* Rond icoonknopje, bijvoorbeeld verwijderen */
+.icoon-knop { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: var(--ink3); flex-shrink: 0; transition: background .2s, color .2s; }
+.icoon-knop:hover { background: var(--soft); color: var(--ink); }
+
+/* Rol-icoon bij een teamlid */
+.rol-icoon { width: 36px; height: 36px; border-radius: 50%; background: var(--soft); display: grid; place-items: center; color: var(--ink2); flex-shrink: 0; font-size: 13px; }
+.keuze .rol-icoon, .regel .rol-icoon { background: var(--card); }
+.team-regel { flex-wrap: wrap; }
+.team-regel.uit { opacity: .55; }
+.tag.klein { min-height: 24px; padding: 0 10px; font-size: 11px; }
+
+/* Compacte velden buiten een formulier, zoals de bezorgtarieven */
+.veld { background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: var(--r-mini); padding: 8px 10px; font-size: 14px; width: 100%; min-height: 38px; transition: border-color .2s; }
+.veld:focus { outline: 0; border-color: var(--ink); }
+.veld.smal { width: 3.8rem; flex-shrink: 0; }
+.veld-prefix { display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: var(--r-mini); background: var(--card); padding-left: 10px; min-height: 38px; }
+.veld-prefix > span { font-size: 12px; color: var(--ink3); white-space: nowrap; }
+.veld-prefix .veld { border: 0; padding-left: 0; min-width: 0; min-height: 36px; }
+.veld-prefix:focus-within { border-color: var(--ink); }
+.tier-rij { display: flex; align-items: center; gap: 8px; }
+.tier-bol { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Bestelkaart ───────────────────────────────────────────────────── */
+
+.order-kaart.klaar { opacity: .6; }
+.kop b { font-weight: 500; }
+.aantal { display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 6px; border-radius: 8px; background: var(--line); font-size: 12px; font-weight: 500; flex-shrink: 0; }
+.order-optie { font-size: 12px; margin-top: 2px; }
+.order-optie.met { color: var(--ink2); }
+.order-optie.zonder { color: var(--ink3); text-decoration: line-through; }
+
+/* Status-tijdlijn: dezelfde stappen als eerst, in de tokens van het systeem */
+body .status-tijdlijn { margin: 4px 0 18px; }
+body .stl-stap::before, body .stl-stap::after { height: 2px; top: 1.15rem; background: var(--line); }
+body .stl-dot { width: 2.3rem; height: 2.3rem; background: var(--card); border: 1px solid var(--line); color: var(--ink3); }
+body .stl-dot i { font-size: .9rem; }
+body .stl-stap.geweest .stl-dot { background: var(--omgekeerd); border-color: var(--omgekeerd); color: var(--omgekeerd-ink); }
+body .stl-stap.nu .stl-dot { color: var(--ink); transform: scale(1.12); }
+body .stl-lbl { font-size: 11px; font-weight: 400; color: var(--ink3); }
+body .stl-stap.nu .stl-lbl { color: var(--ink); font-weight: 500; }
+body .stl-stap.geweest::before, body .stl-stap.geweest::after, body .stl-stap.nu::before { background: var(--omgekeerd); }
+body .stl-stap.vul::after, body .stl-stap.nu.vul-in::before { background: var(--line); background-image: linear-gradient(var(--omgekeerd), var(--omgekeerd)); }
+
+/* Tijdsschatting bij accepteren */
+body .eta-kiezer { background: var(--soft); border-radius: var(--r-blok); padding: 16px; margin-top: 12px; }
+body .eta-snel { font-family: inherit; font-size: 13px; font-weight: 500; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: var(--r-pill); padding: 0 6px; min-height: 40px; width: 100%; transition: border-color .2s, background .2s; }
+body .eta-snel:hover { border-color: var(--ink); }
+body .eta-stap { width: 40px; height: 40px; border-radius: 50%; background: var(--card); border: 1px solid var(--line); font-family: inherit; font-size: 20px; font-weight: 300; color: var(--ink); display: grid; place-items: center; }
+.eta-waarde { font-size: 24px; font-weight: 300; letter-spacing: -.02em; width: 7rem; text-align: center; }
+
+/* ── Menukaart ─────────────────────────────────────────────────────── */
+
+.menu-foto { width: 56px; height: 56px; border-radius: var(--r-mini); object-fit: cover; flex-shrink: 0; }
+body .menu-card { cursor: pointer; transition: transform .25s var(--soepel); }
+body .menu-card:hover { transform: translateY(-2px); }
+body .menu-card.uit { opacity: .55; }
+
+/* ── Vensters ──────────────────────────────────────────────────────── */
+
+/* Tailwinds "hidden" staat in een laag en zou het van .venster-laag verliezen */
+.venster-laag.hidden { display: none; }
+.venster-laag { padding: var(--gap); }
+.venster-midden { width: 100%; min-height: 100%; display: flex; align-items: center; justify-content: center; }
+.venster { position: relative; }
+.venster.vrij { width: 100%; }
+.venster.hoog { max-height: calc(100dvh - var(--gap) * 2); }
+.venster.midden { align-items: center; text-align: center; }
+.venster.midden .lead { max-width: 44ch; }
+.venster-titel { font-size: 26px; font-weight: 300; letter-spacing: -.02em; line-height: 1.15; }
+.venster-sluit { position: absolute; top: 18px; right: 18px; width: 36px; height: 36px; border-radius: 50%; background: var(--soft); display: grid; place-items: center; color: var(--ink2); z-index: 2; transition: background .2s, color .2s; }
+.venster-sluit:hover { background: var(--line); color: var(--ink); }
+.venster-icoon { width: 52px; height: 52px; border-radius: 50%; background: var(--soft); display: grid; place-items: center; font-size: 20px; color: var(--ink); }
+.venster .venster-scroll { padding-inline: 6px; margin-inline: -6px; }
+
+/* Velden en chips in de vensters (gedeeld met de gerechtenwizard) */
+body .m-label { display: block; font-size: 11px; color: var(--ink3); margin-bottom: 4px; font-weight: 400; }
+body .m-inp { background: transparent; color: var(--ink); border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 6px 0 8px; font-size: 15px; font-weight: 400; min-height: 36px; width: 100%; transition: border-color .2s; }
+body .m-inp:focus { outline: 0; border-bottom-color: var(--ink); }
+body .m-inp::placeholder { color: var(--ink3); font-weight: 400; }
+body .m-inp.m-fout { border-bottom-color: #b3261e; }
+body .m-hint { font-size: 12px; color: var(--ink3); font-weight: 400; }
+body .keuze-chip { background: var(--card); color: var(--ink2); border: 1px solid var(--line); border-radius: var(--r-pill); padding: 0 14px; min-height: 34px; font-size: 13px; font-weight: 500; transition: background .2s, color .2s, border-color .2s; }
+body .keuze-chip:hover { background: var(--soft); color: var(--ink); border-color: var(--line); }
+body .keuze-chip.aan, body .keuze-chip.geel.aan { background: var(--omgekeerd); border-color: var(--omgekeerd); color: var(--omgekeerd-ink); }
+body .chip { background: var(--soft); border: 0; border-radius: var(--r-pill); padding: 5px 12px; font-size: 13px; font-weight: 400; color: var(--ink); }
+body .chip-x { color: var(--ink3); }
+body .chip-x:hover { color: var(--ink); }
+body .seg { display: inline-flex; background: var(--soft); border-radius: var(--r-pill); padding: 3px; gap: 2px; }
+body .seg button { padding: 6px 12px; border-radius: var(--r-pill); font-size: 12px; font-weight: 500; color: var(--ink2); }
+body .seg button.aan { background: var(--omgekeerd); color: var(--omgekeerd-ink); }
+body .optie-groep { background: var(--soft); border-radius: var(--r-blok); padding: 14px; }
+body .optie-groep .m-inp { border-bottom-color: color-mix(in srgb, var(--ink) 18%, transparent); }
+.thema-tegel { text-align: left; padding: 8px; border-radius: var(--r-klein); border: 1px solid var(--line); background: var(--card); transition: border-color .2s, box-shadow .2s; }
+.thema-tegel:hover { border-color: var(--ink3); }
+.thema-tegel.aan { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.kleur-vlek { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: #fff; font-size: 14px; flex-shrink: 0; transition: transform .2s; }
+.kleur-vlek:hover { transform: scale(1.06); }
+.kleur-vlek.aan { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+/* De wizard: grote gecentreerde velden */
+body .venster .inp { font-size: 17px; padding: .85rem 1.1rem; border-radius: var(--r-klein); }
+body .err { color: #b3261e; font-size: 12px; font-weight: 400; min-height: 1.2em; margin-top: 6px; }
+body .enter-hint { font-weight: 400; color: var(--ink3); margin-top: 2px; }
+body .enter-hint b { color: var(--ink2); font-weight: 500; }
+.foto-drop { width: 100%; max-width: 20rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 30px 24px; border-radius: var(--r-blok); border: 1px dashed var(--line); background: var(--soft); transition: border-color .2s; }
+.foto-drop:hover { border-color: var(--ink3); }
+
+/* Toast onderin */
+body #dashToast { background: var(--omgekeerd); color: var(--omgekeerd-ink); box-shadow: none; font-weight: 500; }
+
+/* Smal scherm: zes stappen op 330px. Alleen het label van de huidige stap blijft,
+   plus begin en eind; de rest zie je aan het bolletje. De tariefregels breken
+   in twee regels in plaats van te knellen. */
+@media (max-width: 30rem) {
+    body .stl-lbl { display: none; }
+    body .stl-stap.nu .stl-lbl, body .stl-stap:first-child .stl-lbl, body .stl-stap:last-child .stl-lbl { display: block; }
+    .tier-rij { flex-wrap: wrap; row-gap: 8px; }
+    .tier-rij .veld-prefix { flex: 1 1 calc(50% - 30px); }
+}
+
+/* ── De begroeting als kleurvlek ───────────────────────────────────── */
+
+/* Eén sterke vlek bovenaan het overzicht in de hoofdkleur; alles erin keert om */
+.groet-vlak { --groet-kleur: var(--accent); background: var(--groet-kleur); color: var(--accent-ink); }
+.groet-vlak .label, .groet-vlak .small, .groet-vlak .status { color: color-mix(in srgb, var(--accent-ink) 78%, transparent); }
+.groet-vlak .status-dot { background: color-mix(in srgb, var(--accent-ink) 55%, transparent); }
+body .groet-vlak .status-dot.aan { background: var(--green); }
+.groet-vlak .btn.dark { background: var(--accent-ink); color: var(--groet-kleur); }
+.groet-vlak .btn.dark:hover { background: color-mix(in srgb, var(--accent-ink) 90%, var(--groet-kleur)); }
+body .groet-vlak .btn-grey { background: transparent; color: var(--accent-ink); border-color: color-mix(in srgb, var(--accent-ink) 50%, transparent); }
+body .groet-vlak .mode-switch { background: color-mix(in srgb, var(--accent-ink) 16%, transparent); }
+body .groet-vlak .mode-opt { color: color-mix(in srgb, var(--accent-ink) 80%, transparent); }
+body .groet-vlak .mode-opt:hover { background: color-mix(in srgb, var(--accent-ink) 14%, transparent); color: var(--accent-ink); }
+body .groet-vlak .mode-opt.on { background: var(--accent-ink); color: var(--groet-kleur); }
+
+/* Groen blijft groen, ook naast een rode hoofdkleur */
+.tag.ok { background: color-mix(in srgb, var(--green) 30%, var(--card)); border-color: color-mix(in srgb, var(--green) 70%, transparent); }
+
+/* ── Statuskleuren met betekenis ───────────────────────────────────── */
+
+/* Elke stap van een bestelling heeft een eigen kleur, los van de hoofdkleur
+   van de zaak: in de keuken zie je in één blik waar alles staat. De chips zijn
+   vol, want ze moeten van een afstand leesbaar zijn. */
+:root {
+    --s-nieuw: #2f7cf6;      --s-nieuw-ink: #ffffff;      /* betaald, net binnen */
+    --s-bevestigd: #0e9488;  --s-bevestigd-ink: #ffffff;  /* bevestigd, tijd gekozen */
+    --s-bereiden: #f2a900;   --s-bereiden-ink: #1b1714;   /* wordt bereid */
+    --s-oven: #e0442f;       --s-oven-ink: #ffffff;       /* in de oven, heet */
+    --s-onderweg: #1f9d55;   --s-onderweg-ink: #ffffff;   /* onderweg of af te halen */
+    --s-klaar: #8b837b;      --s-klaar-ink: #ffffff;      /* afgerond */
+}
+.tab-stip { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Foto's groot ──────────────────────────────────────────────────── */
+
+/* Menukaart: een gerecht met foto laat die zien, niet een postzegel ernaast */
+.menu-foto-groot { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: var(--r-blok); margin-bottom: 14px; background: var(--soft); }
+
+/* Begroeting met de eigen foto van de zaak erachter: links blijft de kleur vol
+   zodat de tekst leesbaar is, rechts schemert het eten door de kleurwaas. */
+.groet-vlak.met-foto {
+    background-image: linear-gradient(90deg, var(--groet-kleur) 40%, color-mix(in srgb, var(--groet-kleur) 58%, transparent) 100%), var(--groet-foto);
+    background-size: cover;
+    background-position: right center;
+}
+@media (max-width: 64rem) {
+    .groet-vlak.met-foto { background-image: linear-gradient(180deg, var(--groet-kleur) 55%, color-mix(in srgb, var(--groet-kleur) 62%, transparent) 100%), var(--groet-foto); }
+}
+
+/* Een gerecht zonder eigen foto krijgt de standaardfoto die klanten ook zien, met een label erbij */
+.menu-foto-vak { position: relative; margin-bottom: 14px; }
+.menu-foto-vak .menu-foto-groot { margin-bottom: 0; }
+.foto-label { position: absolute; left: 10px; bottom: 10px; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: var(--r-pill); background: rgba(0, 0, 0, .55); color: #fff; }
+
+/* Vlak op de tweede kleur (inkoop-oproep): alles erin leest in de inkt van die kleur,
+   ook in donker, waar --ink licht is en het vlak zelf licht blijft */
+.vlak.tweede .kop, .vlak.tweede h2, .vlak.tweede h3, .vlak.tweede p { color: var(--accent-2-ink); }
+.vlak.tweede .btn.wh { background: #fff; color: #1b1714; }
+.vlak.tweede .btn.wh:hover { background: #f4eee6; }

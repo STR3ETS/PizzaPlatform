@@ -33,6 +33,12 @@ class User extends Authenticatable
         return $this->hasMany(Klant::class);
     }
 
+    /** Teamleden van deze zaak: bezorgers en keukenhulp */
+    public function medewerkers(): HasMany
+    {
+        return $this->hasMany(Medewerker::class);
+    }
+
     /** Nog in de gratis proefmaand (en zonder betaald abonnement)? */
     public function inProefperiode(): bool
     {
