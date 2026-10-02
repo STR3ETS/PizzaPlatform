@@ -13,7 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Stripe stuurt de webhook zonder sessie of formulier-token
-        $middleware->validateCsrfTokens(except: ['stripe/webhook']);
+        // Stripe stuurt de webhook en de bonprinter zijn ophaalverzoeken zonder sessie of formulier-token
+        $middleware->validateCsrfTokens(except: ['stripe/webhook', 'printer/*']);
 
         // De taal van de site (nl, of en als de bezoeker dat koos)
         $middleware->web(append: [\App\Http\Middleware\ZetTaal::class]);

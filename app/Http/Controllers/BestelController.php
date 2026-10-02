@@ -1141,6 +1141,13 @@ class BestelController extends Controller
             $klant->update(['punten' => max(0, $klant->punten - $order->punten_gebruikt + $order->punten)]);
         }
 
+        // De bon voor de keuken (en eventueel de klant) klaarzetten voor de bonprinter van de zaak
+        try {
+            \App\Support\Bonprinter::plan($user, $order);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         // De demo-zaak (template-speeltuinen) mailt niet, en een mailstoring mag nooit blokkeren
         if ($user->email === 'demo@pizzeria.nl') {
             return;

@@ -2213,3 +2213,77 @@ $('#teamLinkKopie')?.addEventListener('click', async () => {
     knop.textContent = (await kopieer(link)) ? 'Gekopieerd' : 'Kopiëren lukte niet';
     setTimeout(() => { knop.textContent = 'Link kopiëren'; }, 1600);
 });
+
+/* ── Bonprinter: adres kopiëren, instellingen opslaan, testbon, en de status ververst zolang het paneel open is ── */
+(function bonprinter() {
+    const vlak = $('#printerVlak');
+    if (!vlak) return;
+
+    const toon = (stand) => {
+        const status = $('#printerStatus');
+        if (stand.online) {
+            status.className = 'status live shrink-0';
+            status.innerHTML = `<i></i>Printer online${stand.naam ? ` (${esc(stand.naam)})` : ''}`;
+        } else if (stand.gezien_om) {
+            const wanneer = new Date(stand.gezien_om).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+            status.className = 'status uit shrink-0';
+            status.innerHTML = `<i></i>Laatst gezien ${wanneer}`;
+        } else {
+            status.className = 'status uit shrink-0';
+            status.innerHTML = '<i></i>Nog niet gezien';
+        }
+        $('#printerUrl').textContent = stand.url;
+        const laatste = stand.laatste;
+        const melding = $('#printerMelding');
+        if (stand.wachtend > 0) {
+            melding.textContent = `${stand.wachtend} bon${stand.wachtend === 1 ? '' : 'nen'} in de wachtrij${stand.online ? '' : ', de printer moet eerst langskomen'}.`;
+        } else if (laatste?.status === 'mislukt') {
+            melding.textContent = `De laatste bon is mislukt (${laatste.fout || 'onbekende fout'}). Controleer papier en netwerk.`;
+        } else if (laatste?.status === 'geprint') {
+            melding.textContent = 'De laatste bon is geprint.';
+        } else {
+            melding.textContent = '';
+        }
+    };
+
+    const ververs = async () => {
+        const stand = await fetch('/printer/status', { headers: { Accept: 'application/json' } }).then((r) => r.json()).catch(() => null);
+        if (stand && stand.url) toon(stand);
+    };
+
+    $('#printerKopieer').addEventListener('click', async () => {
+        const knop = $('#printerKopieer');
+        knop.textContent = (await kopieer($('#printerUrl').textContent.trim())) ? 'Gekopieerd' : 'Kopiëren lukte niet';
+        setTimeout(() => { knop.textContent = 'Adres kopiëren'; }, 1600);
+    });
+
+    $('#printerTest').addEventListener('click', async () => {
+        const stand = await postJson('/printer/test', {}).catch(() => null);
+        if (!stand) return dashToast('Dat lukte niet, probeer het zo nog eens.', 3600);
+        toon(stand);
+        dashToast(stand.online ? 'Testbon staat klaar, hij komt er zo uit.' : 'Testbon staat klaar. Zodra de printer langskomt, komt hij eruit.');
+    });
+
+    vlak.addEventListener('click', (e) => {
+        const kop = e.target.closest('[data-kopieen]');
+        if (kop) $$('#printerKopieen .keuze-chip').forEach((el) => el.classList.toggle('aan', el === kop));
+        const br = e.target.closest('[data-breedte]');
+        if (br) $$('#printerBreedte .keuze-chip').forEach((el) => el.classList.toggle('aan', el === br));
+    });
+
+    $('#printerOpslaan').addEventListener('click', async () => {
+        const stand = await postJson('/printer/instellingen', {
+            aan: $('#printerAan').checked,
+            keukenbon: $('#printerKeuken').checked,
+            klantbon: $('#printerKlant').checked,
+            kopieen: Number($('#printerKopieen .keuze-chip.aan')?.dataset.kopieen || 1),
+            breedte: Number($('#printerBreedte .keuze-chip.aan')?.dataset.breedte || 48),
+        }).catch(() => null);
+        if (!stand) return dashToast('Opslaan lukte niet, probeer het zo nog eens.', 3600);
+        toon(stand);
+        dashToast(stand.aan ? 'Printer staat aan.' : 'Printer staat uit.');
+    });
+
+    ververs();
+    setInterval(() => { if (document.visibilityState === 'visible') ververs(); }, 15000);
+})();

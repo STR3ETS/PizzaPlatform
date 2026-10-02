@@ -79,12 +79,11 @@
          vier cijfers die één voor één oplopen. --}}
     <section class="donker-vlak" id="hoe">
         <div class="donker">
-            {{-- Links twee foto's over elkaar, anders dan de collage erboven: donkere beelden die in het zwart opgaan.
-                 Stockfoto's van Unsplash (Unsplash-licentie): grill door Caramel (JKJmdRDfPfk),
-                 nachtbezorger door Rowan Freeman (clYlmCaQbzY). --}}
-            <div class="donker-fotos" aria-hidden="true">
-                <div class="photo g1" data-diepte="60"><img src="{{ asset('assets/site/grill.jpg') }}" alt="" loading="lazy"></div>
-                <div class="photo g2" data-diepte="-70"><img src="{{ asset('assets/site/nacht.jpg') }}" alt="" loading="lazy"></div>
+            {{-- Links het systeem zelf, op ware verhouding: het dashboard als scherm en hetzelfde dashboard (bestellingen) als telefoon,
+                 over elkaar heen zoals de collage erboven. Beide schuiven licht mee met het scrollen. --}}
+            <div class="donker-fotos">
+                <div class="photo g1 scherm-raam" data-diepte="60"><img src="{{ asset('assets/site/dashboard-site.png') }}" alt="Het dashboard met de bestellingen van vandaag" loading="lazy"></div>
+                <div class="photo g2 telefoon-raam" data-diepte="-70"><img src="{{ asset('assets/site/telefoon-dashboard.png') }}" alt="Het dashboard op een telefoon, met een bestelling om te bevestigen" loading="lazy"></div>
             </div>
             <div class="cijfers">
                 <div class="cijfer" data-vanaf="0"><span class="n"><span data-tel="100" data-dec="0">0</span>%</span><span class="c">{{ __('site.donker.c1') }}</span></div>
@@ -404,7 +403,7 @@
                     l.style.opacity = (.16 + .84 * o).toFixed(3);
                 });
                 /* De foto's schuiven elk in eigen tempo: diepte in px, van +helft naar -helft */
-                fotos.forEach((f) => f.style.setProperty('--y', ((.5 - p) * f.dataset.diepte).toFixed(1) + 'px'));
+                fotos.forEach((f) => f.style.setProperty('--y', Math.round((.5 - p) * f.dataset.diepte) + 'px'));
             };
 
             /* Het vel kleurt om: --t (achtergrond) en --tt (tekst) op <html> lopen van 0 naar 1 zodra het
@@ -431,7 +430,7 @@
                 html.style.setProperty('--t', t.toFixed(3));
                 html.style.setProperty('--tt', tt.toFixed(3));
                 donker.style.setProperty('--q', q.toFixed(3));
-                donkerFotos.forEach((f) => f.style.setProperty('--y', ((.5 - q) * f.dataset.diepte).toFixed(1) + 'px'));
+                donkerFotos.forEach((f) => f.style.setProperty('--y', Math.round((.5 - q) * f.dataset.diepte) + 'px'));
                 /* Elk cijfer begint op zijn eigen moment (data-vanaf) en telt in een stuk van de scroll op */
                 cijfers.forEach((cijfer) => {
                     const u = klem((q - parseFloat(cijfer.dataset.vanaf)) / .28);

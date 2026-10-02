@@ -76,6 +76,12 @@ Route::view('/stijlgids', 'stijlgids')->name('stijlgids');
 // Stripe meldt hier betalingen en wijzigingen aan gekoppelde accounts
 Route::post('/stripe/webhook', \App\Http\Controllers\StripeWebhookController::class)->name('stripe.webhook');
 
+// De bonprinter van een zaak haalt hier zelf zijn bonnen op (Epson Server Direct Print); de token is het wachtwoord
+Route::post('/printer/{token}', [\App\Http\Controllers\PrinterController::class, 'poll'])->where('token', '[a-z0-9]{32}')->name('printer.poll');
+// Het hulpprogramma (php artisan bon:agent) voor printers die dat niet zelf kunnen: ophalen als ESC/POS en resultaat melden
+Route::get('/printer/{token}/volgende', [\App\Http\Controllers\PrinterController::class, 'volgende'])->where('token', '[a-z0-9]{32}')->name('printer.volgende');
+Route::post('/printer/{token}/klaar', [\App\Http\Controllers\PrinterController::class, 'klaar'])->where('token', '[a-z0-9]{32}')->name('printer.klaar');
+
 // Het teamscherm voor bezorgers en keukenhulp: eigen inlog, los van het dashboard
 Route::prefix('/bezorger')->group(function () {
     Route::get('/login', [\App\Http\Controllers\BezorgerController::class, 'showLogin'])->name('bezorger.login');
@@ -314,6 +320,12 @@ Route::middleware('auth')->group(function () {
         return response()->json(['ok' => true]);
     })->name('bezorg.opslaan');
 
+    // De bonprinter instellen en testen vanuit het dashboard
+    Route::get('/printer/status', [\App\Http\Controllers\PrinterController::class, 'status'])->name('printer.status');
+    Route::post('/printer/instellingen', [\App\Http\Controllers\PrinterController::class, 'instellingen'])->name('printer.instellingen');
+    Route::post('/printer/test', [\App\Http\Controllers\PrinterController::class, 'test'])->name('printer.test');
+    Route::post('/printer/nieuwe-token', [\App\Http\Controllers\PrinterController::class, 'nieuweToken'])->name('printer.token');
+
     // Stripe Connect: de zaak koppelt zijn eigen account om betalingen te ontvangen
     Route::get('/stripe/koppelen', [\App\Http\Controllers\StripeConnectController::class, 'start'])->name('stripe.connect.start');
     Route::get('/stripe/terug', [\App\Http\Controllers\StripeConnectController::class, 'terug'])->name('stripe.connect.terug');
@@ -429,6 +441,13 @@ Route::middleware('auth')->group(function () {
             'opmerking' => ($vol || ! random_int(0, 2)) ? $opmerkingPool[array_rand($opmerkingPool)] : null,
             'is_demo' => true,
         ]);
+
+        // Een voorbeeld telt als betaald, dus hij mag ook meteen uit de bonprinter komen
+        try {
+            \App\Support\Bonprinter::plan($request->user(), $order->fresh());
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return response()->json($order);
     })->name('orders.demo');

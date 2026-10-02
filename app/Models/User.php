@@ -72,6 +72,15 @@ class User extends Authenticatable
             'lat' => 'float',
             'lng' => 'float',
             'bezorgkosten' => 'array',
+            'printer_aan' => 'boolean',
+            'printer_opties' => 'array',
+            'printer_gezien_om' => 'datetime',
         ];
+    }
+
+    /** De bonnen die de bonprinter van deze zaak nog moet ophalen of al printte */
+    public function printJobs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PrintJob::class);
     }
 }

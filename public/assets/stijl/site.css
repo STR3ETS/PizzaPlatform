@@ -130,7 +130,7 @@
 
 /* Drie foto's rechts: verschillend van maat, een tikje gedraaid en over elkaar heen; --y komt uit het script */
 .lees-fotos { position: relative; width: 100%; aspect-ratio: 1 / 1; max-height: 76dvh; }
-.lees-fotos .photo { position: absolute; border-radius: var(--r-blok); transform: rotate(var(--rot)) translateY(var(--y, 0px)); will-change: transform; }
+.lees-fotos .photo { position: absolute; border-radius: var(--r-blok); transform: rotate(var(--rot)) translateY(var(--y, 0px)); backface-visibility: hidden; }
 .lees-fotos .f1 { left: 0; top: 4%; width: 58%; aspect-ratio: 4 / 5; --rot: -4deg; z-index: 1; --pos: center 22%; }
 .lees-fotos .f2 { right: 0; top: 0; width: 46%; aspect-ratio: 1 / 1; --rot: 3deg; z-index: 2; }
 .lees-fotos .f3 { left: 30%; bottom: 0; width: 46%; aspect-ratio: 4 / 3; --rot: -2deg; z-index: 3; --pos: 60% center; }
@@ -181,13 +181,17 @@ body { background: transparent; }
 
 /* Links in het donkere deel: twee foto's over elkaar, anders dan de collage erboven (staand groot, liggend klein) */
 .donker-fotos { position: relative; width: 100%; aspect-ratio: 1 / 1; max-height: 78dvh; }
-.donker-fotos .photo { position: absolute; border-radius: var(--r-blok); transform: rotate(var(--rot)) translateY(var(--y, 0px)); will-change: transform; }
-.donker-fotos .g1 { left: 4%; top: 0; width: 56%; aspect-ratio: 3 / 4; --rot: 2deg; z-index: 1; --pos: center 40%; }
-.donker-fotos .g2 { right: 0; bottom: 4%; width: 60%; aspect-ratio: 4 / 3; --rot: -3deg; z-index: 2; border: 1px solid rgba(255, 255, 255, .12); }
+/* Het dashboard (158:100) en de telefoon (390:844) houden hun echte verhouding, dus niets wordt afgesneden */
+.donker-fotos .photo { position: absolute; border-radius: var(--r-blok); transform: rotate(var(--rot)) translateY(var(--y, 0px)); backface-visibility: hidden; }
+.donker-fotos .g1 { left: 0; top: 5%; width: 84%; aspect-ratio: 158 / 100; --rot: -1.5deg; z-index: 1; --pos: top; }
+.donker-fotos .g2 { right: 2%; bottom: 0; width: 30%; aspect-ratio: 390 / 844; --rot: 2deg; z-index: 2; --pos: top; }
+/* Randen als van een scherm en een telefoon */
+.scherm-raam { border: 1px solid rgba(255, 255, 255, .14); border-radius: 14px; --ph: #f6f2ec; }
+.telefoon-raam { border: 6px solid #141414; border-radius: 30px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .12); --ph: #f6f2ec; }
 @media (max-width: 900px) {
     .donker-fotos { aspect-ratio: 4 / 3; max-height: 44dvh; }
-    .donker-fotos .g1 { width: 50%; }
-    .donker-fotos .g2 { width: 54%; }
+    .donker-fotos .g1 { width: 82%; }
+    .donker-fotos .g2 { width: 30%; }
 }
 
 /* Smal scherm: het merk breekt niet af en Inloggen wordt een rond icoontje naast de taalpil */
@@ -259,7 +263,7 @@ body { background: transparent; }
 
 .lint { padding: clamp(10px, 2vh, 18px) 0; border-top: 1px solid var(--lijn); }
 .lint:last-child { border-bottom: 1px solid var(--lijn); }
-.lint-rij { display: flex; align-items: center; gap: clamp(28px, 3.5vw, 56px); width: max-content; will-change: transform; }
+.lint-rij { display: flex; align-items: center; gap: clamp(28px, 3.5vw, 56px); width: max-content; }
 .lint .woord { font-size: var(--maat-h1); font-weight: 300; letter-spacing: -.02em; line-height: 1; white-space: nowrap; }
 .lint .rond { width: clamp(44px, 5vw, 68px); height: clamp(44px, 5vw, 68px); border-radius: 50%; flex-shrink: 0; }
 @media (max-width: 900px) {
@@ -306,7 +310,7 @@ body { background: transparent; }
 .kring-tekst .tag { background: transparent; color: inherit; border-color: var(--lijn); }
 
 /* De kaartjes: op hun plek in procenten, gedraaid, zwevend, en --y uit het script voor het meeschuiven */
-.kaartje { --s: 1; --o: 1; position: absolute; left: calc(50% + (var(--x) - 50%) * var(--s)); top: calc(50% + (var(--y0) - 50%) * var(--s)); opacity: var(--o); width: 22%; border-radius: 18px; padding: 14px 16px; background: var(--zacht); border: 1px solid var(--lijn); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); transform: translate(-50%, -50%) rotate(calc(var(--rot, 0deg) + (1 - var(--s)) * -35deg)) scale(calc(.15 + .85 * var(--s))); will-change: transform, opacity; }
+.kaartje { --s: 1; --o: 1; position: absolute; left: calc(50% + (var(--x) - 50%) * var(--s)); top: calc(50% + (var(--y0) - 50%) * var(--s)); opacity: var(--o); width: 22%; border-radius: 18px; padding: 14px 16px; background: var(--zacht); border: 1px solid var(--lijn); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); transform: translate(-50%, -50%) rotate(calc(var(--rot, 0deg) + (1 - var(--s)) * -35deg)) scale(calc(.15 + .85 * var(--s))); backface-visibility: hidden; }
 .kaartje::after { content: ""; position: absolute; inset: 0; border-radius: inherit; animation: zweven 7s ease-in-out infinite alternate; animation-delay: var(--wacht, 0s); pointer-events: none; }
 .kaartje > * { position: relative; animation: zweven 7s ease-in-out infinite alternate; animation-delay: var(--wacht, 0s); }
 @keyframes zweven { from { translate: 0 -5px; } to { translate: 0 5px; } }

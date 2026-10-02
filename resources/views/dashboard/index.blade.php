@@ -882,6 +882,46 @@
                             <p id="domeinWaarde" class="text-[14px] break-all">{{ $eigenDomein ? 'bestellen.' . strtolower(preg_replace('#^(https?://)?(www\.)?#', '', $ob['ownDomain'])) : $obSlug . '.' . config('app.centraal_domein') }}</p>
                         </div>
 
+                        {{-- De bonprinter: de printer haalt zelf zijn bonnen op bij ons, dus hier alleen het adres, de status en wat er geprint wordt --}}
+                        @php $printerOpties = \App\Support\Bonprinter::opties(auth()->user()); @endphp
+                        <div class="vlak app" id="printerVlak" data-aan="{{ auth()->user()->printer_aan ? 1 : 0 }}">
+                            <div class="head">
+                                <p class="kop">Bonprinter</p>
+                                <span id="printerStatus" class="status uit shrink-0"><i></i>Nog niet gezien</span>
+                            </div>
+                            <p class="mini mb-4">Elke betaalde bestelling komt vanzelf uit je bonprinter. Heb je een Epson met netwerk, zet dan dit adres in de printer bij <b>Server Direct Print</b> (interval 5 seconden). Elke andere netwerkprinter werkt via ons hulpprogramma op een pc in de zaak, met ditzelfde adres.</p>
+                            <div class="regel" style="align-items:flex-start">
+                                <i class="fa-solid fa-print mt-1 text-[12px]" style="color:var(--ink3)" aria-hidden="true"></i>
+                                <span class="op"><span id="printerUrl" class="text-[13px] break-all">{{ \App\Support\Bonprinter::url(auth()->user()) }}</span></span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 mt-3">
+                                <button type="button" id="printerKopieer" class="btn line klein cursor-pointer">Adres kopiëren</button>
+                                <button type="button" id="printerTest" class="btn line klein cursor-pointer">Testbon printen</button>
+                            </div>
+                            <p class="mini mt-3">Geen Epson? Start op een pc in de zaak het hulpprogramma met dit adres en het IP van de printer: <code class="text-[12px]">php artisan bon:agent --url=&lt;adres&gt; --printer=&lt;ip&gt;</code></p>
+                            <div class="mt-5 flex flex-col gap-2">
+                                <label class="check-item"><input type="checkbox" id="printerAan" {{ auth()->user()->printer_aan ? 'checked' : '' }}> <span>Bonnen printen bij elke betaalde bestelling</span></label>
+                                <label class="check-item"><input type="checkbox" id="printerKeuken" {{ $printerOpties['keukenbon'] ? 'checked' : '' }}> <span>Keukenbon (zonder prijzen)</span></label>
+                                <label class="check-item"><input type="checkbox" id="printerKlant" {{ $printerOpties['klantbon'] ? 'checked' : '' }}> <span>Klantbon met prijzen en QR naar de bestelstatus</span></label>
+                            </div>
+                            <div class="grid grid-cols-2 gap-[var(--gap)] mt-4">
+                                <div>
+                                    <p class="label mb-2">Keukenbonnen</p>
+                                    <div class="flex gap-1.5" id="printerKopieen">
+                                        @foreach([1, 2, 3] as $n)<button type="button" class="keuze-chip justify-center !py-2 flex-1 cursor-pointer {{ (int) $printerOpties['kopieen'] === $n ? 'aan' : '' }}" data-kopieen="{{ $n }}">{{ $n }}</button>@endforeach
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="label mb-2">Papier</p>
+                                    <div class="flex gap-1.5" id="printerBreedte">
+                                        @foreach([48 => '80 mm', 32 => '58 mm'] as $b => $l)<button type="button" class="keuze-chip justify-center !py-2 flex-1 cursor-pointer {{ (int) $printerOpties['breedte'] === $b ? 'aan' : '' }}" data-breedte="{{ $b }}">{{ $l }}</button>@endforeach
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" id="printerOpslaan" class="btn dark breed mt-5 cursor-pointer">Printer opslaan</button>
+                            <p id="printerMelding" class="small mt-3"></p>
+                        </div>
+
                         <div class="vlak app">
                             <p class="kop mb-4">Hulp en account</p>
                             <div class="flex flex-wrap items-center gap-2">
